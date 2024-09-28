@@ -30,7 +30,7 @@ app.use(cors());
 const mongooseURL = process.env.MONGODB_URI;
 mongoose
   .connect(mongooseURL)
-  .then(() => console.log("Connect success.."))
+  .then(() => console.log("Connect to mongodb success.."))
   .catch((error) => console.error("Error connecting to database...", error));
 
 app.use('/admins', adminRouter);
