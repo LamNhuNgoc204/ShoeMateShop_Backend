@@ -1,6 +1,7 @@
 var express = require("express");
 var router = express.Router();
 var AuthController = require("../controllers/authController");
+const { validateRequest } = require("../middlewares/userMiddleware");
 
 //methods:  PUT
 //http:  http://localhost:8080/auth
@@ -8,12 +9,20 @@ var AuthController = require("../controllers/authController");
 router.put("/reset-password", AuthController.resetPassword);
 
 // Forgot password
-router.post("/forgot-password", AuthController.forgotPassword);
+router.post("/forgot-password", validateRequest, AuthController.forgotPassword);
 
 //verify password otp
-router.post("/verify-password-otp", AuthController.verifyPasswordOTP);
+router.post(
+  "/verify-password-otp",
+  validateRequest,
+  AuthController.verifyPasswordOTP
+);
 
 //Save new password
-router.put("/save-new-password", AuthController.saveNewPassword);
+router.put(
+  "/save-new-password",
+  validateRequest,
+  AuthController.saveNewPassword
+);
 
 module.exports = router;
