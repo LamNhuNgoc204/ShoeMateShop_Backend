@@ -1,5 +1,11 @@
 exports.validateRequest = (req, res, next) => {
-  const { userId, email, newPassword, re_newPassword } = req.body;
+  const { userId, email, newPassword, re_newPassword, newRole } = req.body;
+
+  if (!newRole) {
+    return res
+      .status(400)
+      .json({ status: false, message: "New role is required!" });
+  }
 
   if (!userId) {
     return res

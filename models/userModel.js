@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
   passwordOTP: { type: String },
   passwordOTPExpire: { type: Date },
   name: { type: String, required: true },
-  role: { type: String, default: "user" },
+  role: { type: String, enum: ["admin", "user", "employee"], default: "user" },
   device_info: { type: Object },
   wallet: { type: mongoose.Schema.Types.ObjectId, ref: "wallet" },
   address: [{ type: mongoose.Schema.Types.ObjectId, ref: "address" }],
