@@ -2,7 +2,7 @@ const User = require("../models/userModel");
 const { checkPassword, hashPassword } = require("../utils/encryptionUtils");
 const { sendEmail } = require("../utils/emailUtils");
 const { generateOTP } = require("../utils/generateUtils");
-
+const jwt = require("jsonwebtoken");
 exports.resetPassword = async (req, res) => {
   try {
     const { userId, oldPassword, newPassword } = req.body;
@@ -144,3 +144,108 @@ exports.saveNewPassword = async (req, res) => {
     return res.status(500).json({ status: false, message: "Server error" });
   }
 };
+
+//signup
+
+exports.signup = async (req, res) => {
+  try {
+    const { email, phoneNumber, password, name } = req.body;
+
+    // Validate user input
+    if (!email || !phoneNumber || !password || !name) {
+      return res.status(400).json({
+        status: false,
+        message: "Please provide all required fields.",
+      });
+    }
+
+    // Check if the user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Email already in use." });
+    }
+
+    // Hash password
+    const hashedPassword = await hashPassword(password);
+
+    // Create new user
+    const newUser = new User({
+      email,
+      phoneNumber,
+      password: hashedPassword,
+      name,
+    });
+
+    await newUser.save();
+
+    // Generate JWT token
+    const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    // Return user info without password
+    const userResponse = newUser.toObject();
+    delete userResponse.password;
+
+    return res.status(201).json({
+      status: true,
+      message: "User registered successfully!",
+      data: { user: userResponse, token },
+    });
+  } catch (error) {
+    console.log("Signup error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
+// login 
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validate user input
+    if (!email || !password) {
+      return res.status(400).json({
+        status: false,
+        message: "Please provide both email and password.",
+      });
+    }
+
+    // Check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res
+        .status(400)
+        .json({ status: false, message: "User does not exist." });
+    }
+
+    // Check if password is correct
+    const isPasswordCorrect = await checkPassword(password, user.password);
+    if (!isPasswordCorrect) {
+      return res
+        .status(401)
+        .json({ status: false, message: "Invalid password." });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    // Return user info without password
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    return res.status(200).json({
+      status: true,
+      message: "Login successful!",
+      data: { user: userResponse, token },
+    });
+  } catch (error) {
+    console.log("Login error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+

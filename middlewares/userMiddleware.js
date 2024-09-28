@@ -47,3 +47,65 @@ exports.validateRequest = (req, res, next) => {
 
   next();
 };
+
+
+exports.validateRegister = (req, res, next) => {
+  const { email, phoneNumber, password, re_password, name } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ status: false, message: "Name is required!" });
+  }
+
+  if (!email) {
+    return res.status(400).json({ status: false, message: "Email is required!" });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ status: false, message: "Invalid email format!" });
+  }
+
+  if (!phoneNumber) {
+    return res.status(400).json({ status: false, message: "Phone number is required!" });
+  }
+
+  if (!password) {
+    return res.status(400).json({
+      status: false,
+      message: "Password are required!",
+    });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({
+      status: false,
+      message: "Password must be at least 6 characters long!",
+    });
+  }
+
+
+
+  next();
+};
+
+exports.validateLogin = (req, res, next) => {
+  const { email, password } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ status: false, message: "Email is required!" });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ status: false, message: "Invalid email format!" });
+  }
+
+  if (!password) {
+    return res.status(400).json({
+      status: false,
+      message: "Password is required!",
+    });
+  }
+
+  next();
+};
