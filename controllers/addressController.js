@@ -59,3 +59,32 @@ exports.addAddress = async (req, res) => {
     return res.status(500).json({ status: false, message: "Server error" });
   }
 };
+
+exports.deleteAddress = async (req, res) => {
+  try {
+    const { userId, addressId } = req.params;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(400).json({ status: false, message: "User not found" });
+    }
+
+    const deletedAddress = await Address.findOneAndDelete({
+      _id: addressId,
+      userId: userId,
+    });
+
+    if (!deletedAddress) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Address not found" });
+    }
+
+    return res
+      .status(200)
+      .json({ status: true, message: "Address deleted successfully" });
+  } catch (error) {
+    console.log("Error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
