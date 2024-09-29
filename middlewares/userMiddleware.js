@@ -1,3 +1,5 @@
+const { isValidPhoneNumber } = require("../utils/numberUtils");
+
 exports.validateRequest = (req, res, next) => {
   const {
     userId,
@@ -147,6 +149,42 @@ exports.validateParams = (req, res, next) => {
       status: false,
       message: "userId is required!",
     });
+  }
+
+  next();
+};
+
+exports.validateFields = (req, res, next) => {
+  const { address, recieverPhoneNumber, recieverName, isDefault } = req.body;
+
+  if (!address) {
+    return res
+      .status(400)
+      .json({ status: false, message: "Address is required!" });
+  }
+
+  if (!recieverPhoneNumber) {
+    return res
+      .status(400)
+      .json({ status: false, message: "Receiver phone number is required!" });
+  }
+
+  if (!recieverName) {
+    return res
+      .status(400)
+      .json({ status: false, message: "Receiver name is required!" });
+  }
+
+  if (!isValidPhoneNumber(recieverPhoneNumber)) {
+    return res
+      .status(400)
+      .json({ status: false, message: "Invalid phone number format!" });
+  }
+
+  if (isDefault !== undefined && typeof isDefault !== "boolean") {
+    return res
+      .status(400)
+      .json({ status: false, message: "isDefault must be a boolean!" });
   }
 
   next();
