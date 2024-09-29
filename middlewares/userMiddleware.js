@@ -50,7 +50,7 @@ exports.validateRequest = (req, res, next) => {
 
 
 exports.validateRegister = (req, res, next) => {
-  const { email, phoneNumber, password, re_password, name } = req.body;
+  const { email,  password,  name } = req.body;
 
   if (!name) {
     return res.status(400).json({ status: false, message: "Name is required!" });
@@ -65,9 +65,7 @@ exports.validateRegister = (req, res, next) => {
     return res.status(400).json({ status: false, message: "Invalid email format!" });
   }
 
-  if (!phoneNumber) {
-    return res.status(400).json({ status: false, message: "Phone number is required!" });
-  }
+
 
   if (!password) {
     return res.status(400).json({
