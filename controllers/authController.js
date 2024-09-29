@@ -3,6 +3,8 @@ const { checkPassword, hashPassword } = require("../utils/encryptionUtils");
 const { sendEmail } = require("../utils/emailUtils");
 const { generateOTP } = require("../utils/generateUtils");
 const jwt = require("jsonwebtoken");
+
+const {sendVerificationEmail} = require("../utils/emailUtils");
 exports.resetPassword = async (req, res) => {
   try {
     const { userId, oldPassword, newPassword } = req.body;
@@ -150,7 +152,6 @@ exports.saveNewPassword = async (req, res) => {
 exports.signup = async (req, res) => {
   try {
     const { email, phoneNumber, password, name } = req.body;
-
     // Validate user input
     if (!email || !phoneNumber || !password || !name) {
       return res.status(400).json({
@@ -158,7 +159,6 @@ exports.signup = async (req, res) => {
         message: "Please provide all required fields.",
       });
     }
-
     // Check if the user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -166,33 +166,35 @@ exports.signup = async (req, res) => {
         .status(400)
         .json({ status: false, message: "Email already in use." });
     }
-
     // Hash password
     const hashedPassword = await hashPassword(password);
+    // Tạo mã OTP
+    const otpCode = generateOTP();
 
-    // Create new user
+    const otpExpires = Date.now() + 10 * 60 * 1000; 
+
     const newUser = new User({
       email,
       phoneNumber,
       password: hashedPassword,
       name,
+      otpCode, 
+      otpExpires, 
+      isVerified: false, 
     });
 
     await newUser.save();
-
-    // Generate JWT token
-    const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
-
-    // Return user info without password
-    const userResponse = newUser.toObject();
-    delete userResponse.password;
+    await sendVerificationEmail(email, otpCode);
 
     return res.status(201).json({
       status: true,
-      message: "User registered successfully!",
-      data: { user: userResponse, token },
+      data: {
+        _id: newUser._id,
+        email: newUser.email,
+        name: newUser.name,
+        isVerified: newUser.isVerified
+      },
+      message: "User registered successfully! Please verify your email.",
     });
   } catch (error) {
     console.log("Signup error: ", error);
@@ -200,6 +202,38 @@ exports.signup = async (req, res) => {
   }
 };
 
+// Verify OTP
+exports.verifyOTP = async (req, res) => {
+  try {
+    const { email, otpCode } = req.body;
+
+    // Kiểm tra người dùng
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ status: false, message: "User not found." });
+    }
+
+    if (user.otpCode !== otpCode || Date.now() > user.otpExpires) {
+      return res.status(400).json({
+        status: false,
+        message: "Invalid or expired OTP.",
+      });
+    }
+
+    user.isVerified = true;
+    user.otpCode = undefined; 
+    user.otpExpires = undefined;
+    await user.save();
+
+    return res.status(200).json({
+      status: true,
+      message: "Email verified successfully!",
+    });
+  } catch (error) {
+    console.log("Verify OTP error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
 // login 
 exports.login = async (req, res) => {
   try {

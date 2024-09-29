@@ -4,8 +4,9 @@ var AuthController = require("../controllers/authController");
 const { validateRequest,validateRegister,validateLogin } = require("../middlewares/userMiddleware");
 
 //methods:  PUT
-//http:  http://localhost:8080/auth
-
+//http:  http://localhost:3000/auth
+// Verify email
+router.post("/verify-email", AuthController.verifyOTP);
 // Signup route
 router.post("/signup",validateRegister, AuthController.signup);
 

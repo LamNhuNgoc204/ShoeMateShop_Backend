@@ -13,6 +13,9 @@ const userSchema = new mongoose.Schema({
   search: [{ type: mongoose.Schema.Types.ObjectId, ref: "search" }],
   cart: [{ type: mongoose.Schema.Types.ObjectId, ref: "cart" }],
   wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "wishlist" }],
+  isVerified: { type: Boolean, default: false },
+  otpCode: { type: String }, 
+  otpExpires: { type: Date },
   createAt: { type: Date, default: Date.now },
   updateAt: { type: Date, default: Date.now },
 });
