@@ -3,6 +3,7 @@ const { checkPassword, hashPassword } = require("../utils/encryptionUtils");
 const { sendEmail } = require("../utils/emailUtils");
 const { generateOTP } = require("../utils/generateUtils");
 const jwt = require("jsonwebtoken");
+const { createToken,verifyToken } = require("../utils/token");
 
 const {sendVerificationEmail} = require("../utils/emailUtils");
 exports.resetPassword = async (req, res) => {
@@ -151,9 +152,9 @@ exports.saveNewPassword = async (req, res) => {
 
 exports.signup = async (req, res) => {
   try {
-    const { email, phoneNumber, password, name } = req.body;
+    const { email,  password, name } = req.body;
     // Validate user input
-    if (!email || !phoneNumber || !password || !name) {
+    if (!email || !password || !name) {
       return res.status(400).json({
         status: false,
         message: "Please provide all required fields.",
@@ -166,16 +167,11 @@ exports.signup = async (req, res) => {
         .status(400)
         .json({ status: false, message: "Email already in use." });
     }
-    // Hash password
     const hashedPassword = await hashPassword(password);
-    // Tạo mã OTP
     const otpCode = generateOTP();
-
     const otpExpires = Date.now() + 10 * 60 * 1000; 
-
     const newUser = new User({
       email,
-      phoneNumber,
       password: hashedPassword,
       name,
       otpCode, 
@@ -264,9 +260,8 @@ exports.login = async (req, res) => {
     }
 
     // Generate JWT token
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    const token = createToken(user._id);
+  
 
     // Return user info without password
     const userResponse = user.toObject();
