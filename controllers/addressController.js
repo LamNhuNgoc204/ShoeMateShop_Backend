@@ -88,3 +88,48 @@ exports.deleteAddress = async (req, res) => {
     return res.status(500).json({ status: false, message: "Server error" });
   }
 };
+
+exports.updateAddress = async (req, res) => {
+  try {
+    const { userId, addressId } = req.params;
+    const { address, recieverPhoneNumber, recieverName, isDefault } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ status: false, message: "User not found" });
+    }
+
+    const addressToUpdate = await Address.findOne({
+      userId: userId,
+      _id: addressId,
+    });
+    if (!addressToUpdate) {
+      return res
+        .status(404)
+        .json({ status: false, message: "Address not found" });
+    }
+
+    addressToUpdate.address = address || addressToUpdate.address;
+    addressToUpdate.recieverPhoneNumber =
+      recieverPhoneNumber || addressToUpdate.recieverPhoneNumber;
+    addressToUpdate.recieverName = recieverName || addressToUpdate.recieverName;
+    addressToUpdate.isDefault = isDefault || addressToUpdate.isDefault;
+
+    const updatedAddress = await addressToUpdate.save();
+
+    if (!updatedAddress) {
+      return res
+        .status(404)
+        .json({ status: false, message: "Address save failed" });
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: "Address updated successfully",
+      data: updatedAddress,
+    });
+  } catch (error) {
+    console.log("Error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};

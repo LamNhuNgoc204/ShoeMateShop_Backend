@@ -4,6 +4,7 @@ const addressController = require("../controllers/addressController");
 const {
   validateRequest,
   validateParams,
+  validateFields,
 } = require("../middlewares/userMiddleware");
 
 //http:  http://localhost:3000/addresses
@@ -16,6 +17,14 @@ router.delete(
   "/:userId/delete-address/:addressId",
   validateParams,
   addressController.deleteAddress
+);
+
+// Update user's address
+router.put(
+  "/:userId/update-address/:addressId",
+  validateParams,
+  validateFields,
+  addressController.updateAddress
 );
 
 module.exports = router;
