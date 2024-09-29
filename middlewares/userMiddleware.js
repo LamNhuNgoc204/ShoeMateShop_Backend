@@ -1,5 +1,19 @@
 exports.validateRequest = (req, res, next) => {
-  const { userId, email, newPassword, re_newPassword, newRole } = req.body;
+  const {
+    userId,
+    email,
+    newPassword,
+    re_newPassword,
+    newRole,
+    address,
+    recieverPhoneNumber,
+    recieverName,
+    isDefault,
+  } = req.body;
+
+  if (!address || !recieverPhoneNumber || !recieverName) {
+    return res.status(400).json({ message: "Please fill in all information" });
+  }
 
   if (!newRole) {
     return res
@@ -48,25 +62,32 @@ exports.validateRequest = (req, res, next) => {
   next();
 };
 
-
 exports.validateRegister = (req, res, next) => {
   const { email, phoneNumber, password, re_password, name } = req.body;
 
   if (!name) {
-    return res.status(400).json({ status: false, message: "Name is required!" });
+    return res
+      .status(400)
+      .json({ status: false, message: "Name is required!" });
   }
 
   if (!email) {
-    return res.status(400).json({ status: false, message: "Email is required!" });
+    return res
+      .status(400)
+      .json({ status: false, message: "Email is required!" });
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    return res.status(400).json({ status: false, message: "Invalid email format!" });
+    return res
+      .status(400)
+      .json({ status: false, message: "Invalid email format!" });
   }
 
   if (!phoneNumber) {
-    return res.status(400).json({ status: false, message: "Phone number is required!" });
+    return res
+      .status(400)
+      .json({ status: false, message: "Phone number is required!" });
   }
 
   if (!password) {
@@ -83,8 +104,6 @@ exports.validateRegister = (req, res, next) => {
     });
   }
 
-
-
   next();
 };
 
@@ -92,12 +111,16 @@ exports.validateLogin = (req, res, next) => {
   const { email, password } = req.body;
 
   if (!email) {
-    return res.status(400).json({ status: false, message: "Email is required!" });
+    return res
+      .status(400)
+      .json({ status: false, message: "Email is required!" });
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    return res.status(400).json({ status: false, message: "Invalid email format!" });
+    return res
+      .status(400)
+      .json({ status: false, message: "Invalid email format!" });
   }
 
   if (!password) {
