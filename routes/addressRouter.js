@@ -41,4 +41,11 @@ router.put(
   addressController.setAddressDefault
 );
 
+// Get address Default
+router.get(
+  "/:userId/default-address",
+  validateParams,
+  addressController.getDefaultAddress
+);
+
 module.exports = router;
