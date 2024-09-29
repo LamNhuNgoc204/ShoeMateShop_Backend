@@ -6,7 +6,6 @@ const { protect, adminOrEmployee } = require("../middlewares/authMiddleware");
 //  localhost:3000/products
 // API thêm sản phẩm (chỉ admin hoặc nhân viên)
 router.post("/add", protect, adminOrEmployee, productController.createProduct);
-var express = require('express');
 const ProductsController = require('../controllers/productsController')
 
 // url: http://localhost:3000/products
