@@ -27,4 +27,11 @@ router.put(
   addressController.updateAddress
 );
 
+// Get all user's addresses
+router.get(
+  "/get-all-address/:userId",
+  validateParams,
+  addressController.getAllAddresses
+);
+
 module.exports = router;
