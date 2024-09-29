@@ -132,3 +132,22 @@ exports.validateLogin = (req, res, next) => {
   next();
 };
 
+exports.validateParams = (req, res, next) => {
+  const { addressId, userId } = req.params;
+
+  if (!addressId) {
+    return res.status(400).json({
+      status: false,
+      message: "addressId is required!",
+    });
+  }
+
+  if (!userId) {
+    return res.status(400).json({
+      status: false,
+      message: "userId is required!",
+    });
+  }
+
+  next();
+};
