@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const addressSchema = new mongoose.Schema({
-  user_id: {
+  userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "user",
     required: true,
@@ -8,7 +8,7 @@ const addressSchema = new mongoose.Schema({
   address: { type: String, required: true },
   recieverPhoneNumber: { type: String, required: true },
   recieverName: { type: String, required: true },
-  isDefault: { type: Boolean },
+  isDefault: { type: Boolean, default: false },
 });
 
 module.exports =
