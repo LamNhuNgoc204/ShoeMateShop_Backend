@@ -8,7 +8,6 @@ exports.validateRequest = (req, res, next) => {
     address,
     recieverPhoneNumber,
     recieverName,
-    isDefault,
   } = req.body;
 
   if (!address || !recieverPhoneNumber || !recieverName) {
@@ -132,3 +131,4 @@ exports.validateLogin = (req, res, next) => {
 
   next();
 };
+

@@ -31,13 +31,21 @@ exports.addAddress = async (req, res) => {
         .json({ message: "This address already exists for this user" });
     }
 
+    //If this address true, set orther address false
+    if (isDefault) {
+      await Address.updateMany(
+        { userId: userId, isDefault: true },
+        { isDefault: false }
+      );
+    }
+
     // Create new user address
     const newAddress = new Address({
       userId: userId,
       address: address,
       recieverPhoneNumber: recieverPhoneNumber,
       recieverName: recieverName,
-      isDefault: isDefault,
+      isDefault: isDefault || false,
     });
     await newAddress.save();
 
