@@ -6,7 +6,6 @@ const {
   validateLogin,
   validateUpdatePassword,
   validateSignInWithGoogle,
-  checkUserId,
   checkUser,
   verifyOTP,
   saveNewPassword,
