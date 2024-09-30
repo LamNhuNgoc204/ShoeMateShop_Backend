@@ -9,19 +9,19 @@ const ProductsController = require('../controllers/productsController')
 // url: http://localhost:3000/cart
 
 // Add product to cart
-router.post("/add-product-to-cart", protect, cartController.addProductToCart)
+router.post("/add-product-to-cart", cartController.addProductToCart)
 
 // Update the quantity of a product in the cart
-router.post("/update-cart-quantity", protect, cartController.updateCartQuantity)
+router.post("/update-cart-quantity", cartController.updateCartQuantity)
 
 // Remove a product from the cart
-router.post("/remove-product-from-cart", protect, cartController.removeProductFromCart)
+router.post("/remove-product-from-cart", cartController.removeProductFromCart)
 
 // Calculate the total value of the cart
-router.post("/calculate-cart-total", protect, cartController.calculateCartTotal)
+router.post("/calculate-cart-total", cartController.calculateCartTotal)
 
 // Clear the entire cart
-router.post("/clear-cart", protect, cartController.clearCart)
+router.post("/clear-cart", cartController.clearCart)
 
 
 module.exports = router
