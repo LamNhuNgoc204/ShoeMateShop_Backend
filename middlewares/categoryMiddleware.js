@@ -1,4 +1,4 @@
-exports.validateUpdateMiddleware = async (req, res, next) => {
+exports.validateCreateCategory = async (req, res, next) => {
     try {
         const { name, image } = req.body;
         if(!name) {
@@ -11,6 +11,32 @@ exports.validateUpdateMiddleware = async (req, res, next) => {
             return res.status(400).json({
                 status: false,
                 message: 'Image is required!'
+            });
+        }
+        next();
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            status: false,
+            message: 'Internal server error!'
+        })
+    }
+}
+
+
+exports.validateUpdateCategory = async (req, res, next) => {
+    try {
+        const {categoryId, name, image} = req.body;
+        if(!categoryId) {
+            return res.status(400).json({
+                status: false,
+                message: 'Category ID is required!'
+            });
+        }
+        if(!name &&!image) {
+            return res.status(400).json({
+                status: false,
+                message: 'At least one field (name or image) is required!'
             });
         }
         next();
