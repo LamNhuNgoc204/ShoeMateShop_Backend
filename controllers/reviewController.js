@@ -44,3 +44,11 @@ exports.createReview = async (req, res) => {
     return res.status(500).json({ status: false, message: "Server error" });
   }
 };
+
+exports.approveReview = async (req, res) => {
+  try {
+  } catch (error) {
+    console.log("Error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
