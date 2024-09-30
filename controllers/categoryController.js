@@ -96,3 +96,21 @@ exports.getAllCategories = async (req, res) => {
         return res.status(500).json({ status: false, message: "Server error" });
     }
 }
+
+
+exports.getCategory = async (req, res) => {
+    try {
+        const {id} = req.params;
+        if(!id) {
+            return res.status(400).json({ status: false, message: "Category ID is required!" });
+        } 
+        const category = await Category.findById(id);
+        if(!category) {
+            return res.status(400).json({ status: false, message: "Category not found!" });
+        }
+        return res.status(200).json({ status: true, message: "Category retrieved successfully", data: category });
+    } catch (error) {
+        console.error("Error: ", error);
+        return res.status(500).json({ status: false, message: "Server error" });
+    }
+}

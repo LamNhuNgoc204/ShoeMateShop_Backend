@@ -17,4 +17,7 @@ router.put('/update-category', validateUpdateCategory, categoryController.update
 //get all categories  
 router.get('/get-categories', categoryController.getAllCategories)
 
+//get category by id
+router.get('/get-category/:id', categoryController.getCategory)
+
 module.exports = router
