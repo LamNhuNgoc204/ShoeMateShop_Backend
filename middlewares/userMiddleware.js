@@ -184,3 +184,43 @@ exports.validateFields = (req, res, next) => {
 
   next();
 };
+
+
+exports.validateUpdatePassword = async (req, res, next) => {
+  try {
+    const { userId, oldPassword, newPassword} = req.body;
+    // Validate user input
+    if (!userId) {
+      return res.status(400).json({
+        status: false,
+        message: "User ID is required.",
+      });
+    }
+    if (!oldPassword) {
+      return res.status(400).json({
+        status: false,
+        message: "Old password is required.",
+      });
+    }
+    if (!newPassword) {
+      return res.status(400).json({
+        status: false,
+        message: "New password is required.",
+      });
+    }
+
+    if(newPassword.length < 6 ) {
+      return res.status(400).json({
+        status: false,
+        message: "Password must be at least 6 characters long.",
+      });
+    }
+    next();
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      status: false,
+      message: "Server error.",
+    });
+  }
+} 

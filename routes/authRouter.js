@@ -1,7 +1,7 @@
 var express = require("express");
 var router = express.Router();
 var AuthController = require("../controllers/authController");
-const { validateRequest,validateRegister,validateLogin } = require("../middlewares/userMiddleware");
+const { validateRequest,validateRegister,validateLogin, validateUpdatePassword } = require("../middlewares/userMiddleware");
 
 //methods:  PUT
 //http:  http://localhost:3000/auth
@@ -13,7 +13,7 @@ router.post("/signup",validateRegister, AuthController.signup);
 // Login route
 router.post("/login",validateLogin, AuthController.login);
 
-router.put("/reset-password", AuthController.resetPassword);
+router.put("/reset-password", validateUpdatePassword ,AuthController.resetPassword);
 
 // Forgot password
 router.post("/forgot-password", validateRequest, AuthController.forgotPassword);
