@@ -1,16 +1,20 @@
 var express = require("express");
 var router = express.Router();
 const adminController = require("../controllers/adminController");
-const { checkPermission } = require("../middlewares/permissions");
-const { validateRequest } = require("../middlewares/userMiddleware");
+const {
+  checkUserPermission,
+  checkUserId,
+} = require("../middlewares/userMiddleware");
+const { protect } = require("../middlewares/authMiddleware");
 
-// url: http://localhost:8080/admins
+// url: http://localhost:3000/admins
 
 // update role
 router.put(
   "/update-permission/:userId",
-  checkPermission(["admin"]),
-  validateRequest,
+  protect,
+  checkUserId,
+  checkUserPermission,
   adminController.updateUserPermissions
 );
 

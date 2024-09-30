@@ -4,8 +4,8 @@ const { isValidPhoneNumber } = require("../utils/numberUtils");
 
 exports.addAddress = async (req, res) => {
   try {
-    const { userId, address, recieverPhoneNumber, recieverName, isDefault } =
-      req.body;
+    const { userId } = req.params;
+    const { address, recieverPhoneNumber, recieverName, isDefault } = req.body;
 
     // Check user existence
     const user = await User.findOne({ _id: userId });
@@ -49,6 +49,10 @@ exports.addAddress = async (req, res) => {
     });
     await newAddress.save();
 
+    const currUser = await User.findById(userId);
+    currUser.address.push(newAddress._id);
+    await currUser.save();
+
     return res.status(200).json({
       status: true,
       message: "Address added successfully",
@@ -79,6 +83,9 @@ exports.deleteAddress = async (req, res) => {
         .status(400)
         .json({ status: false, message: "Address not found" });
     }
+
+    user.address.remove(addressId);
+    await user.save();
 
     return res
       .status(200)

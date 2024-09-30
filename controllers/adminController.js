@@ -5,8 +5,14 @@ exports.updateUserPermissions = async (req, res) => {
     const { userId } = req.params;
     const { newRole } = req.body;
 
-    if (!["admin", "user", "employee"].includes(newRole)) {
-      return res.status(400).json({ status: false, message: "Invalid role." });
+    const currentUser = req.user;
+
+    if (!currentUser || currentUser.role !== "admin") {
+      return res.status(403).json({
+        status: false,
+        message:
+          "Access denied. You don't have permission to perform this action.",
+      });
     }
 
     const user = await User.findById(userId);

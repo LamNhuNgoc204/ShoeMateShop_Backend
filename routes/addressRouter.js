@@ -2,49 +2,54 @@ const express = require("express");
 const router = express.Router();
 const addressController = require("../controllers/addressController");
 const {
-  validateRequest,
-  validateParams,
-  validateFields,
+  checkUserId,
+  checkFieldsAddress,
+  checkUserAddressId,
 } = require("../middlewares/userMiddleware");
 
 //http:  http://localhost:3000/addresses
 
 // Add user's address
-router.post("/add-address", validateRequest, addressController.addAddress);
+router.post(
+  "/:userId/add-address",
+  checkUserId,
+  checkFieldsAddress,
+  addressController.addAddress
+);
 
 // Delete user's address
 router.delete(
   "/:userId/delete-address/:addressId",
-  validateParams,
+  checkUserAddressId,
   addressController.deleteAddress
 );
 
 // Update user's address
 router.put(
   "/:userId/update-address/:addressId",
-  validateParams,
-  validateFields,
+  checkUserAddressId,
+  checkFieldsAddress,
   addressController.updateAddress
 );
 
 // Get all user's addresses
 router.get(
   "/get-all-address/:userId",
-  validateParams,
+  checkUserId,
   addressController.getAllAddresses
 );
 
 // Set address default
 router.put(
   "/:userId/set-default-address/:addressId",
-  validateParams,
+  checkUserAddressId,
   addressController.setAddressDefault
 );
 
 // Get address Default
 router.get(
   "/:userId/default-address",
-  validateParams,
+  checkUserId,
   addressController.getDefaultAddress
 );
 

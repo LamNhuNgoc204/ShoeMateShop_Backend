@@ -2,11 +2,13 @@ const User = require("../models/userModel");
 const { checkPassword, hashPassword } = require("../utils/encryptionUtils");
 const { sendEmail } = require("../utils/emailUtils");
 const { generateOTP } = require("../utils/generateUtils");
-const jwt = require("jsonwebtoken");
-const { createToken, verifyToken } = require("../utils/token");
+const { createToken } = require("../utils/token");
+const {
+  sendVerificationEmail,
+  sendRandomPassword,
+} = require("../utils/emailUtils");
+const { randomPassword } = require("../utils/stringUtils");
 
-const { sendVerificationEmail, sendRandomPassword } = require("../utils/emailUtils");
-const { randomPassword } = require("../utils/stringUtils")
 exports.resetPassword = async (req, res) => {
   try {
     const { userId, oldPassword, newPassword } = req.body;
@@ -56,15 +58,10 @@ exports.resetPassword = async (req, res) => {
 
 exports.forgotPassword = async (req, res) => {
   try {
-    const { userId, email } = req.body;
+    const { email } = req.body;
 
-    // Check user existence
-    const user = await User.findOne({ _id: userId });
-    if (!user) {
-      return res
-        .status(400)
-        .json({ status: false, message: "User does not exist!" });
-    }
+    // get user in middleware
+    const user = req.user;
 
     const otp = generateOTP();
 
@@ -73,9 +70,7 @@ exports.forgotPassword = async (req, res) => {
     user.passwordOTPExpire = Date.now() + 120 * 1000;
     await user.save();
 
-    //Send email to change password
-    const message = `Your otp code is: ${otp}`;
-    await sendEmail(email, "OTP code reset password", message);
+    await sendVerificationEmail(email, otp);
 
     return res.status(200).json({
       status: true,
@@ -89,23 +84,6 @@ exports.forgotPassword = async (req, res) => {
 
 exports.verifyPasswordOTP = async (req, res) => {
   try {
-    const { email, otp } = req.body;
-
-    // Check email existence
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res
-        .status(400)
-        .json({ status: false, message: "User does not exist!" });
-    }
-
-    //Check otp
-    if (user.passwordOTP !== otp || Date.now() > user.passwordOTPExpire) {
-      return res
-        .status(400)
-        .json({ status: false, message: "Otp is invalid or expired!" });
-    }
-
     return res.status(200).json({
       status: true,
       message: "Valid otp code.",
@@ -118,23 +96,12 @@ exports.verifyPasswordOTP = async (req, res) => {
 
 exports.saveNewPassword = async (req, res) => {
   try {
-    const { email, newPassword, re_newPassword } = req.body;
+    const { newPassword } = req.body;
 
-    // Check email existence
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res
-        .status(400)
-        .json({ status: false, message: "User does not exist!" });
-    }
+    // get user in middleware
+    const user = req.user;
 
-    if (newPassword !== re_newPassword) {
-      return res
-        .status(400)
-        .json({ status: false, message: "Passwords do not match!" });
-    }
-
-    user.password = hashPassword(newPassword);
+    user.password = await hashPassword(newPassword);
     user.passwordOTP = undefined;
     user.passwordOTPExpire = undefined;
     await user.save();
@@ -150,7 +117,6 @@ exports.saveNewPassword = async (req, res) => {
 };
 
 //signup
-
 exports.signup = async (req, res) => {
   try {
     const { email, password, name } = req.body;
@@ -189,7 +155,7 @@ exports.signup = async (req, res) => {
         _id: newUser._id,
         email: newUser.email,
         name: newUser.name,
-        isVerified: newUser.isVerified
+        isVerified: newUser.isVerified,
       },
       message: "User registered successfully! Please verify your email.",
     });
@@ -207,7 +173,9 @@ exports.verifyOTP = async (req, res) => {
     // Kiểm tra người dùng
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ status: false, message: "User not found." });
+      return res
+        .status(404)
+        .json({ status: false, message: "User not found." });
     }
 
     if (user.otpCode !== otpCode || Date.now() > user.otpExpires) {
@@ -231,7 +199,7 @@ exports.verifyOTP = async (req, res) => {
     return res.status(500).json({ status: false, message: "Server error" });
   }
 };
-// login 
+// login
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -263,7 +231,6 @@ exports.login = async (req, res) => {
     // Generate JWT token
     const token = createToken(user._id);
 
-
     // Return user info without password
     const userResponse = user.toObject();
     delete userResponse.password;
@@ -279,33 +246,31 @@ exports.login = async (req, res) => {
   }
 };
 
-
 exports.signInWithGG = async (req, res) => {
   try {
     const { email, name, avatar } = req.body;
     // Kiểm tra người dùng
     var user = await User.findOne({ email });
     if (!user) {
-      const password = randomPassword()
-      const hashedPassword = await hashPassword(password)
+      const password = randomPassword();
+      const hashedPassword = await hashPassword(password);
       user = await User.create({
         email,
         password: hashedPassword,
         name,
         isVerified: true,
         avatar: avatar,
-        phoneNumber: 1
-      })
-      await sendRandomPassword(email, password, name)
+        phoneNumber: 1,
+      });
+      await sendRandomPassword(email, password, name);
     }
 
-    const userData = user.toObject()
-    delete userData.password
+    const userData = user.toObject();
+    delete userData.password;
 
-    return res.status(200).json({ status: true, data: userData })
+    return res.status(200).json({ status: true, data: userData });
   } catch (error) {
     console.log("Google sign-in error: ", error);
     return res.status(500).json({ status: false, message: "Server error" });
   }
-}
-
+};
