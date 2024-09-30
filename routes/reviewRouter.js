@@ -5,6 +5,7 @@ const {
   createReview,
   checkUpdateReview,
   checkReviewById,
+  checkProductById,
 } = require("../middlewares/reviewMiddleware");
 const { protect } = require("../middlewares/authMiddleware");
 const adminMiddleware = require("../middlewares/adminMiddleware");
@@ -47,6 +48,13 @@ router.get(
   "/get-review-detail/:reviewId",
   checkReviewById,
   reviewController.getReviewById
+);
+
+// Get list product's reviews
+router.get(
+  "/get-list-product-reviews/:productId",
+  checkProductById,
+  reviewController.getProductReviews
 );
 
 module.exports = router;
