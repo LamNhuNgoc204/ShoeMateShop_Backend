@@ -13,4 +13,8 @@ router.delete('/delete-category', categoryController.deleteCategory);
 
 //update category
 router.put('/update-category', validateUpdateCategory, categoryController.updateCategory)
+
+//get all categories  
+router.get('/get-categories', categoryController.getAllCategories)
+
 module.exports = router

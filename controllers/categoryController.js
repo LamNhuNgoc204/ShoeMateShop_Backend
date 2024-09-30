@@ -62,3 +62,37 @@ exports.updateCategory = async (req, res) => {
     }
 
 }
+
+
+exports.getAllCategories = async (req, res) => {
+    try {
+        let { page, limit } = req.query;
+        page = parseInt(page) || 1; 
+        limit = parseInt(limit) || 10; 
+        
+        const skip = (page - 1) * limit;
+
+        const totalCategories = await Category.countDocuments();
+
+        const categories = await Category.find({})
+            .skip(skip)
+            .limit(limit);
+
+        const totalPages = Math.ceil(totalCategories / limit);
+
+        return res.status(200).json({
+            status: true,
+            message: "Categories retrieved successfully",
+            data: categories,
+            pagination: {
+                currentPage: page,
+                totalPages: totalPages,
+                totalItems: totalCategories,
+                itemsPerPage: limit
+            }
+        });
+    } catch (error) {
+        console.error("Error: ", error);
+        return res.status(500).json({ status: false, message: "Server error" });
+    }
+}
