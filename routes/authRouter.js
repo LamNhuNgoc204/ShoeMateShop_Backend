@@ -1,7 +1,7 @@
 var express = require("express");
 var router = express.Router();
 var AuthController = require("../controllers/authController");
-const { validateRequest,validateRegister,validateLogin, validateUpdatePassword } = require("../middlewares/userMiddleware");
+const { validateRequest,validateRegister,validateLogin, validateUpdatePassword, validateSignInWithGoogle } = require("../middlewares/userMiddleware");
 
 //methods:  PUT
 //http:  http://localhost:3000/auth
@@ -31,6 +31,10 @@ router.put(
   validateRequest,
   AuthController.saveNewPassword
 );
+
+
+//login/signup with gg
+router.post("/login-with-google", validateSignInWithGoogle, AuthController.signInWithGG)
 
 
 

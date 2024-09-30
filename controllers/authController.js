@@ -5,7 +5,8 @@ const { generateOTP } = require("../utils/generateUtils");
 const jwt = require("jsonwebtoken");
 const { createToken,verifyToken } = require("../utils/token");
 
-const {sendVerificationEmail} = require("../utils/emailUtils");
+const {sendVerificationEmail, sendRandomPassword} = require("../utils/emailUtils");
+const { randomPassword } = require("../utils/stringUtils")
 exports.resetPassword = async (req, res) => {
   try {
     const { userId, oldPassword, newPassword } = req.body;
@@ -277,4 +278,33 @@ exports.login = async (req, res) => {
     return res.status(500).json({ status: false, message: "Server error" });
   }
 };
+
+
+exports.signInWithGG = async (req, res) =>{
+  try {
+    const {email, name, avatar} = req.body;
+    // Kiểm tra người dùng
+    var user = await User.findOne({ email });
+    if (!user) {
+      const password = randomPassword()
+      await sendRandomPassword(email, password)
+      const hashedPassword = await hashPassword(password)
+      user = await User.create({
+        email,
+        password: hashedPassword,
+        name,
+        isVerified: true,
+        avatar: avatar
+      })
+    }
+
+    const userData = user.toObject()
+    delete userData.password
+
+    return res.status(200).json({status: true, data: userData})
+  } catch (error) {
+    console.log("Google sign-in error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+}
 

@@ -64,7 +64,7 @@ exports.validateRequest = (req, res, next) => {
 };
 
 exports.validateRegister = (req, res, next) => {
-  const { email,  password,  name } = req.body;
+  const { email, password, name } = req.body;
 
   if (!name) {
     return res
@@ -188,7 +188,7 @@ exports.validateFields = (req, res, next) => {
 
 exports.validateUpdatePassword = async (req, res, next) => {
   try {
-    const { userId, oldPassword, newPassword} = req.body;
+    const { userId, oldPassword, newPassword } = req.body;
     // Validate user input
     if (!userId) {
       return res.status(400).json({
@@ -209,7 +209,7 @@ exports.validateUpdatePassword = async (req, res, next) => {
       });
     }
 
-    if(newPassword.length < 6 ) {
+    if (newPassword.length < 6) {
       return res.status(400).json({
         status: false,
         message: "Password must be at least 6 characters long.",
@@ -223,4 +223,40 @@ exports.validateUpdatePassword = async (req, res, next) => {
       message: "Server error.",
     });
   }
-} 
+}
+
+
+exports.validateSignInWithGoogle = async (req, res, next) => {
+  try {
+    const { email, name, avatar } = req.body;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) {
+      return res
+       .status(400)
+       .json({ status: false, message: "Email is required!" });
+    }
+    if (!emailRegex.test(email)) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Invalid email format!" });
+    }
+    if (!name) {
+      return res
+       .status(400)
+       .json({ status: false, message: "Name is required!" });
+    }
+    if (!avatar) {
+      return res
+       .status(400)
+       .json({ status: false, message: "Avatar is required!" });
+    }
+    next();
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      status: false,
+      message: "Server error.",
+    });
+
+  }
+}
