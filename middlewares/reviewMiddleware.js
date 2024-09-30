@@ -1,4 +1,5 @@
 const Review = require("../models/reviewModel");
+const Product = require("../models/productModel");
 
 exports.createReview = (req, res, next) => {
   const { orderDetail_id, product_id, rating, comment } = req.body;
@@ -54,5 +55,30 @@ exports.checkReviewById = async (req, res, next) => {
 
   req.review = review;
 
+  next();
+};
+
+exports.checkProductById = async (req, res, next) => {
+  const { productId } = req.params;
+  if (!productId) {
+    return res.status(400).json({
+      status: false,
+      message: "Product id is required",
+    });
+  }
+
+  const product = await Product.findById(productId);
+  if (!product) {
+    return res.status(400).json({
+      status: false,
+      message: "Product not found",
+    });
+  }
+
+  const reviews = await Review.find({ productId })
+    .populate("userId", "name email avatar")
+    .sort({ createdAt: -1 });
+
+  req.review = reviews;
   next();
 };

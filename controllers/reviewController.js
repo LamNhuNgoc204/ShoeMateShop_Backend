@@ -131,3 +131,17 @@ exports.getReviewById = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
+// get list review's product
+exports.getProductReviews = async (req, res) => {
+  try {
+    const reviews = req.review;
+    return res.status(200).json({
+      status: true,
+      message: "Get product review successfully",
+      data: reviews,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error" });
+  }
+};
