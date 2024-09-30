@@ -101,7 +101,7 @@ exports.getAllReviews = async (req, res) => {
       data: reviews,
     });
   } catch (error) {
-    return res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ status: false, message: "Server error" });
   }
 };
 
@@ -113,7 +113,7 @@ exports.getPendingReviews = async (req, res) => {
       .status(200)
       .json({ status: true, message: "Get reviews pending", data: reviews });
   } catch (error) {
-    return res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ status: false, message: "Server error" });
   }
 };
 
@@ -128,7 +128,7 @@ exports.getReviewById = async (req, res) => {
       data: review,
     });
   } catch (error) {
-    return res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ status: false, message: "Server error" });
   }
 };
 
@@ -142,7 +142,7 @@ exports.getProductReviews = async (req, res) => {
       data: reviews,
     });
   } catch (error) {
-    return res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ status: false, message: "Server error" });
   }
 };
 
@@ -165,8 +165,21 @@ exports.updateProductReview = async (req, res) => {
       data: review,
     });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Lỗi máy chủ", error: error.message });
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
+// Get user product reviews
+exports.getUserProductReview = async (req, res) => {
+  try {
+    const reviews = req.reviews;
+
+    return res.status(200).json({
+      status: true,
+      message: "Get list user's reviews successfully",
+      data: reviews,
+    });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: "Server error" });
   }
 };
