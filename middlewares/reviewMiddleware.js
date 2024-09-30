@@ -126,3 +126,23 @@ exports.checkUserUpdateReview = async (req, res, next) => {
 
   next();
 };
+
+exports.checkUserProductReview = async (req, res, next) => {
+  const userId = req.user._id;
+
+  if (!userId) {
+    return res.status(400).json({
+      status: false,
+      message: "User ID is required",
+    });
+  }
+
+  const reviews = await Review.find({ userId })
+    .populate("product_id", "name price")
+    .populate("reviewer_id", "name email avatar")
+    .sort({ createdAt: -1 });
+
+  req.reviews = reviews;
+
+  next();
+};
