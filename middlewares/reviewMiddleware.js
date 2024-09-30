@@ -1,7 +1,7 @@
 exports.createReview = (req, res, next) => {
-  const { orderDetail_id, product_id, reviewer_id, rating } = req.body;
+  const { orderDetail_id, product_id, rating } = req.body;
 
-  if (!orderDetail_id || !product_id || !reviewer_id) {
+  if (!orderDetail_id || !product_id) {
     return res
       .status(400)
       .json({ status: false, message: "All id is required!" });
