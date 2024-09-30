@@ -26,6 +26,7 @@ require("./models/userModel");
 require("./models/voucherModel");
 require("./models/walletModel");
 require("./models/wishlistModel");
+require("./models/voucherModel");
 
 var adminRouter = require("./routes/adminRouter");
 var usersRouter = require("./routes/usersRouter");
@@ -36,6 +37,8 @@ var addressesRouter = require("./routes/addressRouter");
 var cartRouter = require("./routes/cartRouter");
 var categoryRouter = require("./routes/categoryRouter");
 var reviewRouter = require("./routes/reviewRouter");
+
+const voucherRouter = require('./routes/voucherRouter')
 
 var app = express();
 
@@ -65,6 +68,7 @@ app.use("/products", productsRouter);
 app.use("/addresses", addressesRouter);
 app.use("/cart", cartRouter);
 app.use("/categories", categoryRouter);
+app.use("/vouchers", voucherRouter);
 app.use("/reviews", reviewRouter);
 
 // catch 404 and forward to error handler
