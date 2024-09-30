@@ -1,7 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const reviewController = require("../controllers/reviewController");
-const { createReview } = require("../middlewares/reviewMiddleware");
+const {
+  createReview,
+  checkUpdateReview,
+  checkReviewById,
+} = require("../middlewares/reviewMiddleware");
 const { protect } = require("../middlewares/authMiddleware");
 const adminMiddleware = require("../middlewares/adminMiddleware");
 
@@ -17,10 +21,32 @@ router.post(
 
 // Manage reviews
 router.put(
-  "/approve-review/:reviewId",
+  "/update-review-status/:reviewId",
   protect,
   adminMiddleware,
-  reviewController.approveReview
+  checkUpdateReview,
+  reviewController.updateReviewStatus
+);
+
+router.get(
+  "/get-all-reviews",
+  protect,
+  adminMiddleware,
+  reviewController.getAllReviews
+);
+
+router.get(
+  "/get-pending-reviews",
+  protect,
+  adminMiddleware,
+  reviewController.getPendingReviews
+);
+
+// Get review detail
+router.get(
+  "/get-review-detail/:reviewId",
+  checkReviewById,
+  reviewController.getReviewById
 );
 
 module.exports = router;

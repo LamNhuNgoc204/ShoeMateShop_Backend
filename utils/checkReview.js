@@ -1,5 +1,3 @@
-const Filter = require("bad-words");
-
 const badWords = [
   "hate",
   "stupid",

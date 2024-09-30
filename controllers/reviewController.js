@@ -45,10 +45,89 @@ exports.createReview = async (req, res) => {
   }
 };
 
-exports.approveReview = async (req, res) => {
+// for admin
+exports.updateReviewStatus = async (req, res) => {
   try {
+    const { reviewId } = req.params;
+    const { status } = req.body;
+
+    let review;
+
+    if (status === "rejected") {
+      review = await Review.findByIdAndDelete(reviewId);
+
+      if (!review) {
+        return res
+          .status(400)
+          .json({ status: false, message: "Review not found" });
+      }
+
+      return res.status(200).json({
+        status: true,
+        message: "Review rejected and deleted successfully",
+      });
+    } else {
+      review = await Review.findByIdAndUpdate(
+        reviewId,
+        { status },
+        { new: true }
+      );
+
+      if (!review) {
+        return res
+          .status(400)
+          .json({ status: false, message: "Review not found" });
+      }
+
+      return res.status(200).json({
+        status: true,
+        message: "Review approved successfully",
+        data: review,
+      });
+    }
   } catch (error) {
-    console.log("Error: ", error);
-    return res.status(500).json({ status: false, message: "Server error" });
+    console.error("Error updating review status:", error);
+    res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
+// For admin
+exports.getAllReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find();
+    return res.status(200).json({
+      status: true,
+      message: "Retrieved all reviews",
+      data: reviews,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// For admin
+exports.getPendingReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find({ status: "pending" });
+    return res
+      .status(200)
+      .json({ status: true, message: "Get reviews pending", data: reviews });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Get review detail
+exports.getReviewById = async (req, res) => {
+  try {
+    const review = req.review;
+
+    return res.status(200).json({
+      status: true,
+      message: "Retrieved review successfully",
+      data: review,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error" });
   }
 };
