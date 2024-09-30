@@ -82,3 +82,47 @@ exports.checkProductById = async (req, res, next) => {
   req.review = reviews;
   next();
 };
+
+exports.checkUserUpdateReview = async (req, res, next) => {
+  const { productId, reviewId } = req.params;
+  const userId = req.user._id;
+
+  if (!productId) {
+    return res.status(400).json({
+      status: false,
+      message: "Product id is required",
+    });
+  }
+
+  const product = await Product.findById(productId);
+  if (!product) {
+    return res.status(404).json({
+      status: false,
+      message: "Product not found",
+    });
+  }
+
+  if (!reviewId) {
+    return res.status(400).json({
+      status: false,
+      message: "Review id is required",
+    });
+  }
+
+  const review = await Review.findOne({
+    _id: reviewId,
+    product_id: productId,
+    reviewer_id: userId,
+  });
+
+  if (!review) {
+    return res.status(400).json({
+      status: false,
+      message: "Review not found",
+    });
+  }
+
+  req.review = review;
+
+  next();
+};
