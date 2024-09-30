@@ -8,5 +8,8 @@ const categoryController = require('../controllers/categoryController')
 //create category
 router.post('/create-category',validateUpdateMiddleware, categoryController.createCategory)
 
+//delete category
+router.delete('/delete-category', categoryController.deleteCategory);
+
 
 module.exports = router

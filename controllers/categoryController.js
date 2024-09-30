@@ -22,3 +22,21 @@ exports.createCategory = async (req, res, next) => {
         return res.status(500).json({ status: false, message: "Server error" });  
     }
 }
+
+exports.deleteCategory = async (req, res) => {
+    try {
+        const { categoryId }= req.body;
+        if(!categoryId) {
+            return res.status(400).json({ status: false, message: "Category ID is required!" });
+        }
+        const category = await Category.findById(categoryId);
+        if(!category) {
+            return res.status(400).json({ status: false, message: "Category not found!" });
+        }
+        await Category.findByIdAndDelete(categoryId)
+        return res.status(200).json({ status: true, message: "Category deleted successfully!" });
+    } catch (error) {
+        console.error("Error: ", error);
+        return res.status(500).json({ status: false, message: "Server error" });
+    }
+}
