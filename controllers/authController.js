@@ -3,9 +3,9 @@ const { checkPassword, hashPassword } = require("../utils/encryptionUtils");
 const { sendEmail } = require("../utils/emailUtils");
 const { generateOTP } = require("../utils/generateUtils");
 const jwt = require("jsonwebtoken");
-const { createToken,verifyToken } = require("../utils/token");
+const { createToken, verifyToken } = require("../utils/token");
 
-const {sendVerificationEmail, sendRandomPassword} = require("../utils/emailUtils");
+const { sendVerificationEmail, sendRandomPassword } = require("../utils/emailUtils");
 const { randomPassword } = require("../utils/stringUtils")
 exports.resetPassword = async (req, res) => {
   try {
@@ -43,7 +43,7 @@ exports.resetPassword = async (req, res) => {
     const newUser = user.toObject();
     delete newUser.password;
 
-    return res.json(200).status({
+    return res.status(200).json({
       status: true,
       message: "New password had been changed successfully!",
       data: newUser,
@@ -153,7 +153,7 @@ exports.saveNewPassword = async (req, res) => {
 
 exports.signup = async (req, res) => {
   try {
-    const { email,  password, name } = req.body;
+    const { email, password, name } = req.body;
     // Validate user input
     if (!email || !password || !name) {
       return res.status(400).json({
@@ -170,14 +170,14 @@ exports.signup = async (req, res) => {
     }
     const hashedPassword = await hashPassword(password);
     const otpCode = generateOTP();
-    const otpExpires = Date.now() + 10 * 60 * 1000; 
+    const otpExpires = Date.now() + 10 * 60 * 1000;
     const newUser = new User({
       email,
       password: hashedPassword,
       name,
-      otpCode, 
-      otpExpires, 
-      isVerified: false, 
+      otpCode,
+      otpExpires,
+      isVerified: false,
     });
 
     await newUser.save();
@@ -218,7 +218,7 @@ exports.verifyOTP = async (req, res) => {
     }
 
     user.isVerified = true;
-    user.otpCode = undefined; 
+    user.otpCode = undefined;
     user.otpExpires = undefined;
     await user.save();
 
@@ -262,7 +262,7 @@ exports.login = async (req, res) => {
 
     // Generate JWT token
     const token = createToken(user._id);
-  
+
 
     // Return user info without password
     const userResponse = user.toObject();
@@ -280,28 +280,29 @@ exports.login = async (req, res) => {
 };
 
 
-exports.signInWithGG = async (req, res) =>{
+exports.signInWithGG = async (req, res) => {
   try {
-    const {email, name, avatar} = req.body;
+    const { email, name, avatar } = req.body;
     // Kiểm tra người dùng
     var user = await User.findOne({ email });
     if (!user) {
       const password = randomPassword()
-      await sendRandomPassword(email, password)
       const hashedPassword = await hashPassword(password)
       user = await User.create({
         email,
         password: hashedPassword,
         name,
         isVerified: true,
-        avatar: avatar
+        avatar: avatar,
+        phoneNumber: 1
       })
+      await sendRandomPassword(email, password, name)
     }
 
     const userData = user.toObject()
     delete userData.password
 
-    return res.status(200).json({status: true, data: userData})
+    return res.status(200).json({ status: true, data: userData })
   } catch (error) {
     console.log("Google sign-in error: ", error);
     return res.status(500).json({ status: false, message: "Server error" });

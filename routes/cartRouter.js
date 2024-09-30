@@ -22,3 +22,6 @@ router.post("/calculate-cart-total", protect, cartController.calculateCartTotal)
 
 // Clear the entire cart
 router.post("/clear-cart", protect, cartController.clearCart)
+
+
+module.exports = router
