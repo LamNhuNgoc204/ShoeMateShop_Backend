@@ -27,6 +27,11 @@ const reviewSchema = new mongoose.Schema({
   },
   images: [{ type: String }],
   video: { type: String },
+  status: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending",
+  },
   createdAt: { type: Date, default: Date.now },
 });
 

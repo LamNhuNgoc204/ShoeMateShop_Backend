@@ -1,5 +1,5 @@
 exports.createReview = (req, res, next) => {
-  const { orderDetail_id, product_id, rating } = req.body;
+  const { orderDetail_id, product_id, rating, comment } = req.body;
 
   if (!orderDetail_id || !product_id) {
     return res
@@ -11,6 +11,15 @@ exports.createReview = (req, res, next) => {
     return res
       .status(400)
       .json({ status: false, message: "Rating must be between 1 and 5!" });
+  }
+
+  if (checkBadWord(comment)) {
+    return res
+      .status(400)
+      .json({
+        status: false,
+        message: "Comment contains inappropriate language!",
+      });
   }
 
   next();
