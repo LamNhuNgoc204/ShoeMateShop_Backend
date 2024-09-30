@@ -145,3 +145,28 @@ exports.getProductReviews = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
+// Update product review
+exports.updateProductReview = async (req, res) => {
+  try {
+    const { rating, comment, images, video } = req.body;
+
+    const review = req.review;
+
+    review.rating = rating || review.rating;
+    review.comment = comment || review.comment;
+    review.images = images || review.images;
+    review.video = video || review.video;
+    await review.save();
+
+    return res.status(200).json({
+      status: true,
+      message: "Update review successfully",
+      data: review,
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Lỗi máy chủ", error: error.message });
+  }
+};
