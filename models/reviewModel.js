@@ -18,7 +18,6 @@ const reviewSchema = new mongoose.Schema({
   responder_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "user",
-    required: true,
   },
   rating: { type: Number, required: true, min: 1, max: 5 },
   comment: { type: String },
@@ -26,7 +25,8 @@ const reviewSchema = new mongoose.Schema({
     content: { type: String },
     createdAt: { type: Date, default: Date.now },
   },
-  assets: [{ type: mongoose.Schema.Types.ObjectId, ref: "asset" }],
+  images: [{ type: String }],
+  video: { type: String },
   createdAt: { type: Date, default: Date.now },
 });
 
