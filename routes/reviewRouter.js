@@ -10,7 +10,7 @@ const {
   checkUserProductReview,
 } = require("../middlewares/reviewMiddleware");
 const { protect } = require("../middlewares/authMiddleware");
-const adminMiddleware = require("../middlewares/adminMiddleware");
+const { adminMiddleware } = require("../middlewares/adminMiddleware");
 
 // url: http://localhost:3000/reviews
 

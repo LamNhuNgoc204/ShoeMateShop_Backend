@@ -1,4 +1,4 @@
-const adminMiddleware = (req, res, next) => {
+exports.adminMiddleware = (req, res, next) => {
   if (req.user && req.user.role === "admin") {
     next();
   } else {
@@ -6,7 +6,7 @@ const adminMiddleware = (req, res, next) => {
   }
 };
 
-const managerMiddleware = (req, res, next) => {
+exports.managerMiddleware = (req, res, next) => {
   if ((req.user && req.user.role === "admin") || req.user.role === "employee") {
     next();
   } else {
@@ -15,5 +15,3 @@ const managerMiddleware = (req, res, next) => {
       .json({ message: "Access denied. Admin and employee only." });
   }
 };
-
-module.exports = { adminMiddleware, managerMiddleware };

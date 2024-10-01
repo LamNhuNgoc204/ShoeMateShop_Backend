@@ -37,6 +37,13 @@ exports.checkUpdateReview = (req, res, next) => {
     });
   }
 
+  if (!status) {
+    return res.status(400).json({
+      status: false,
+      message: "Status is required",
+    });
+  }
+
   if (!["approved", "rejected"].includes(status)) {
     return res.status(400).json({ status: false, message: "Invalid status" });
   }
