@@ -4,7 +4,7 @@ const User = require("../models/userModel");
 // Middleware xác thực người dùng và token
 exports.protect = async (req, res, next) => {
   let token;
-  console.log(req.headers);
+
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith("Bearer")

@@ -151,4 +151,22 @@ exports.getAdsByCategory = async (req, res) => {
       res.status(500).json({ message: "Error fetching ads", error });
     }
   };
+
+  // Tăng lượt click quảng cáo
+exports.incrementAdClicks = async (req, res) => {
+    try {
+      const ad = await Ad.findById(req.params.id);
+  
+      if (!ad) {
+        return res.status(404).json({ message: "Ad not found" });
+      }
+  
+      ad.clicks += 1;
+      await ad.save();
+  
+      res.status(200).json({ message: "Clicks incremented", clicks: ad.clicks });
+    } catch (error) {
+      res.status(500).json({ message: "Error incrementing clicks", error });
+    }
+  };
   

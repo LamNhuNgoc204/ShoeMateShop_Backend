@@ -18,8 +18,11 @@ router.put("/views/:id", protect, advertisingController.incrementAdViews);
 router.delete("/delete/:id", protect, adminOrEmployee, advertisingController.deleteAd);
 
 // Lấy quảng cáo theo ID
-router.get("/detail/:id", advertisingController.getAdById);
+router.get("/detail/:id", protect, advertisingController.getAdById);
 
 // Lấy quảng cáo theo loại (category)
-router.get("/category/:category", advertisingController.getAdsByCategory);
+router.get("/category/:category", protect, advertisingController.getAdsByCategory);
+
+// Tăng lượt click quảng cáo
+router.put("/clicks/:id",protect, advertisingController.incrementAdClicks);
 module.exports = router;
