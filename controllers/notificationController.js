@@ -29,9 +29,17 @@ exports.createNotification = async (req, res) => {
 
 exports.readNotification = async (req, res) => {
     try {
-        
+        const  { id }= req.params
+        const notification = await Notification.findById(id);
+        if (!notification) {
+            return res.status(404).json({ status: false, message: "Notification not found" });
+        }
+        notification.isRead = true;
+        const rNotification = await notification.save();
+        return res.status(200).json({ status: true, message: "Notification read successfully", data: rNotification });
     } catch (error) {
-        
+        console.error("Error: ", error);
+        return res.status(500).json({ status: false, message: "Server error" });
     }
 }
 
