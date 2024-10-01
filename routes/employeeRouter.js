@@ -24,4 +24,10 @@ router.get(
   empController.getAllEmployee
 );
 
+// Get employee information
+router.get(
+  "/get-employee-information/:employeeId",
+  empController.getEmployeeInfor
+);
+
 module.exports = router;
