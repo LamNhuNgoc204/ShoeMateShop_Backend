@@ -310,18 +310,10 @@ exports.saveNewPassword = async (req, res, next) => {
   next();
 };
 
-exports.addNewEmployee = async (req, res, next) => {
-  const { email, phoneNumber, name, password, role } = req.body;
+exports.checkEmployeeFields = async (req, res, next) => {
+  const { email, phoneNumber, name, password } = req.body;
 
-  const user = await User.findOne({ email: email });
-  if (user) {
-    return res.status(400).json({
-      status: false,
-      message: "Email has been used",
-    });
-  }
-
-  if (!email || !phoneNumber || !name || !password || !role) {
+  if (!email || !phoneNumber || !name || !password) {
     return res.status(400).json({
       status: false,
       message: "Do not leave the form blank",
@@ -344,9 +336,28 @@ exports.addNewEmployee = async (req, res, next) => {
     return res.status(400).json({ status: false, message: "Weak password!" });
   }
 
-  if (!checkRole(role)) {
-    return res.status(400).json({ status: false, message: "Invalid role!" });
+  next();
+};
+
+exports.checkEmployee = async (req, res, next) => {
+  const { employeeId } = req.params;
+
+  if (!employeeId) {
+    return res.status(400).json({
+      status: false,
+      message: "employeeId is required",
+    });
   }
+
+  const employee = await User.findById(employeeId);
+  if (!employee || employee.role !== "employee") {
+    return res.status(400).json({
+      status: false,
+      message: "employee not found",
+    });
+  }
+
+  req.employee = employee;
 
   next();
 };
