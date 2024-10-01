@@ -11,5 +11,8 @@ router.post('/create-notification', validateCreateNotification, notificationCont
 //read notification
 router.put('/read-notification/:id', notificationController.readNotification)
 
+//delete notification
+router.delete('/delete-notification/:id', notificationController.deleteNotification)    
+
 
 module.exports = router;
