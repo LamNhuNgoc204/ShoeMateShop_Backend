@@ -5,9 +5,13 @@ const {
   checkEmployeeFields,
   checkEmployee,
 } = require("../middlewares/userMiddleware");
-const adminMiddleware = require("../middlewares/adminMiddleware");
+const {
+  adminMiddleware,
+  managerMiddleware,
+} = require("../middlewares/adminMiddleware");
 const { protect } = require("../middlewares/authMiddleware");
 const { checkReviewById } = require("../middlewares/reviewMiddleware");
+const { checkOrderDetail } = require("../middlewares/errorMiddleware");
 
 // url: http://localhost:3000/employees
 
@@ -61,6 +65,15 @@ router.patch(
 );
 
 // search employee
-router.get('/search-employee', empController.research)
+router.get("/search-employee", empController.research);
+
+// refund order
+router.post(
+  "/handle-refund/:orderDetailId",
+  protect,
+  managerMiddleware,
+  checkOrderDetail,
+  empController.refundOrder
+);
 
 module.exports = router;

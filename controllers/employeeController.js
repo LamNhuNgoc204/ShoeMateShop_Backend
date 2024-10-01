@@ -205,3 +205,44 @@ exports.research = async (req, res) => {
     });
   }
 };
+
+exports.refundOrder = async (req, res) => {
+  try {
+    const { action } = req.body;
+    const orderDetail = req.orderDetail;
+
+    if (!action) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Action is required" });
+    }
+
+    if (action === "confirm") {
+      orderDetail.refund.status = "confirmed";
+      orderDetail.refund.responseDate = new Date();
+
+      await orderDetail.save();
+
+      return res
+        .status(200)
+        .json({ message: "Refund request confirmed", orderDetail });
+    } else if (action === "reject") {
+      orderDetail.refund.status = "rejected";
+      orderDetail.refund.responseDate = new Date();
+
+      await orderDetail.save();
+
+      return res
+        .status(200)
+        .json({ message: "Refund request rejected", orderDetail });
+    } else {
+      return res.status(400).json({ message: "Invalid action" });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      status: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
