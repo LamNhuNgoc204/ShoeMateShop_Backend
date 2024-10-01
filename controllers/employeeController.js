@@ -210,7 +210,7 @@ exports.research = async (req, res) => {
 exports.refundOrder = async (req, res) => {
   try {
     const { action } = req.body;
-    const orderDetail = req.orderDetail;
+    const order = req.order;
 
     if (!action) {
       return res
@@ -219,23 +219,23 @@ exports.refundOrder = async (req, res) => {
     }
 
     if (action === "confirm") {
-      orderDetail.refund.status = "confirmed";
-      orderDetail.refund.responseDate = new Date();
+      order.refund.status = "confirmed";
+      order.refund.responseDate = new Date();
 
-      await orderDetail.save();
+      await order.save();
 
       return res
         .status(200)
-        .json({ message: "Refund request confirmed", orderDetail });
+        .json({ message: "Refund request confirmed", order });
     } else if (action === "reject") {
-      orderDetail.refund.status = "rejected";
-      orderDetail.refund.responseDate = new Date();
+      order.refund.status = "rejected";
+      order.refund.responseDate = new Date();
 
-      await orderDetail.save();
+      await order.save();
 
       return res
         .status(200)
-        .json({ message: "Refund request rejected", orderDetail });
+        .json({ message: "Refund request rejected", order });
     } else {
       return res.status(400).json({ message: "Invalid action" });
     }

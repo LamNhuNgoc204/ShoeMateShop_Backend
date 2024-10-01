@@ -6,10 +6,23 @@ const orderSchema = new mongoose.Schema({
     required: true,
   },
   voucher_id: { type: mongoose.Schema.Types.ObjectId, ref: "voucher" },
+  //Comfimed order
   status: {
     type: String,
     enum: ["pending", "completed", "canceled"],
     default: "pending",
+  },
+  //Refund order
+  refund: {
+    reason: { type: String },
+    status: {
+      type: String,
+      enum: ["pending", "confirmed", "rejected"],
+      default: "pending",
+    },
+    requestDate: { type: Date, default: Date.now },
+    responseDate: { type: Date },
+    createdAt: { type: Date, default: Date.now },
   },
   total_price: { type: Number, required: true },
   user_id: {

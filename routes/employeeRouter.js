@@ -11,10 +11,7 @@ const {
 } = require("../middlewares/adminMiddleware");
 const { protect } = require("../middlewares/authMiddleware");
 const { checkReviewById } = require("../middlewares/reviewMiddleware");
-const {
-  checkOrderDetail,
-  checkOrder,
-} = require("../middlewares/errorMiddleware");
+const { checkOrder } = require("../middlewares/errorMiddleware");
 
 // url: http://localhost:3000/employees
 
@@ -75,7 +72,7 @@ router.post(
   "/handle-refund/:orderDetailId",
   protect,
   managerMiddleware,
-  checkOrderDetail,
+  checkOrder,
   empController.refundOrder
 );
 
