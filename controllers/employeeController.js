@@ -1,5 +1,4 @@
 const User = require("../models/userModel");
-const Review = require("../models/reviewModel");
 const { hashPassword } = require("../utils/encryptionUtils");
 const { checkRole } = require("../utils/stringUtils");
 
@@ -115,7 +114,6 @@ exports.updateInformation = async (req, res) => {
   }
 };
 
-
 exports.reviewFeedback = async (req, res) => {
   try {
     const { content } = req.body;
@@ -145,6 +143,15 @@ exports.reviewFeedback = async (req, res) => {
       status: true,
       message: "Feedback successfully",
       data: review,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
 
 exports.deleteEmployee = async (req, res) => {
   try {
@@ -158,7 +165,6 @@ exports.deleteEmployee = async (req, res) => {
     return res.status(200).json({
       status: true,
       message: "Delete employee successfully",
-
     });
   } catch (error) {
     return res.status(500).json({
