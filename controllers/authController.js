@@ -220,6 +220,10 @@ exports.login = async (req, res) => {
         .json({ status: false, message: "User does not exist." });
     }
 
+    if (!user.isActive) {
+      return res.status(403).json({ message: "Account is inactive" });
+    }
+
     // Check if password is correct
     const isPasswordCorrect = await checkPassword(password, user.password);
     if (!isPasswordCorrect) {
