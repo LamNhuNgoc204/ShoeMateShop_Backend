@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+
 const adsSchema = new mongoose.Schema({
   productId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -22,6 +23,11 @@ const adsSchema = new mongoose.Schema({
   clicks: { type: Number, default: 0 },
   startDate: { type: Date, required: true },
   endDate: { type: Date, required: true },
-});
+  status: {
+    type: String,
+    enum: ["active", "inactive", "expired"], 
+    default: "inactive",
+  },
+}, { timestamps: true });
 
 module.exports = mongoose.models.ads || mongoose.model("ads", adsSchema);
