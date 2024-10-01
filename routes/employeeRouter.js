@@ -7,6 +7,7 @@ const {
 } = require("../middlewares/userMiddleware");
 const adminMiddleware = require("../middlewares/adminMiddleware");
 const { protect } = require("../middlewares/authMiddleware");
+const { checkReviewById } = require("../middlewares/reviewMiddleware");
 
 // url: http://localhost:3000/employees
 
@@ -42,6 +43,15 @@ router.put(
   empController.updateInformation
 );
 
+// Review feedback
+router.post(
+  "/:reviewId/respond/:employeeId",
+  checkReviewById,
+  checkEmployee,
+  empController.reviewFeedback
+);
+
+// Delete employee
 router.patch(
   "/delete-employee/:employeeId",
   protect,

@@ -1,4 +1,5 @@
 const User = require("../models/userModel");
+const Review = require("../models/reviewModel");
 const { hashPassword } = require("../utils/encryptionUtils");
 const { checkRole } = require("../utils/stringUtils");
 
@@ -114,6 +115,37 @@ exports.updateInformation = async (req, res) => {
   }
 };
 
+
+exports.reviewFeedback = async (req, res) => {
+  try {
+    const { content } = req.body;
+    const employee = req.employee;
+    const review = req.review;
+
+    if (!content) {
+      return res.status(400).json({
+        status: false,
+        message: "Content is required",
+      });
+    }
+
+    if (review.response && review.response.content) {
+      return res.status(400).json({ message: "The review has had feedback" });
+    }
+
+    review.responder_id = employee._id;
+    review.response = {
+      content,
+      createdAt: Date.now(),
+    };
+
+    await review.save();
+
+    return res.status(200).json({
+      status: true,
+      message: "Feedback successfully",
+      data: review,
+
 exports.deleteEmployee = async (req, res) => {
   try {
     const employee = req.employee;
@@ -126,6 +158,7 @@ exports.deleteEmployee = async (req, res) => {
     return res.status(200).json({
       status: true,
       message: "Delete employee successfully",
+
     });
   } catch (error) {
     return res.status(500).json({
