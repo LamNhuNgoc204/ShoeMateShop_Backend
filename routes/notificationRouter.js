@@ -17,5 +17,7 @@ router.delete('/delete-notification/:id', notificationController.deleteNotificat
 //get all notifications
 router.get('/get-notifications', notificationController.getNotifications)
 
+//get notification by useId
+router.get('/get-notifications-by-user/:userId', notificationController.getNotificationByUser)
 
 module.exports = router;

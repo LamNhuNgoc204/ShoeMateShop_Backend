@@ -1,6 +1,7 @@
 const Order = require('../models/orderModel')
 const User = require('../models/userModel')
-const Notification = require('../models/notificationModel')
+const Notification = require('../models/notificationModel');
+const { create } = require('hbs');
 
 exports.createNotification = async (req, res) => {
     try {
@@ -80,6 +81,31 @@ exports.getNotifications = async (req, res) => {
             .limit(limit)
         return res.status(200).json({ status: true, message: "Notifications retrieved successfully", data: notifications, pagination: { totalPage, currentPage: page, itemPerPage: limit, totalItem: totalNotifications } });
 
+    } catch (error) {
+        console.error("Error: ", error);
+        return res.status(500).json({ status: false, message: "Server error" });
+    }
+}
+
+
+exports.getNotificationByUser = async (req, res) => {
+    try {
+        const { userId } = req.params
+        var { page, limit } = req.query
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        console.log('userId: ', userId);
+        if (!userId) {
+            return res.status(400).json({ status: false, message: "User ID is required!" });
+        }
+        const startIndex = (page - 1) * limit;
+        const totalNotifications = await Notification.countDocuments({ user_id: userId })
+        const totalPage = Math.ceil(totalNotifications / limit);
+        const notifications = await Notification.find({ user_id: userId })
+            .sort({ createAt: -1 })
+            .skip(startIndex)
+            .limit(limit)
+        return res.status(200).json({ status: true, message: "Notifications retrieved successfully", data: notifications, pagination: { totalPage, currentPage: page, itemPerPage: limit, totalItem: totalNotifications } });
     } catch (error) {
         console.error("Error: ", error);
         return res.status(500).json({ status: false, message: "Server error" });
