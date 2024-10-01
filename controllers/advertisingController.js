@@ -105,4 +105,19 @@ exports.createAd = async (req, res) => {
     }
   };
   
+// Xóa quảng cáo theo ID (Chỉ admin hoặc nhân viên)
+exports.deleteAd = async (req, res) => {
+    try {
+      const deletedAd = await Ad.findByIdAndDelete(req.params.id);
+  
+      if (!deletedAd) {
+        return res.status(404).json({ message: "Ad not found" });
+      }
+  
+      res.status(200).json({ message: "Ad deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Error deleting ad", error });
+    }
+  };
+  
   
