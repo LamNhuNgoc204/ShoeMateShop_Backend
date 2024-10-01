@@ -64,4 +64,45 @@ exports.createAd = async (req, res) => {
       res.status(500).json({ message: "Error updating ad", error });
     }
   };
+// Lọc quảng cáo
+  exports.getAllAds = async (req, res) => {
+    try {
+      const { status } = req.query; // Lọc theo trạng thái
+     
+  
+      let query = {};
+      if (status) {
+        query.status = status;
+      }
+      console.log(query);
+      const ads = await Ad.find(query).populate("productId", "name price assets");
+      res.status(200).json(ads);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching ads", error });
+    }
+  };
+  
+  // Tang so luong luot xem
+  exports.incrementAdViews = async (req, res) => {
+    try {
+      const ad = await Ad.findById(req.params.id);
+  
+      if (!ad) {
+        return res.status(404).json({ message: "Ad not found" });
+      }
+  
+      // Kiểm tra trạng thái nếu đã hết hạn
+      if (new Date(ad.endDate) < new Date()) {
+        ad.status = "expired";
+      } else {
+        ad.views += 1;
+      }
+  
+      await ad.save();
+      res.status(200).json({ message: "Views incremented", views: ad.views });
+    } catch (error) {
+      res.status(500).json({ message: "Error incrementing views", error });
+    }
+  };
+  
   
