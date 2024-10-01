@@ -1,5 +1,9 @@
 const { isValidPhoneNumber } = require("../utils/numberUtils");
-const { validateEmail, checkRole, validatePassword } = require("../utils/stringUtils");
+const {
+  validateEmail,
+  checkRole,
+  validatePassword,
+} = require("../utils/stringUtils");
 const User = require("../models/userModel");
 
 exports.validateRegister = (req, res, next) => {
@@ -248,24 +252,6 @@ exports.checkUserPermission = (req, res, next) => {
   next();
 };
 
-exports.checkValidity = (req, res, next) => {
-  const data = req.body;
-
-  if (!validateEmail(data.email)) {
-    return res
-      .status(400)
-      .json({ status: false, message: "Invalid email format!" });
-  }
-
-  if (!isValidPhoneNumber(newPassword)) {
-    return res
-      .status(400)
-      .json({ status: false, message: "Invalid phone number format!" });
-  }
-
-  next();
-};
-
 exports.checkUser = async (req, res, next) => {
   const { email } = req.body;
 
@@ -288,7 +274,7 @@ exports.checkUser = async (req, res, next) => {
 
 exports.verifyOTP = async (req, res, next) => {
   const { otp } = req.body;
-  const user = req.user; // Access user from previous middleware
+  const user = req.user;
 
   if (user.passwordOTP !== otp || Date.now() > user.passwordOTPExpire) {
     return res
@@ -319,6 +305,47 @@ exports.saveNewPassword = async (req, res, next) => {
     return res
       .status(400)
       .json({ status: false, message: "Invalid password!" });
+  }
+
+  next();
+};
+
+exports.addNewEmployee = async (req, res, next) => {
+  const { email, phoneNumber, name, password, role } = req.body;
+
+  const user = await User.findOne({ email: email });
+  if (user) {
+    return res.status(400).json({
+      status: false,
+      message: "Email has been used",
+    });
+  }
+
+  if (!email || !phoneNumber || !name || !password || !role) {
+    return res.status(400).json({
+      status: false,
+      message: "Do not leave the form blank",
+    });
+  }
+
+  if (!validateEmail(email)) {
+    return res
+      .status(400)
+      .json({ status: false, message: "Invalid email format!" });
+  }
+
+  if (!isValidPhoneNumber(phoneNumber)) {
+    return res
+      .status(400)
+      .json({ status: false, message: "Invalid phone number format!" });
+  }
+
+  if (!validatePassword(password)) {
+    return res.status(400).json({ status: false, message: "Weak password!" });
+  }
+
+  if (!checkRole(role)) {
+    return res.status(400).json({ status: false, message: "Invalid role!" });
   }
 
   next();
