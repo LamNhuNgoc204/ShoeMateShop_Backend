@@ -120,4 +120,18 @@ exports.deleteAd = async (req, res) => {
     }
   };
   
+  // Lấy quảng cáo theo ID
+exports.getAdById = async (req, res) => {
+    try {
+      const ad = await Ad.findById(req.params.id).populate("productId", "_id name price");
+  
+      if (!ad) {
+        return res.status(404).json({ message: "Ad not found" });
+      }
+  
+      res.status(200).json(ad);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching ad", error });
+    }
+  };
   
