@@ -16,4 +16,7 @@ router.put("/views/:id", protect, advertisingController.incrementAdViews);
 
 // Xóa quảng cáo (Chỉ admin hoặc nhân viên)
 router.delete("/delete/:id", protect, adminOrEmployee, advertisingController.deleteAd);
+
+// Lấy quảng cáo theo ID
+router.get("/detail/:id", advertisingController.getAdById);
 module.exports = router;
