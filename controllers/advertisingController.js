@@ -8,13 +8,12 @@ exports.createAd = async (req, res) => {
   
       // Kiểm tra startDate nhỏ hơn endDate
       if (new Date(startDate) > new Date(endDate)) {
-        return res.status(400).json({ message: "Start date must be before end date" });
+        return res.status(400).json({ status: false, message: "Start date must be before end date" });
       }
-  
       // Kiểm tra sản phẩm có tồn tại không
       const product = await Product.findById(productId);
       if (!product) {
-        return res.status(404).json({ message: "Product not found" });
+        return res.status(404).json({ status: false, message: "Product not found" });
       }
   
       const newAd = new Ad({
@@ -30,9 +29,9 @@ exports.createAd = async (req, res) => {
       });
   
       const savedAd = await newAd.save();
-      res.status(201).json({ message: "Ad created successfully", ad: savedAd });
+      res.status(201).json({ status: true, message: "Ad created successfully", ad: savedAd });
     } catch (error) {
-      res.status(500).json({ message: "Error creating ad", error });
+      res.status(500).json({ status: false, message: "Error creating ad", error });
     }
   };
   // Cấp nhật adversiting
@@ -42,7 +41,7 @@ exports.createAd = async (req, res) => {
   
       // Kiểm tra startDate nhỏ hơn endDate
       if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-        return res.status(400).json({ message: "Start date must be before end date" });
+        return res.status(400).json({ status: false, message: "Start date must be before end date" });
       }
   
       // Cập nhật quảng cáo
@@ -56,12 +55,12 @@ exports.createAd = async (req, res) => {
       );
   
       if (!updatedAd) {
-        return res.status(404).json({ message: "Ad not found" });
+        return res.status(404).json({ status: false, message: "Ad not found" });
       }
   
-      res.status(200).json({ message: "Ad updated successfully", ad: updatedAd });
+      res.status(200).json({ status: true, message: "Ad updated successfully", ad: updatedAd });
     } catch (error) {
-      res.status(500).json({ message: "Error updating ad", error });
+      res.status(500).json({ status: false, message: "Error updating ad", error });
     }
   };
 // Lọc quảng cáo
@@ -76,9 +75,9 @@ exports.createAd = async (req, res) => {
       }
       console.log(query);
       const ads = await Ad.find(query).populate("productId", "name price assets");
-      res.status(200).json(ads);
+      res.status(200).json({ status: true, ads });
     } catch (error) {
-      res.status(500).json({ message: "Error fetching ads", error });
+      res.status(500).json({ status: false, message: "Error fetching ads", error });
     }
   };
   
@@ -88,7 +87,7 @@ exports.createAd = async (req, res) => {
       const ad = await Ad.findById(req.params.id);
   
       if (!ad) {
-        return res.status(404).json({ message: "Ad not found" });
+        return res.status(404).json({ status: false, message: "Ad not found" });
       }
   
       // Kiểm tra trạng thái nếu đã hết hạn
@@ -99,9 +98,9 @@ exports.createAd = async (req, res) => {
       }
   
       await ad.save();
-      res.status(200).json({ message: "Views incremented", views: ad.views });
+      res.status(200).json({ status: true, message: "Views incremented", views: ad.views });
     } catch (error) {
-      res.status(500).json({ message: "Error incrementing views", error });
+      res.status(500).json({ status: false, message: "Error incrementing views", error });
     }
   };
   
@@ -111,12 +110,12 @@ exports.deleteAd = async (req, res) => {
       const deletedAd = await Ad.findByIdAndDelete(req.params.id);
   
       if (!deletedAd) {
-        return res.status(404).json({ message: "Ad not found" });
+        return res.status(404).json({ status: false, message: "Ad not found" });
       }
   
-      res.status(200).json({ message: "Ad deleted successfully" });
+      res.status(200).json({ status: true, message: "Ad deleted successfully" });
     } catch (error) {
-      res.status(500).json({ message: "Error deleting ad", error });
+      res.status(500).json({ status: false, message: "Error deleting ad", error });
     }
   };
   
@@ -126,12 +125,12 @@ exports.getAdById = async (req, res) => {
       const ad = await Ad.findById(req.params.id).populate("productId", "_id name price");
   
       if (!ad) {
-        return res.status(404).json({ message: "Ad not found" });
+        return res.status(404).json({ status: false, message: "Ad not found" });
       }
   
-      res.status(200).json(ad);
+      res.status(200).json({ status: true, ad });
     } catch (error) {
-      res.status(500).json({ message: "Error fetching ad", error });
+      res.status(500).json({ status: false, message: "Error fetching ad", error });
     }
   };
 
@@ -143,12 +142,12 @@ exports.getAdsByCategory = async (req, res) => {
       const ads = await Ad.find({ category }).populate("productId", "name price");
   
       if (ads.length === 0) {
-        return res.status(404).json({ message: "No ads found for this category" });
+        return res.status(404).json({ status: false, message: "No ads found for this category" });
       }
   
-      res.status(200).json(ads);
+      res.status(200).json({ status: true, ads });
     } catch (error) {
-      res.status(500).json({ message: "Error fetching ads", error });
+      res.status(500).json({ status: false, message: "Error fetching ads", error });
     }
   };
 
@@ -158,15 +157,15 @@ exports.incrementAdClicks = async (req, res) => {
       const ad = await Ad.findById(req.params.id);
   
       if (!ad) {
-        return res.status(404).json({ message: "Ad not found" });
+        return res.status(404).json({ status: false, message: "Ad not found" });
       }
   
       ad.clicks += 1;
       await ad.save();
   
-      res.status(200).json({ message: "Clicks incremented", clicks: ad.clicks });
+      res.status(200).json({ status: true, message: "Clicks incremented", clicks: ad.clicks });
     } catch (error) {
-      res.status(500).json({ message: "Error incrementing clicks", error });
+      res.status(500).json({ status: false, message: "Error incrementing clicks", error });
     }
   };
   
