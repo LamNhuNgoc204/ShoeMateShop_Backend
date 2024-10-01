@@ -64,4 +64,22 @@ exports.createAd = async (req, res) => {
       res.status(500).json({ message: "Error updating ad", error });
     }
   };
+// Lọc quảng cáo
+  exports.getAllAds = async (req, res) => {
+    try {
+      const { status } = req.query; // Lọc theo trạng thái
+     
+  
+      let query = {};
+      if (status) {
+        query.status = status;
+      }
+      console.log(query);
+      const ads = await Ad.find(query).populate("productId", "name price assets");
+      res.status(200).json(ads);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching ads", error });
+    }
+  };
+  
   
