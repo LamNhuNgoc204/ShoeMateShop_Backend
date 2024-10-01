@@ -42,4 +42,12 @@ router.put(
   empController.updateInformation
 );
 
+router.patch(
+  "/delete-employee/:employeeId",
+  protect,
+  adminMiddleware,
+  checkEmployee,
+  empController.deleteEmployee
+);
+
 module.exports = router;
