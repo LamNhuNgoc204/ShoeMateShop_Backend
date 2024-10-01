@@ -60,4 +60,7 @@ router.patch(
   empController.deleteEmployee
 );
 
+// search employee
+router.get('/search-employee', empController.research)
+
 module.exports = router;

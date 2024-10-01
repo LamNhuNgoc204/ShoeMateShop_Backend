@@ -174,3 +174,34 @@ exports.deleteEmployee = async (req, res) => {
     });
   }
 };
+
+exports.research = async (req, res) => {
+  try {
+    const { keyword } = req.body;
+
+    const employees = await User.find({
+      role: "employee",
+      $or: [
+        { name: { $regex: keyword, $options: "i" } },
+        { email: { $regex: keyword, $options: "i" } },
+        { phoneNumber: { $regex: keyword, $options: "i" } },
+      ],
+    });
+
+    if (employees.length === 0) {
+      return res.status(400).json({
+        message: "No suitable staff found",
+      });
+    }
+
+    return res
+      .status(200)
+      .json({ status: true, message: "Complete search", data: employees });
+  } catch (error) {
+    return res.status(500).json({
+      status: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
