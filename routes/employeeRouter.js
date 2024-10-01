@@ -1,7 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const empController = require("../controllers/employeeController");
-const { addNewEmployee } = require("../middlewares/userMiddleware");
+const {
+  checkEmployeeFields,
+  checkEmployee,
+} = require("../middlewares/userMiddleware");
 const adminMiddleware = require("../middlewares/adminMiddleware");
 const { protect } = require("../middlewares/authMiddleware");
 
@@ -12,7 +15,7 @@ router.post(
   "/add-new-employee",
   protect,
   adminMiddleware,
-  addNewEmployee,
+  checkEmployeeFields,
   empController.addEmployee
 );
 
@@ -27,7 +30,16 @@ router.get(
 // Get employee information
 router.get(
   "/get-employee-information/:employeeId",
+  checkEmployee,
   empController.getEmployeeInfor
+);
+
+// Update employee infor
+router.put(
+  "/update-employee-information/:employeeId",
+  checkEmployee,
+  checkEmployeeFields,
+  empController.updateInformation
 );
 
 module.exports = router;

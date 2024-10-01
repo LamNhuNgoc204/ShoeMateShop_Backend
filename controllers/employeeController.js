@@ -1,9 +1,29 @@
 const User = require("../models/userModel");
 const { hashPassword } = require("../utils/encryptionUtils");
+const { checkRole } = require("../utils/stringUtils");
 
 exports.addEmployee = async (req, res) => {
   try {
     const { email, phoneNumber, name, password, role } = req.body;
+
+    if (!role) {
+      return res.status(400).json({
+        status: false,
+        message: "Role is required",
+      });
+    }
+
+    const user = await User.findOne({ email: email });
+    if (user) {
+      return res.status(400).json({
+        status: false,
+        message: "Email has been used",
+      });
+    }
+
+    if (!checkRole(role)) {
+      return res.status(400).json({ status: false, message: "Invalid role!" });
+    }
 
     const pass = await hashPassword(password);
 
@@ -51,26 +71,39 @@ exports.getAllEmployee = async (req, res) => {
 
 exports.getEmployeeInfor = async (req, res) => {
   try {
-    const { employeeId } = req.params;
-    if (!employeeId) {
-      return res.status(400).json({
-        status: false,
-        message: "employeeId is required",
-      });
-    }
-
-    const employee = await User.findById(employeeId);
-    if (!employee || employee.role !== "employee") {
-      return res.status(400).json({
-        status: false,
-        message: "employee not found",
-      });
-    }
+    const employee = req.employee;
 
     return res.status(200).json({
       status: true,
       message: "Get information successfully",
       data: employee,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+exports.updateInformation = async (req, res) => {
+  try {
+    const { email, phoneNumber, name, password } = req.body;
+    const employee = req.employee;
+
+    const pass = await hashPassword(password);
+
+    employee.email = email || employee.email;
+    employee.phoneNumber = phoneNumber || employee.phoneNumber;
+    employee.name = name || employee.name;
+    employee.password = pass || employee.password;
+
+    await employee.save();
+
+    return res.status(200).json({
+      status: true,
+      message: "Update information successfully",
     });
   } catch (error) {
     return res.status(500).json({
