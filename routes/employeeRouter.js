@@ -51,4 +51,13 @@ router.post(
   empController.reviewFeedback
 );
 
+// Delete employee
+router.patch(
+  "/delete-employee/:employeeId",
+  protect,
+  adminMiddleware,
+  checkEmployee,
+  empController.deleteEmployee
+);
+
 module.exports = router;

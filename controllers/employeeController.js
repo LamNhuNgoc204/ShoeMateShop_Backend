@@ -115,6 +115,7 @@ exports.updateInformation = async (req, res) => {
   }
 };
 
+
 exports.reviewFeedback = async (req, res) => {
   try {
     const { content } = req.body;
@@ -144,6 +145,20 @@ exports.reviewFeedback = async (req, res) => {
       status: true,
       message: "Feedback successfully",
       data: review,
+
+exports.deleteEmployee = async (req, res) => {
+  try {
+    const employee = req.employee;
+
+    employee.isActive = false;
+    employee.updateAt = Date.now();
+
+    await employee.save();
+
+    return res.status(200).json({
+      status: true,
+      message: "Delete employee successfully",
+
     });
   } catch (error) {
     return res.status(500).json({
