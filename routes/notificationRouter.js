@@ -14,5 +14,8 @@ router.put('/read-notification/:id', notificationController.readNotification)
 //delete notification
 router.delete('/delete-notification/:id', notificationController.deleteNotification)    
 
+//get all notifications
+router.get('/get-notifications', notificationController.getNotifications)
+
 
 module.exports = router;
