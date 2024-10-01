@@ -11,7 +11,10 @@ const {
 } = require("../middlewares/adminMiddleware");
 const { protect } = require("../middlewares/authMiddleware");
 const { checkReviewById } = require("../middlewares/reviewMiddleware");
-const { checkOrderDetail } = require("../middlewares/errorMiddleware");
+const {
+  checkOrderDetail,
+  checkOrder,
+} = require("../middlewares/errorMiddleware");
 
 // url: http://localhost:3000/employees
 
@@ -74,6 +77,15 @@ router.post(
   managerMiddleware,
   checkOrderDetail,
   empController.refundOrder
+);
+
+// Comfirm order
+router.put(
+  "/comfirm-order/:orderId",
+  protect,
+  managerMiddleware,
+  checkOrder,
+  empController.comfirmOrder
 );
 
 module.exports = router;

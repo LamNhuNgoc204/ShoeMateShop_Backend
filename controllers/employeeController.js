@@ -1,4 +1,5 @@
 const User = require("../models/userModel");
+const Order = require("../models/orderModel");
 const { hashPassword } = require("../utils/encryptionUtils");
 const { checkRole } = require("../utils/stringUtils");
 
@@ -238,6 +239,27 @@ exports.refundOrder = async (req, res) => {
     } else {
       return res.status(400).json({ message: "Invalid action" });
     }
+  } catch (error) {
+    return res.status(500).json({
+      status: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+exports.comfirmOrder = async (req, res) => {
+  try {
+    const order = req.order;
+
+    order.status = "confirmed";
+    await order.save();
+
+    return res.status(200).json({
+      status: true,
+      message: "Order confirmed successfully",
+      data: order,
+    });
   } catch (error) {
     return res.status(500).json({
       status: false,
