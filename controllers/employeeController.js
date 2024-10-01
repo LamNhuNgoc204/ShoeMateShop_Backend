@@ -30,3 +30,21 @@ exports.addEmployee = async (req, res) => {
     });
   }
 };
+
+exports.getAllEmployee = async (req, res) => {
+  try {
+    const employees = await User.find({ role: "employee" });
+
+    return res.status(200).json({
+      status: true,
+      message: "Get data successfully",
+      data: employees,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
