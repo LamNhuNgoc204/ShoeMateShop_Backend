@@ -22,3 +22,24 @@ exports.checkOrderDetail = async (req, res, next) => {
 
   next();
 };
+
+exports.checkOrder = async (req, res, next) => {
+  const { orderId } = req.params;
+
+  if (!orderId) {
+    return res.status(400).json({
+      status: false,
+      message: "Order id is required",
+    });
+  }
+
+  const order = await Order.findById(orderId);
+
+  if (!order) {
+    return res.status(404).json({ status: false, message: "Order not found" });
+  }
+
+  req.order = order;
+
+  next();
+};
