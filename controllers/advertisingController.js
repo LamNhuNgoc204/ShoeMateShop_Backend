@@ -134,4 +134,21 @@ exports.getAdById = async (req, res) => {
       res.status(500).json({ message: "Error fetching ad", error });
     }
   };
+
+  // Lấy quảng cáo theo loại (category)
+exports.getAdsByCategory = async (req, res) => {
+    try {
+      const { category } = req.params;
+  
+      const ads = await Ad.find({ category }).populate("productId", "name price");
+  
+      if (ads.length === 0) {
+        return res.status(404).json({ message: "No ads found for this category" });
+      }
+  
+      res.status(200).json(ads);
+    } catch (error) {
+      res.status(500).json({ message: "Error fetching ads", error });
+    }
+  };
   

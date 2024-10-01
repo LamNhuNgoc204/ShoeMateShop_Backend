@@ -19,4 +19,7 @@ router.delete("/delete/:id", protect, adminOrEmployee, advertisingController.del
 
 // Lấy quảng cáo theo ID
 router.get("/detail/:id", advertisingController.getAdById);
+
+// Lấy quảng cáo theo loại (category)
+router.get("/category/:category", advertisingController.getAdsByCategory);
 module.exports = router;
