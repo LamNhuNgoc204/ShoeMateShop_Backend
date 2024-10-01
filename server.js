@@ -30,6 +30,7 @@ require("./models/voucherModel");
 
 var adminRouter = require("./routes/adminRouter");
 var usersRouter = require("./routes/usersRouter");
+var employeeRouter = require("./routes/employeeRouter");
 var authRouter = require("./routes/authRouter");
 var ordersRouter = require("./routes/ordersRouter");
 var productsRouter = require("./routes/productsRouter");
@@ -63,6 +64,7 @@ mongoose
 
 app.use("/admins", adminRouter);
 app.use("/users", usersRouter);
+app.use("/employees", employeeRouter);
 app.use("/auth", authRouter);
 app.use("/orders", ordersRouter);
 app.use("/products", productsRouter);
