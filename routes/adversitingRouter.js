@@ -11,5 +11,7 @@ router.put("/update/:id", protect, adminOrEmployee, adversitingController.update
 
 // Lấy danh sách tất cả các quảng cáo và lọc
 router.get("/all", protect, adversitingController.getAllAds);
+// Tăng lượt xem quảng cáo
+router.put("/views/:id", adversitingController.incrementAdViews);
 
 module.exports = router;
