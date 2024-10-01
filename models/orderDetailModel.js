@@ -10,6 +10,17 @@ const orderDetailSchema = new mongoose.Schema({
     ref: "size",
     required: true,
   },
+  refund: {
+    reason: { type: String },
+    status: {
+      type: String,
+      enum: ["pending", "confirmed", "rejected"],
+      default: "pending",
+    },
+    requestDate: { type: Date, default: Date.now },
+    responseDate: { type: Date },
+    createdAt: { type: Date, default: Date.now },
+  },
   quantity: { type: Number, required: true, min: 1 },
   size_name: { type: String, required: true },
   product: {
