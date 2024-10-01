@@ -82,4 +82,27 @@ exports.createAd = async (req, res) => {
     }
   };
   
+  // Tang so luong luot xem
+  exports.incrementAdViews = async (req, res) => {
+    try {
+      const ad = await Ad.findById(req.params.id);
+  
+      if (!ad) {
+        return res.status(404).json({ message: "Ad not found" });
+      }
+  
+      // Kiểm tra trạng thái nếu đã hết hạn
+      if (new Date(ad.endDate) < new Date()) {
+        ad.status = "expired";
+      } else {
+        ad.views += 1;
+      }
+  
+      await ad.save();
+      res.status(200).json({ message: "Views incremented", views: ad.views });
+    } catch (error) {
+      res.status(500).json({ message: "Error incrementing views", error });
+    }
+  };
+  
   
