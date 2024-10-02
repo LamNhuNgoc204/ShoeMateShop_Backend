@@ -242,3 +242,207 @@ exports.getOrderStatus = async (req, res) => {
     res.status(500).json({ message: `An error occurred while fetching order status: ${error.message}` });
   }
 };
+
+// API to create a return request for an order
+exports.createReturnRequest = async (req, res) => {
+  const { order_id } = req.params; // Get order ID from the route parameters
+  const { reason } = req.body; // Get the return reason from the request body
+
+  try {
+    // Find the order by ID
+    const order = await Order.findById(order_id);
+
+    // Check if the order exists
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Check if the order has already been canceled or refunded
+    if (order.status === "canceled") {
+      return res.status(400).json({ message: "Cannot request a refund for a canceled order." });
+    }
+
+    // Check if a return request has already been made
+    if (order.refund && order.refund.status !== "pending") {
+      return res.status(400).json({ message: "A return request has already been made for this order." });
+    }
+
+    // Update the refund request details in the order
+    order.refund = {
+      reason: reason || "No reason provided",
+      status: "pending",
+      requestDate: Date.now(),
+    };
+
+    // Save the updated order
+    await order.save();
+
+    // Return a success response
+    res.status(200).json({
+      message: "Return request created successfully",
+      order,
+    });
+  } catch (error) {
+    console.error("Error creating return request:", error);
+    res.status(500).json({ message: `An error occurred while creating the return request: ${error.message}` });
+  }
+};
+
+// API to get all return requests
+exports.getAllReturnRequests = async (req, res) => {
+  try {
+    // Find all orders with a refund request, excluding orders with status "canceled"
+    const returnRequests = await Order.find({
+      "refund.status": { $exists: true },
+      status: { $ne: "canceled" } // Exclude orders with status "canceled"
+    });
+
+    // Check if there are any return requests
+    if (returnRequests.length === 0) {
+      return res.status(404).json({ message: "No return requests found" });
+    }
+
+    // Return the list of return requests
+    res.status(200).json({
+      message: "Return requests retrieved successfully",
+      returnRequests,
+    });
+  } catch (error) {
+    console.error("Error fetching return requests:", error);
+    res.status(500).json({ message: `An error occurred while fetching return requests: ${error.message}` });
+  }
+};
+
+// API to get completed orders for a specific user
+exports.getCompletedOrdersByUser = async (req, res) => {
+  const { user_id } = req.params; // User ID from request parameters
+
+  try {
+    // Find completed orders for the given user
+    const completedOrders = await Order.find({
+      user_id: user_id,    // Filter by user ID
+      status: "completed", // Only get completed orders
+    });
+
+    // Check if there are any completed orders
+    if (completedOrders.length === 0) {
+      return res.status(404).json({ message: "No completed orders found for this user" });
+    }
+
+    // Return the list of completed orders
+    res.status(200).json({
+      message: "Completed orders retrieved successfully",
+      completedOrders,
+    });
+  } catch (error) {
+    console.error("Error fetching completed orders:", error);
+    res.status(500).json({
+      message: `An error occurred while fetching completed orders: ${error.message}`,
+    });
+  }
+};
+
+// API to get a list of all orders
+exports.getAllOrders = async (req, res) => {
+  try {
+    // Find all orders in the database
+    const orders = await Order.find();
+
+    // Check if any orders exist
+    if (orders.length === 0) {
+      return res.status(404).json({ message: "No orders found" });
+    }
+
+    // Return the list of all orders
+    res.status(200).json({
+      message: "Orders retrieved successfully",
+      orders,
+    });
+  } catch (error) {
+    console.error("Error fetching all orders:", error);
+    res.status(500).json({
+      message: `An error occurred while fetching all orders: ${error.message}`,
+    });
+  }
+};
+
+// API to get pending orders for a specific user
+exports.getPendingOrdersByUser = async (req, res) => {
+  const { user_id } = req.params; // User ID from request parameters
+
+  try {
+    // Find pending orders for the given user
+    const pendingOrders = await Order.find({
+      user_id: user_id,    // Filter by user ID
+      status: "pending",   // Only get pending orders
+    });
+
+    // Check if there are any pending orders
+    if (pendingOrders.length === 0) {
+      return res.status(404).json({ message: "No pending orders found for this user" });
+    }
+
+    // Return the list of pending orders
+    res.status(200).json({
+      message: "Pending orders retrieved successfully",
+      pendingOrders,
+    });
+  } catch (error) {
+    console.error("Error fetching pending orders:", error);
+    res.status(500).json({
+      message: `An error occurred while fetching pending orders: ${error.message}`,
+    });
+  }
+};
+
+// API to get a list of canceled orders
+exports.getCanceledOrders = async (req, res) => {
+  try {
+    // Find all canceled orders
+    const canceledOrders = await Order.find({
+      status: "canceled", // Only get orders with status 'canceled'
+    });
+
+    // Check if there are any canceled orders
+    if (canceledOrders.length === 0) {
+      return res.status(404).json({ message: "No canceled orders found" });
+    }
+
+    // Return the list of canceled orders
+    res.status(200).json({
+      message: "Canceled orders retrieved successfully",
+      canceledOrders,
+    });
+  } catch (error) {
+    console.error("Error fetching canceled orders:", error);
+    res.status(500).json({
+      message: `An error occurred while fetching canceled orders: ${error.message}`,
+    });
+  }
+};
+
+// API to get a list of completed orders
+exports.getCompletedOrders = async (req, res) => {
+  try {
+    // Find all orders with status 'completed'
+    const completedOrders = await Order.find({
+      status: "completed", // Only get orders with status 'completed'
+    });
+
+    // Check if there are any completed orders
+    if (completedOrders.length === 0) {
+      return res.status(404).json({ message: "No completed orders found" });
+    }
+
+    // Return the list of completed orders
+    res.status(200).json({
+      message: "Completed orders retrieved successfully",
+      completedOrders,
+    });
+  } catch (error) {
+    console.error("Error fetching completed orders:", error);
+    res.status(500).json({
+      message: `An error occurred while fetching completed orders: ${error.message}`,
+    });
+  }
+};

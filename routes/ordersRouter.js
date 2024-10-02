@@ -22,5 +22,26 @@ router.get("/order-details/:order_id", orderController.getOrderDetails);
 //Get order status
 router.get("/order-status/:order_id", orderController.getOrderStatus);
 
+//Create a return request
+router.post("/return-request/:order_id", orderController.createReturnRequest);
+
+//Get all return requests
+router.get("/return-requests", orderController.getAllReturnRequests);
+
+//Get completed orders by user
+router.get("/completed-orders/:user_id", orderController.getCompletedOrdersByUser);
+
+//Get all orders
+router.get("/all-orders", orderController.getAllOrders);
+
+//Get pending orders by user
+router.get("/pending-orders/:user_id", orderController.getPendingOrdersByUser);
+
+//Get canceled orders
+router.get("/canceled-orders", orderController.getCanceledOrders);
+
+//Get completed orders
+router.get("/completed-orders", orderController.getCompletedOrders);
+
 
 module.exports = router;
