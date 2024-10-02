@@ -68,6 +68,11 @@ exports.createNewOrder = async (req, res) => {
       if (!size) {
         return res.status(404).json({ message: "Size not found" });
       }
+      }
+      const size = await Size.findById(size_id);
+      if (!size) {
+        return res.status(404).json({ message: "Size not found" });
+      }
 
       // Check if product quantity is sufficient
       if (product.quantity < quantity) {

@@ -43,5 +43,4 @@ router.get("/canceled-orders", orderController.getCanceledOrders);
 //Get completed orders
 router.get("/completed-orders", orderController.getCompletedOrders);
 
-
 module.exports = router;
