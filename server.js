@@ -8,7 +8,6 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 
 require("./models/addressModel");
-require("./models/assetModel");
 require("./models/brandModel");
 require("./models/cartModels");
 require("./models/categoryModel");
