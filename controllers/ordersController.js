@@ -26,40 +26,42 @@ exports.createNewOrder = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Validate payment method
-    const payment = new Payment({ payment_method, status: "pending" });
-    await payment.save();
-
-    // Apply voucher (if provided)
+    // Apply voucher if provided
     let discount = 0;
+    let voucher = null;
     if (voucher_id) {
-      const voucher = await Voucher.findById(voucher_id);
+      voucher = await Voucher.findById(voucher_id);
       if (!voucher || voucher.status !== "active") {
         return res.status(400).json({ message: "Invalid or inactive voucher" });
       }
 
-      // Check if voucher is applicable
+      // Check if order meets the voucher's minimum order value
       if (total_price < voucher.min_order_value) {
-        return res
-          .status(400)
-          .json({
-            message:
-              "Order value does not meet the voucher's minimum requirement",
-          });
+        return res.status(400).json({
+          message: "Order value does not meet the voucher's minimum requirement",
+        });
       }
 
+      // Calculate the discount
       discount = Math.min(voucher.discount_value, voucher.max_discount_value);
       total_price -= discount;
 
-      // Mark voucher as used by the user
+      // Mark voucher as used
       voucher.usedBy.push(user._id);
       await voucher.save();
     }
 
-    // Create new order
+    // Create the payment record without order_id initially
+    const payment = new Payment({
+      payment_method,
+      status: "pending",
+    });
+    await payment.save();
+
+    // Create the order
     const newOrder = new Order({
       payment_id: payment._id,
-      voucher_id: voucher_id || null,
+      voucher_id: voucher ? voucher._id : null,
       status: "pending",
       total_price,
       user_id: user._id,
@@ -69,7 +71,11 @@ exports.createNewOrder = async (req, res) => {
     });
     await newOrder.save();
 
-    // Create order details (for each item)
+    // Now update payment with the new order ID
+    payment.order_id = newOrder._id;
+    await payment.save();
+
+    // Create order details for each item
     for (const item of items) {
       const { product_id, size_id, quantity } = item;
 
@@ -78,52 +84,47 @@ exports.createNewOrder = async (req, res) => {
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
       }
+
       const size = await Size.findById(size_id);
       if (!size) {
         return res.status(404).json({ message: "Size not found" });
       }
+
+      // Check if product quantity is sufficient
+      if (product.quantity < quantity) {
+        return res
+          .status(400)
+          .json({ message: `Not enough quantity for product ${product.name}` });
+      }
+
+      // Create order detail
+      const orderDetail = new OrderDetail({
+        order_id: newOrder._id,
+        size_id: size._id,
+        quantity,
+        size_name: size.name,
+        product: product._id,
+      });
+      await orderDetail.save();
+
+      // Decrease product quantity
+      product.quantity -= quantity;
+      product.sold += quantity;
+      await product.save();
     }
-
-    const size = await Size.findById(size_id);
-    if (!size) {
-      return res.status(404).json({ message: "Size not found" });
-    }
-
-    // Check if product quantity is sufficient
-    if (product.quantity < quantity) {
-      return res
-        .status(400)
-        .json({ message: `Not enough quantity for product ${product.name}` });
-    }
-
-    // Create order detail
-    const orderDetail = new OrderDetail({
-      order_id: newOrder._id,
-      size_id: size._id,
-      quantity,
-      size_name: size.name,
-      product: product._id,
-    });
-    await orderDetail.save();
-
-    // Decrease product quantity
-    product.quantity -= quantity;
-    product.sold += quantity;
-    await product.save();
 
     // Return success response
     res
       .status(201)
       .json({ message: "Order created successfully", order_id: newOrder._id });
   } catch (error) {
-    console.error("Error creating order:", error); // Logs the specific error for debugging
-    res
-      .status(500)
-      .json({
-        message: `An error occurred while creating the order: ${error.message}`,
-      });
+    console.error("Error creating order:", error);
+    res.status(500).json({
+      message: `An error occurred while creating the order: ${error.message}`,
+    });
   }
 };
+
 
 // API to update order status
 exports.updateOrderStatus = async (req, res) => {
