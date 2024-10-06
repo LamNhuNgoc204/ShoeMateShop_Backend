@@ -1,11 +1,17 @@
 const mongoose = require("mongoose");
+
 const paymentSchema = new mongoose.Schema({
   payment_method: { type: String, required: true },
+  order_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "order",
+  },
   status: {
     type: String,
     enum: ["pending", "completed", "failed"],
     default: "pending",
   },
+  amount: { type: Number},
   createdAt: { type: Date, default: Date.now },
 });
 

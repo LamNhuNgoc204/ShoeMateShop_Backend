@@ -39,7 +39,8 @@ var categoryRouter = require("./routes/categoryRouter");
 var reviewRouter = require("./routes/reviewRouter");
 var notificationsRouter = require("./routes/notificationRouter");
 const voucherRouter = require('./routes/voucherRouter')
-const advertisingRouter = require('./routes/adversitingRouter')
+const advertisingRouter = require('./routes/adversitingRouter');
+const paymentRouter = require('./routes/paymentRouter');
 var app = express();
 
 // view engine setup
@@ -73,6 +74,7 @@ app.use("/vouchers", voucherRouter);
 app.use("/reviews", reviewRouter);
 app.use('/notifications', notificationsRouter);
 app.use('/advertising', advertisingRouter);
+app.use('/payment', paymentRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
