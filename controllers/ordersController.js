@@ -8,7 +8,16 @@ const User = require("../models/userModel");
 
 // API Create a new order
 exports.createNewOrder = async (req, res) => {
-  let { user_id, voucher_id, payment_method, receiver, receiverPhone, address, items, total_price } = req.body;
+  let {
+    user_id,
+    voucher_id,
+    payment_method,
+    receiver,
+    receiverPhone,
+    address,
+    items,
+    total_price,
+  } = req.body;
 
   try {
     // Validate user
@@ -17,35 +26,42 @@ exports.createNewOrder = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Validate payment method
-    const payment = new Payment({ payment_method, status: "pending" });
-    await payment.save();
-
-    // Apply voucher (if provided)
+    // Apply voucher if provided
     let discount = 0;
+    let voucher = null;
     if (voucher_id) {
-      const voucher = await Voucher.findById(voucher_id);
+      voucher = await Voucher.findById(voucher_id);
       if (!voucher || voucher.status !== "active") {
         return res.status(400).json({ message: "Invalid or inactive voucher" });
       }
 
-      // Check if voucher is applicable
+      // Check if order meets the voucher's minimum order value
       if (total_price < voucher.min_order_value) {
-        return res.status(400).json({ message: "Order value does not meet the voucher's minimum requirement" });
+        return res.status(400).json({
+          message: "Order value does not meet the voucher's minimum requirement",
+        });
       }
 
+      // Calculate the discount
       discount = Math.min(voucher.discount_value, voucher.max_discount_value);
       total_price -= discount;
 
-      // Mark voucher as used by the user
+      // Mark voucher as used
       voucher.usedBy.push(user._id);
       await voucher.save();
     }
 
-    // Create new order
+    // Create the payment record without order_id initially
+    const payment = new Payment({
+      payment_method,
+      status: "pending",
+    });
+    await payment.save();
+
+    // Create the order
     const newOrder = new Order({
       payment_id: payment._id,
-      voucher_id: voucher_id || null,
+      voucher_id: voucher ? voucher._id : null,
       status: "pending",
       total_price,
       user_id: user._id,
@@ -55,7 +71,11 @@ exports.createNewOrder = async (req, res) => {
     });
     await newOrder.save();
 
-    // Create order details (for each item)
+    // Now update payment with the new order ID
+    payment.order_id = newOrder._id;
+    await payment.save();
+
+    // Create order details for each item
     for (const item of items) {
       const { product_id, size_id, quantity } = item;
 
@@ -95,13 +115,17 @@ exports.createNewOrder = async (req, res) => {
     await product.save();
 
     // Return success response
-    return res.status(201).json({ message: "Order created successfully", order_id: newOrder._id });
-
+    res
+      .status(201)
+      .json({ message: "Order created successfully", order_id: newOrder._id });
   } catch (error) {
-    console.error("Error creating order:", error);  // Logs the specific error for debugging
-    res.status(500).json({ message: `An error occurred while creating the order: ${error.message}` });
+    console.error("Error creating order:", error);
+    res.status(500).json({
+      message: `An error occurred while creating the order: ${error.message}`,
+    });
   }
 }
+
 
 // API to update order status
 exports.updateOrderStatus = async (req, res) => {
@@ -125,11 +149,16 @@ exports.updateOrderStatus = async (req, res) => {
     await order.save();
 
     // Send a success response
-    res.status(200).json({ message: "Order status updated successfully", order });
-
+    res
+      .status(200)
+      .json({ message: "Order status updated successfully", order });
   } catch (error) {
     console.error("Error updating order status:", error);
-    res.status(500).json({ message: `An error occurred while updating the order status: ${error.message}` });
+    res
+      .status(500)
+      .json({
+        message: `An error occurred while updating the order status: ${error.message}`,
+      });
   }
 };
 
@@ -139,7 +168,9 @@ exports.getUserOrderHistory = async (req, res) => {
 
   try {
     // Fetch orders by user_id and populate related fields
-    const orders = await Order.find({ user_id }).populate("payment_id voucher_id");
+    const orders = await Order.find({ user_id }).populate(
+      "payment_id voucher_id"
+    );
 
     if (!orders || orders.length === 0) {
       return res.status(404).json({ message: "No orders found for this user" });
@@ -148,19 +179,29 @@ exports.getUserOrderHistory = async (req, res) => {
     // Fetch order details for each order
     const ordersWithDetails = await Promise.all(
       orders.map(async (order) => {
-        const orderDetails = await OrderDetail.find({ order_id: order._id }).populate("product size_id");
+        const orderDetails = await OrderDetail.find({
+          order_id: order._id,
+        }).populate("product size_id");
         return {
           order,
-          orderDetails
+          orderDetails,
         };
       })
     );
 
-    res.status(200).json({ message: "User order history retrieved successfully", orders: ordersWithDetails });
-
+    res
+      .status(200)
+      .json({
+        message: "User order history retrieved successfully",
+        orders: ordersWithDetails,
+      });
   } catch (error) {
     console.error("Error fetching user order history:", error);
-    res.status(500).json({ message: `An error occurred while fetching the order history: ${error.message}` });
+    res
+      .status(500)
+      .json({
+        message: `An error occurred while fetching the order history: ${error.message}`,
+      });
   }
 };
 
@@ -190,7 +231,11 @@ exports.cancelOrder = async (req, res) => {
     res.status(200).json({ message: "Order canceled successfully", order });
   } catch (error) {
     console.error("Error canceling order:", error);
-    res.status(500).json({ message: `An error occurred while canceling the order: ${error.message}` });
+    res
+      .status(500)
+      .json({
+        message: `An error occurred while canceling the order: ${error.message}`,
+      });
   }
 };
 
@@ -200,7 +245,9 @@ exports.getOrderDetails = async (req, res) => {
 
   try {
     // Find the order by ID and populate related fields
-    const order = await Order.findById(order_id).populate("payment_id voucher_id user_id");
+    const order = await Order.findById(order_id).populate(
+      "payment_id voucher_id user_id"
+    );
 
     // Check if the order exists
     if (!order) {
@@ -208,7 +255,9 @@ exports.getOrderDetails = async (req, res) => {
     }
 
     // Fetch the order details for the specified order
-    const orderDetails = await OrderDetail.find({ order_id }).populate("product size_id");
+    const orderDetails = await OrderDetail.find({ order_id }).populate(
+      "product size_id"
+    );
 
     // Return the order and its details
     res.status(200).json({
@@ -218,7 +267,11 @@ exports.getOrderDetails = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching order details:", error);
-    res.status(500).json({ message: `An error occurred while fetching order details: ${error.message}` });
+    res
+      .status(500)
+      .json({
+        message: `An error occurred while fetching order details: ${error.message}`,
+      });
   }
 };
 
@@ -243,7 +296,11 @@ exports.getOrderStatus = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching order status:", error);
-    res.status(500).json({ message: `An error occurred while fetching order status: ${error.message}` });
+    res
+      .status(500)
+      .json({
+        message: `An error occurred while fetching order status: ${error.message}`,
+      });
   }
 };
 
@@ -263,12 +320,18 @@ exports.createReturnRequest = async (req, res) => {
 
     // Check if the order has already been canceled or refunded
     if (order.status === "canceled") {
-      return res.status(400).json({ message: "Cannot request a refund for a canceled order." });
+      return res
+        .status(400)
+        .json({ message: "Cannot request a refund for a canceled order." });
     }
 
     // Check if a return request has already been made
     if (order.refund && order.refund.status !== "pending") {
-      return res.status(400).json({ message: "A return request has already been made for this order." });
+      return res
+        .status(400)
+        .json({
+          message: "A return request has already been made for this order.",
+        });
     }
 
     // Update the refund request details in the order
@@ -288,7 +351,11 @@ exports.createReturnRequest = async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating return request:", error);
-    res.status(500).json({ message: `An error occurred while creating the return request: ${error.message}` });
+    res
+      .status(500)
+      .json({
+        message: `An error occurred while creating the return request: ${error.message}`,
+      });
   }
 };
 
@@ -298,7 +365,7 @@ exports.getAllReturnRequests = async (req, res) => {
     // Find all orders with a refund request, excluding orders with status "canceled"
     const returnRequests = await Order.find({
       "refund.status": { $exists: true },
-      status: { $ne: "canceled" } // Exclude orders with status "canceled"
+      status: { $ne: "canceled" }, // Exclude orders with status "canceled"
     });
 
     // Check if there are any return requests
@@ -313,7 +380,11 @@ exports.getAllReturnRequests = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching return requests:", error);
-    res.status(500).json({ message: `An error occurred while fetching return requests: ${error.message}` });
+    res
+      .status(500)
+      .json({
+        message: `An error occurred while fetching return requests: ${error.message}`,
+      });
   }
 };
 
@@ -324,13 +395,15 @@ exports.getCompletedOrdersByUser = async (req, res) => {
   try {
     // Find completed orders for the given user
     const completedOrders = await Order.find({
-      user_id: user_id,    // Filter by user ID
+      user_id: user_id, // Filter by user ID
       status: "completed", // Only get completed orders
     });
 
     // Check if there are any completed orders
     if (completedOrders.length === 0) {
-      return res.status(404).json({ message: "No completed orders found for this user" });
+      return res
+        .status(404)
+        .json({ message: "No completed orders found for this user" });
     }
 
     // Return the list of completed orders
@@ -377,13 +450,15 @@ exports.getPendingOrdersByUser = async (req, res) => {
   try {
     // Find pending orders for the given user
     const pendingOrders = await Order.find({
-      user_id: user_id,    // Filter by user ID
-      status: "pending",   // Only get pending orders
+      user_id: user_id, // Filter by user ID
+      status: "pending", // Only get pending orders
     });
 
     // Check if there are any pending orders
     if (pendingOrders.length === 0) {
-      return res.status(404).json({ message: "No pending orders found for this user" });
+      return res
+        .status(404)
+        .json({ message: "No pending orders found for this user" });
     }
 
     // Return the list of pending orders

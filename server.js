@@ -8,7 +8,6 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 
 require("./models/addressModel");
-require("./models/assetModel");
 require("./models/brandModel");
 require("./models/cartModels");
 require("./models/categoryModel");
@@ -42,7 +41,7 @@ var notificationsRouter = require("./routes/notificationRouter");
 const voucherRouter = require('./routes/voucherRouter')
 const advertisingRouter = require('./routes/adversitingRouter')
 const messageRouter = require('./routes/messageRouter');
-
+const paymentRouter = require('./routes/paymentRouter');
 var app = express();
 
 // view engine setup
@@ -77,6 +76,7 @@ app.use("/reviews", reviewRouter);
 app.use('/notifications', notificationsRouter);
 app.use('/advertising', advertisingRouter);
 app.use('/messages', messageRouter);
+app.use('/payment', paymentRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
