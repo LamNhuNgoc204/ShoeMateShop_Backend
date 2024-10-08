@@ -168,19 +168,6 @@ exports.validateUpdateProfile = async (req, res, next) => {
   }
 };
 
-exports.checkUserId = (req, res, next) => {
-  const { userId } = req.params;
-
-  if (!userId) {
-    return res.status(400).json({
-      status: false,
-      message: "User Id is required!",
-    });
-  }
-
-  next();
-};
-
 exports.checkUserAddressId = (req, res, next) => {
   const { userId, addressId } = req.params;
 

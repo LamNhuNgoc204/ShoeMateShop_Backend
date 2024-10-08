@@ -6,13 +6,14 @@ const {
   checkFieldsAddress,
   checkUserAddressId,
 } = require("../middlewares/userMiddleware");
+const { protect } = require("../middlewares/authMiddleware");
 
 //http:  http://localhost:3000/addresses
 
 // Add user's address
 router.post(
-  "/:userId/add-address",
-  checkUserId,
+  "/add-address",
+  protect,
   checkFieldsAddress,
   addressController.addAddress
 );
@@ -34,8 +35,8 @@ router.put(
 
 // Get all user's addresses
 router.get(
-  "/get-all-address/:userId",
-  checkUserId,
+  "/get-all-address",
+  protect,
   addressController.getAllAddresses
 );
 
@@ -48,8 +49,8 @@ router.put(
 
 // Get address Default
 router.get(
-  "/:userId/default-address",
-  checkUserId,
+  "/default-address",
+  protect,
   addressController.getDefaultAddress
 );
 
