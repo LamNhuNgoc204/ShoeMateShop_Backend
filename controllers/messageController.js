@@ -1,6 +1,7 @@
 const User = require('../models/userModel');
 const Order = require('../models/orderModel');
 const Message = require('../models/messageModel');
+const { getIo } = require('../socket');
 
 exports.sendMessage = async (req, res) => {
     try {
@@ -24,6 +25,11 @@ exports.sendMessage = async (req, res) => {
             text
         })
 
+        getIo().emit("sendMessage", {
+            message: message
+        })
+
+        
         return res.status(200).json({ status: true, message: "Message sent successfully", data: message });
 
     } catch (error) {
