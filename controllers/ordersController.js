@@ -84,34 +84,35 @@ exports.createNewOrder = async (req, res) => {
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
       }
-
       const size = await Size.findById(size_id);
       if (!size) {
         return res.status(404).json({ message: "Size not found" });
       }
-
-      // Check if product quantity is sufficient
-      if (product.quantity < quantity) {
-        return res
-          .status(400)
-          .json({ message: `Not enough quantity for product ${product.name}` });
-      }
-
-      // Create order detail
-      const orderDetail = new OrderDetail({
-        order_id: newOrder._id,
-        size_id: size._id,
-        quantity,
-        size_name: size.name,
-        product: product._id,
-      });
-      await orderDetail.save();
-
-      // Decrease product quantity
-      product.quantity -= quantity;
-      product.sold += quantity;
-      await product.save();
     }
+    const size = await Size.findById(size_id);
+    if (!size) {
+      return res.status(404).json({ message: "Size not found" });
+    }
+
+    // Check if product quantity is sufficient
+    if (product.quantity < quantity) {
+      return res.status(400).json({ message: `Not enough quantity for product ${product.name}` });
+    }
+
+    // Create order detail
+    const orderDetail = new OrderDetail({
+      order_id: newOrder._id,
+      size_id: size._id,
+      quantity,
+      size_name: size.name,
+      product: product._id,
+    });
+    await orderDetail.save();
+
+    // Decrease product quantity
+    product.quantity -= quantity;
+    product.sold += quantity;
+    await product.save();
 
     // Return success response
     res
@@ -123,7 +124,7 @@ exports.createNewOrder = async (req, res) => {
       message: `An error occurred while creating the order: ${error.message}`,
     });
   }
-};
+}
 
 
 // API to update order status
