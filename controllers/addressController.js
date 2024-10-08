@@ -5,13 +5,7 @@ const { isValidPhoneNumber } = require("../utils/numberUtils");
 exports.addAddress = async (req, res) => {
   try {
     const { address, recieverPhoneNumber, recieverName, isDefault } = req.body;
-
     const user = req.user;
-
-    //Check phoneNumber valid
-    if (!isValidPhoneNumber(recieverPhoneNumber)) {
-      return res.status(400).json({ message: "Invalid phone number" });
-    }
 
     const existingAddress = await Address.findOne({
       userId: user._id,
@@ -58,16 +52,13 @@ exports.addAddress = async (req, res) => {
 
 exports.deleteAddress = async (req, res) => {
   try {
-    const { userId, addressId } = req.params;
+    const { addressId } = req.params;
 
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(400).json({ status: false, message: "User not found" });
-    }
+    const user = req.user;
 
     const deletedAddress = await Address.findOneAndDelete({
       _id: addressId,
-      userId: userId,
+      userId: user._id,
     });
 
     if (!deletedAddress) {
@@ -90,16 +81,12 @@ exports.deleteAddress = async (req, res) => {
 
 exports.updateAddress = async (req, res) => {
   try {
-    const { userId, addressId } = req.params;
+    const { addressId } = req.params;
+    const user = req.user;
     const { address, recieverPhoneNumber, recieverName, isDefault } = req.body;
 
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ status: false, message: "User not found" });
-    }
-
     const addressToUpdate = await Address.findOne({
-      userId: userId,
+      userId: user._id,
       _id: addressId,
     });
     if (!addressToUpdate) {
@@ -137,7 +124,7 @@ exports.getAllAddresses = async (req, res) => {
   try {
     const userID = req.user._id;
 
-    const addresses = await Address.find({ userID });
+    const addresses = await Address.find({ userId: userID });
 
     return res.status(200).json({
       status: true,
@@ -152,12 +139,9 @@ exports.getAllAddresses = async (req, res) => {
 
 exports.setAddressDefault = async (req, res) => {
   try {
-    const { userId, addressId } = req.params;
+    const { addressId } = req.params;
 
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ status: false, message: "User not found" });
-    }
+    const userId = req.user._id;
 
     const address = await Address.findOne({ userId: userId, _id: addressId });
     if (!address) {
