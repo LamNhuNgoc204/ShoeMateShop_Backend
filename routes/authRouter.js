@@ -9,16 +9,20 @@ const {
   checkUser,
   verifyOTP,
   saveNewPassword,
+
 } = require("../middlewares/userMiddleware");
 
 //methods:  PUT
 //http:  http://localhost:3000/auth
 // Verify email
 router.post("/verify-email", AuthController.verifyOTP);
+//resend otp
+router.post("/resend-otp", AuthController.resendOTP);
 // Signup route
 router.post("/signup", validateRegister, AuthController.signup);
 
 // Login route
+// http://localhost:3000/auth/login
 router.post("/login", validateLogin, AuthController.login);
 
 router.put(

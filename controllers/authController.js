@@ -165,24 +165,53 @@ exports.signup = async (req, res) => {
   }
 };
 
+//resend otp
+// Resend OTP
+exports.resendOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        status: false,
+        message: "Please provide an email address.",
+      });
+    }
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ status: false, message: "User not found." });
+    }
+    if (user.isVerified) {
+      return res.status(400).json({ status: false, message: "User is already verified." });
+    }
+    const newOtpCode = generateOTP();
+    user.otpCode = newOtpCode;
+    user.otpExpires = Date.now() + 10 * 60 * 1000;
+    await user.save();
+    await sendVerificationEmail(email, newOtpCode);
+    return res.status(200).json({
+      status: true,
+      message: "OTP has been resent successfully!",
+    });
+  } catch (error) {
+    console.log("Resend OTP error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
+
+
 // Verify OTP
 exports.verifyOTP = async (req, res) => {
   try {
     const { email, otpCode } = req.body;
-
-    // Kiểm tra người dùng
     const user = await User.findOne({ email });
     if (!user) {
-      return res
-        .status(404)
-        .json({ status: false, message: "User not found." });
+      return res.status(404).json({ status: false, message: "User not found." });
     }
 
     if (user.otpCode !== otpCode || Date.now() > user.otpExpires) {
-      return res.status(400).json({
-        status: false,
-        message: "Invalid or expired OTP.",
-      });
+      return res.status(400).json({ status: false, message: "Invalid or expired OTP." });
     }
 
     user.isVerified = true;
@@ -190,15 +219,22 @@ exports.verifyOTP = async (req, res) => {
     user.otpExpires = undefined;
     await user.save();
 
+    const token = createToken(user._id);
+
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
     return res.status(200).json({
       status: true,
       message: "Email verified successfully!",
+      data: { user: userResponse, token }
     });
   } catch (error) {
     console.log("Verify OTP error: ", error);
     return res.status(500).json({ status: false, message: "Server error" });
   }
 };
+
 // login
 exports.login = async (req, res) => {
   try {
