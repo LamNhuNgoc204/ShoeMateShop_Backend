@@ -21,8 +21,14 @@ exports.validateRegister = (req, res, next) => {
       .json({ status: false, message: "Email is required!" });
   }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
+  if (!email || !password || !name) {
+    return res.status(400).json({
+      status: false,
+      message: "Please provide all required fields.",
+    });
+  }
+
+  if (!validateEmail(email)) {
     return res
       .status(400)
       .json({ status: false, message: "Invalid email format!" });
@@ -35,11 +41,10 @@ exports.validateRegister = (req, res, next) => {
     });
   }
 
-  if (password.length < 6) {
-    return res.status(400).json({
-      status: false,
-      message: "Password must be at least 6 characters long!",
-    });
+  if (!validatePassword(password)) {
+    return res
+      .status(400)
+      .json({ status: false, message: "Invalid password!" });
   }
 
   next();

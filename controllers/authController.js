@@ -120,13 +120,7 @@ exports.saveNewPassword = async (req, res) => {
 exports.signup = async (req, res) => {
   try {
     const { email, password, name } = req.body;
-    // Validate user input
-    if (!email || !password || !name) {
-      return res.status(400).json({
-        status: false,
-        message: "Please provide all required fields.",
-      });
-    }
+
     // Check if the user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -179,10 +173,14 @@ exports.resendOTP = async (req, res) => {
     }
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ status: false, message: "User not found." });
+      return res
+        .status(404)
+        .json({ status: false, message: "User not found." });
     }
     if (user.isVerified) {
-      return res.status(400).json({ status: false, message: "User is already verified." });
+      return res
+        .status(400)
+        .json({ status: false, message: "User is already verified." });
     }
     const newOtpCode = generateOTP();
     user.otpCode = newOtpCode;
@@ -199,19 +197,21 @@ exports.resendOTP = async (req, res) => {
   }
 };
 
-
-
 // Verify OTP
 exports.verifyOTP = async (req, res) => {
   try {
     const { email, otpCode } = req.body;
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ status: false, message: "User not found." });
+      return res
+        .status(404)
+        .json({ status: false, message: "User not found." });
     }
 
     if (user.otpCode !== otpCode || Date.now() > user.otpExpires) {
-      return res.status(400).json({ status: false, message: "Invalid or expired OTP." });
+      return res
+        .status(400)
+        .json({ status: false, message: "Invalid or expired OTP." });
     }
 
     user.isVerified = true;
@@ -227,7 +227,7 @@ exports.verifyOTP = async (req, res) => {
     return res.status(200).json({
       status: true,
       message: "Email verified successfully!",
-      data: { user: userResponse, token }
+      data: { user: userResponse, token },
     });
   } catch (error) {
     console.log("Verify OTP error: ", error);
