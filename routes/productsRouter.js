@@ -49,9 +49,9 @@ router.get("/wishlist/list", protect, productController.getWishlist);
 router.get("/list-brands", protect, productController.getAllBrands);
 
 // Lấy tất cả danh mục
-router.get("/list-categories", productController.getAllCate);
+router.get("/list-categories", protect, productController.getAllCate);
 
 // Lấy tất cả sizes
-router.get("/list-sizes", productController.getAllSize);
+router.get("/list-sizes", protect, productController.getAllSize);
 
 module.exports = router;
