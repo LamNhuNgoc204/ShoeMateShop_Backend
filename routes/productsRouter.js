@@ -25,7 +25,7 @@ router.delete(
 );
 
 // API lấy tất cả sản phẩm
-router.get("/list-products", productController.getAllProducts);
+router.get("/list-products", protect, productController.getAllProducts);
 
 // API lấy sản phẩm theo ID
 router.get("/detail/:id", protect, productController.getProductById);
@@ -48,6 +48,6 @@ router.get("/wishlist/list", protect, productController.getWishlist);
 router.get("/list-brands", protect, productController.getAllBrands);
 
 // Lấy tất cả danh mục
-router.get('/list-categories',productController.getAllCate)
+router.get("/list-categories", productController.getAllCate);
 
 module.exports = router;
