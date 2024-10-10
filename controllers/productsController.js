@@ -1,4 +1,5 @@
 const Product = require("../models/productModel");
+const Size = require("../models/sizeModel");
 const Brand = require("../models/brandModel");
 const Categories = require("../models/categoryModel");
 const Wishlist = require("../models/wishlistModel");
@@ -134,6 +135,15 @@ exports.getAllCate = async (_, res) => {
   try {
     const cate = await Categories.find();
     return res.status(200).json(cate);
+  } catch (error) {
+    return res.status(500).json({ message: "Error fetching products", error });
+  }
+};
+
+exports.getAllSize = async (_, res) => {
+  try {
+    const sizes = await Size.find();
+    return res.status(200).json(sizes);
   } catch (error) {
     return res.status(500).json({ message: "Error fetching products", error });
   }

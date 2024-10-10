@@ -51,4 +51,7 @@ router.get("/list-brands", protect, productController.getAllBrands);
 // Lấy tất cả danh mục
 router.get("/list-categories", productController.getAllCate);
 
+// Lấy tất cả sizes
+router.get("/list-sizes", productController.getAllSize);
+
 module.exports = router;
