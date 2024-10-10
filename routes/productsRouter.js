@@ -35,6 +35,7 @@ router.get("/search", productController.searchProducts);
 
 // API thêm sản phẩm vào danh sách yêu thích
 router.post("/wishlist/add/:id", protect, productController.addToWishlist);
+
 // API xóa sản phẩm khỏi danh sách yêu thích
 router.delete(
   "/wishlist/remove/:id",
