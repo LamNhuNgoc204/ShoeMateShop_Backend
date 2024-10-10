@@ -1,4 +1,6 @@
 const Product = require("../models/productModel");
+const Brand = require("../models/brandModel");
+const Categories = require("../models/categoryModel");
 const Wishlist = require("../models/wishlistModel");
 
 // Thêm sản phẩm mới (Chỉ admin hoặc nhân viên)
@@ -102,20 +104,38 @@ exports.getAllProducts = async (req, res) => {
     const products = await Product.find()
       .populate({
         path: "brand",
-        select: "_id name",
+        select: "name",
       })
       .populate({
         path: "category",
-        select: "_id name",
+        select: "name",
       })
       .populate({
         path: "size",
-        select: "_id name",
+        select: "name",
       });
 
     res.status(200).json(products);
   } catch (error) {
     res.status(500).json({ message: "Error fetching products", error });
+  }
+};
+
+exports.getAllBrands = async (_, res) => {
+  try {
+    const brand = await Brand.find();
+    return res.status(200).json(brand);
+  } catch (error) {
+    return res.status(500).json({ message: "Error fetching products", error });
+  }
+};
+
+exports.getAllCate = async (_, res) => {
+  try {
+    const cate = await Categories.find();
+    return res.status(200).json(cate);
+  } catch (error) {
+    return res.status(500).json({ message: "Error fetching products", error });
   }
 };
 
