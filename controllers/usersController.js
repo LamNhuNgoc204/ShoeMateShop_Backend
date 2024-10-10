@@ -2,15 +2,7 @@ const User = require("../models/userModel");
 
 exports.getUserInfo = async (req, res) => {
   try {
-    const { userId } = req.params;
-
-    //Check user exist
-    const user = await User.findById(userId);
-    if (!user) {
-      return res
-        .status(400)
-        .json({ status: false, message: "User does not exist!" });
-    }
+    const user = req.user;
 
     const information = {
       email: user.email,
@@ -36,29 +28,31 @@ exports.getUserInfo = async (req, res) => {
   }
 };
 
-
 exports.updateUserProfile = async (req, res, next) => {
   try {
-    const {name, avatar, userId} = req.body;
+    const { name, avatar, userId } = req.body;
     const user = await User.findById(userId);
     if (!user) {
       return res
-       .status(400)
-       .json({ status: false, message: "User does not exist!" });
+        .status(400)
+        .json({ status: false, message: "User does not exist!" });
     }
-    if(name) {
+    if (name) {
       user.name = name;
-    } 
-    if(avatar) {
+    }
+    if (avatar) {
       user.avatar = avatar;
     }
     const updatedUser = await user.save();
     const userData = updatedUser.toObject();
     delete userData.password;
-    return res.status(200).json({ status: true, message: "User profile updated successfully.", data: userData });
+    return res.status(200).json({
+      status: true,
+      message: "User profile updated successfully.",
+      data: userData,
+    });
   } catch (error) {
     console.log("Error: ", error);
     return res.status(500).json({ status: false, message: "Server error" });
-    
   }
-}
+};

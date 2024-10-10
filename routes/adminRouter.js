@@ -11,9 +11,8 @@ const { protect } = require("../middlewares/authMiddleware");
 
 // update role
 router.put(
-  "/update-permission/:userId",
+  "/update-permission",
   protect,
-  checkUserId,
   checkUserPermission,
   adminController.updateUserPermissions
 );

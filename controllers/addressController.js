@@ -4,25 +4,11 @@ const { isValidPhoneNumber } = require("../utils/numberUtils");
 
 exports.addAddress = async (req, res) => {
   try {
-    const { userId } = req.params;
     const { address, recieverPhoneNumber, recieverName, isDefault } = req.body;
+    const user = req.user;
 
-    // Check user existence
-    const user = await User.findOne({ _id: userId });
-    if (!user) {
-      return res
-        .status(400)
-        .json({ status: false, message: "User does not exist!" });
-    }
-
-    //Check phoneNumber valid
-    if (!isValidPhoneNumber(recieverPhoneNumber)) {
-      return res.status(400).json({ message: "Invalid phone number" });
-    }
-
-    //Check if the address exists
     const existingAddress = await Address.findOne({
-      userId: userId,
+      userId: user._id,
       address: address,
     });
     if (existingAddress) {
@@ -34,14 +20,14 @@ exports.addAddress = async (req, res) => {
     //If this address true, set orther address false
     if (isDefault) {
       await Address.updateMany(
-        { userId: userId, isDefault: true },
+        { userId: user._id, isDefault: true },
         { isDefault: false }
       );
     }
 
     // Create new user address
     const newAddress = new Address({
-      userId: userId,
+      userId: user._id,
       address: address,
       recieverPhoneNumber: recieverPhoneNumber,
       recieverName: recieverName,
@@ -49,7 +35,7 @@ exports.addAddress = async (req, res) => {
     });
     await newAddress.save();
 
-    const currUser = await User.findById(userId);
+    const currUser = await User.findById(user._id);
     currUser.address.push(newAddress._id);
     await currUser.save();
 
@@ -66,16 +52,13 @@ exports.addAddress = async (req, res) => {
 
 exports.deleteAddress = async (req, res) => {
   try {
-    const { userId, addressId } = req.params;
+    const { addressId } = req.params;
 
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(400).json({ status: false, message: "User not found" });
-    }
+    const user = req.user;
 
     const deletedAddress = await Address.findOneAndDelete({
       _id: addressId,
-      userId: userId,
+      userId: user._id,
     });
 
     if (!deletedAddress) {
@@ -98,16 +81,12 @@ exports.deleteAddress = async (req, res) => {
 
 exports.updateAddress = async (req, res) => {
   try {
-    const { userId, addressId } = req.params;
+    const { addressId } = req.params;
+    const user = req.user;
     const { address, recieverPhoneNumber, recieverName, isDefault } = req.body;
 
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ status: false, message: "User not found" });
-    }
-
     const addressToUpdate = await Address.findOne({
-      userId: userId,
+      userId: user._id,
       _id: addressId,
     });
     if (!addressToUpdate) {
@@ -143,14 +122,9 @@ exports.updateAddress = async (req, res) => {
 
 exports.getAllAddresses = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userID = req.user._id;
 
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ status: false, message: "User not found" });
-    }
-
-    const addresses = await Address.find({ userId });
+    const addresses = await Address.find({ userId: userID });
 
     return res.status(200).json({
       status: true,
@@ -165,12 +139,9 @@ exports.getAllAddresses = async (req, res) => {
 
 exports.setAddressDefault = async (req, res) => {
   try {
-    const { userId, addressId } = req.params;
+    const { addressId } = req.params;
 
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ status: false, message: "User not found" });
-    }
+    const userId = req.user._id;
 
     const address = await Address.findOne({ userId: userId, _id: addressId });
     if (!address) {
@@ -199,12 +170,7 @@ exports.setAddressDefault = async (req, res) => {
 
 exports.getDefaultAddress = async (req, res) => {
   try {
-    const { userId } = req.params;
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ status: false, message: "User not found" });
-    }
+    const userId = req.user._id;
 
     const defaultAddress = await Address.findOne({
       userId: userId,

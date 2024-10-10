@@ -1,25 +1,15 @@
-const User = require("../models/userModel");
-
 exports.updateUserPermissions = async (req, res) => {
   try {
-    const { userId } = req.params;
     const { newRole } = req.body;
 
-    const currentUser = req.user;
+    const user = req.user;
 
-    if (!currentUser || currentUser.role !== "admin") {
+    if (!user || user.role !== "admin") {
       return res.status(403).json({
         status: false,
         message:
           "Access denied. You don't have permission to perform this action.",
       });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res
-        .status(400)
-        .json({ status: false, message: "User not found." });
     }
 
     user.role = newRole;

@@ -14,6 +14,11 @@ const productSchema = new mongoose.Schema({
     required: true,
   },
   size: [{ type: mongoose.Schema.Types.ObjectId, ref: "size", required: true }],
+  status: {
+    type: String,
+    enum: ["Còn hàng", "Hết hàng", "Ngừng bán"],
+    default: "Còn hàng",
+  },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
