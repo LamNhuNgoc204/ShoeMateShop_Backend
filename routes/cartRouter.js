@@ -9,7 +9,7 @@ const ProductsController = require('../controllers/productsController')
 // url: http://localhost:3000/cart
 
 // Add product to cart
-router.post("/add-product-to-cart", cartController.addProductToCart)
+router.post("/add-product-to-cart", protect, cartController.addProductToCart)
 
 // Update the quantity of a product in the cart
 router.post("/update-cart-quantity", cartController.updateCartQuantity)
