@@ -20,6 +20,10 @@ exports.createProduct = async (req, res) => {
       assets,
     } = req.body;
 
+    if (!Array.isArray(size) || size.length === 0) {
+      return res.status(400).json({ message: "Size must be provided" });
+    }
+
     const newProduct = new Product({
       name,
       description,
@@ -112,7 +116,7 @@ exports.getAllProducts = async (req, res) => {
         select: "name",
       })
       .populate({
-        path: "size",
+        path: "size.sizeId",
         select: "name",
       });
 
