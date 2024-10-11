@@ -7,21 +7,22 @@ const Size = require("../models/sizeModel");
 exports.addProductToCart = async (req, res) => {
   try {
     const { product_id, size_id, quantity } = req.body;
+    const user = req.user;
     const user_id = req.user._id;
 
     // 2. Check if the size is valid
-    const size = await Size.findById(size_id);
-    if (!size) {
-      return res.status(404).json({ status: false, message: "Size not found" });
-    }
+    // const size = await Size.findById(size_id);
+    // if (!size) {
+    //   return res.status(404).json({ status: false, message: "Size not found" });
+    // }
 
     // 3. Check if the product exists
-    const product = await Product.findById(product_id);
-    if (!product) {
-      return res
-        .status(404)
-        .json({ status: false, message: "Product not found" });
-    }
+    // const product = await Product.findById(product_id);
+    // if (!product) {
+    //   return res
+    //     .status(404)
+    //     .json({ status: false, message: "Product not found" });
+    // }
 
     // 4. Check if the product and size already exist in the user's cart
     let cartItem = await Cart.findOne({ user_id, product_id, size_id });

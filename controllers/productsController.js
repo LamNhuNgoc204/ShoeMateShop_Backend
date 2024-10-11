@@ -152,9 +152,19 @@ exports.getAllSize = async (_, res) => {
 // Lấy chi tiết sản phẩm theo ID
 exports.getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate(
-      "brand category size"
-    );
+    const product = await Product.findById(req.params.id)
+      .populate({
+        path: "brand",
+        select: "name",
+      })
+      .populate({
+        path: "category",
+        select: "name",
+      })
+      .populate({
+        path: "size.sizeId",
+        select: "name",
+      });
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
