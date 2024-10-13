@@ -7,26 +7,6 @@ const cors = require("cors");
 require("dotenv").config();
 const mongoose = require("mongoose");
 
-require("./models/addressModel");
-require("./models/brandModel");
-require("./models/cartModels");
-require("./models/categoryModel");
-require("./models/messageModel");
-require("./models/notificationModel");
-require("./models/orderDetailModel");
-require("./models/orderModel");
-require("./models/paidHistoryModel");
-require("./models/paymentModel");
-require("./models/productModel");
-require("./models/reviewModel");
-require("./models/searchModel");
-require("./models/sizeModel");
-require("./models/userModel");
-require("./models/voucherModel");
-require("./models/walletModel");
-require("./models/wishlistModel");
-require("./models/voucherModel");
-
 var adminRouter = require("./routes/adminRouter");
 var usersRouter = require("./routes/usersRouter");
 var employeeRouter = require("./routes/employeeRouter");
@@ -38,10 +18,11 @@ var cartRouter = require("./routes/cartRouter");
 var categoryRouter = require("./routes/categoryRouter");
 var reviewRouter = require("./routes/reviewRouter");
 var notificationsRouter = require("./routes/notificationRouter");
-const voucherRouter = require('./routes/voucherRouter')
-const advertisingRouter = require('./routes/adversitingRouter')
-const messageRouter = require('./routes/messageRouter');
-const paymentRouter = require('./routes/paymentRouter');
+const voucherRouter = require("./routes/voucherRouter");
+const advertisingRouter = require("./routes/adversitingRouter");
+const messageRouter = require("./routes/messageRouter");
+const paymentRouter = require("./routes/paymentRouter");
+const sizeRouter = require("./routes/sizeRouter");
 var app = express();
 
 // view engine setup
@@ -73,10 +54,11 @@ app.use("/cart", cartRouter);
 app.use("/categories", categoryRouter);
 app.use("/vouchers", voucherRouter);
 app.use("/reviews", reviewRouter);
-app.use('/notifications', notificationsRouter);
-app.use('/advertising', advertisingRouter);
-app.use('/messages', messageRouter);
-app.use('/payment', paymentRouter);
+app.use("/notifications", notificationsRouter);
+app.use("/advertising", advertisingRouter);
+app.use("/messages", messageRouter);
+app.use("/payment", paymentRouter);
+app.use("/sizes", sizeRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
