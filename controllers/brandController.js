@@ -1,4 +1,5 @@
 const Brands = require("../models/brandModel");
+const Product = require("../models/productModel");
 
 exports.createBrand = async (req, res) => {
   try {
@@ -21,6 +22,51 @@ exports.createBrand = async (req, res) => {
       message: "Brand created successfully",
       data: newBrand,
     });
+  } catch (error) {
+    console.error("Error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
+exports.getAllProductOfBrand = async (req, res) => {
+  try {
+    const brandId = req.brand._id;
+
+    const productOfBrand = await Product.find({ brand: brandId })
+      .populate("category", "name")
+      .populate("size.sizeId", "name");
+
+    return res.status(200).json({
+      status: true,
+      message: "Get product of brand success",
+      data: productOfBrand,
+    });
+  } catch (error) {
+    console.error("Error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
+exports.updateBrand = async (req, res) => {
+  try {
+    const brandId = req.brand._id;
+    const { image } = req.body;
+
+    const updatedBrand = await Brands.findByIdAndUpdate(
+      brandId,
+      { image: image },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedBrand) {
+      return res
+        .status(404)
+        .json({ status: false, message: "Thương hiệu không tìm thấy" });
+    }
+
+    return res
+      .status(200)
+      .json({ status: true, message: "update success", data: updatedBrand });
   } catch (error) {
     console.error("Error: ", error);
     return res.status(500).json({ status: false, message: "Server error" });

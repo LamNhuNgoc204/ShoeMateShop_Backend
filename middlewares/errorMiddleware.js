@@ -1,4 +1,20 @@
 const Order = require("../models/orderModel");
+const Brands = require("../models/brandModel");
+
+exports.checckBrandId = async (req, res, next) => {
+  const { brandId } = req.params;
+  if (!brandId) {
+    return res.status(401).json({ status: false, message: "Id required" });
+  }
+
+  const brand = await Brands.findById({ _id: brandId });
+  if (!brand) {
+    return res.status(401).json({ status: false, message: "Brand not exits" });
+  }
+
+  req.brand = brand;
+  next();
+};
 
 // exports.checkOrderDetail = async (req, res, next) => {
 //   const { orderDetailId } = req.params;

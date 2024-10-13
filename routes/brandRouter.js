@@ -5,6 +5,7 @@ const { managerMiddleware } = require("../middlewares/adminMiddleware");
 
 const controller = require("../controllers/brandController");
 const { validateCreateCategory } = require("../middlewares/categoryMiddleware");
+const { checckBrandId } = require("../middlewares/errorMiddleware");
 
 // http://localhost:3000/brands
 
@@ -14,6 +15,22 @@ router.post(
   managerMiddleware,
   validateCreateCategory,
   controller.createBrand
+);
+
+router.get(
+  "/get-product-of-brand/:brandId",
+  checckBrandId,
+  protect,
+  managerMiddleware,
+  controller.getAllProductOfBrand
+);
+
+router.put(
+  "/update-brands/:brandId",
+  checckBrandId,
+  protect,
+  managerMiddleware,
+  controller.updateBrand
 );
 
 module.exports = router;
