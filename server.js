@@ -7,22 +7,24 @@ const cors = require("cors");
 require("dotenv").config();
 const mongoose = require("mongoose");
 
-var adminRouter = require("./routes/adminRouter");
-var usersRouter = require("./routes/usersRouter");
-var employeeRouter = require("./routes/employeeRouter");
-var authRouter = require("./routes/authRouter");
-var ordersRouter = require("./routes/ordersRouter");
-var productsRouter = require("./routes/productsRouter");
-var addressesRouter = require("./routes/addressRouter");
-var cartRouter = require("./routes/cartRouter");
-var categoryRouter = require("./routes/categoryRouter");
-var reviewRouter = require("./routes/reviewRouter");
-var notificationsRouter = require("./routes/notificationRouter");
+const adminRouter = require("./routes/adminRouter");
+const usersRouter = require("./routes/usersRouter");
+const employeeRouter = require("./routes/employeeRouter");
+const authRouter = require("./routes/authRouter");
+const ordersRouter = require("./routes/ordersRouter");
+const productsRouter = require("./routes/productsRouter");
+const addressesRouter = require("./routes/addressRouter");
+const cartRouter = require("./routes/cartRouter");
+const categoryRouter = require("./routes/categoryRouter");
+const reviewRouter = require("./routes/reviewRouter");
+const notificationsRouter = require("./routes/notificationRouter");
 const voucherRouter = require("./routes/voucherRouter");
 const advertisingRouter = require("./routes/adversitingRouter");
 const messageRouter = require("./routes/messageRouter");
 const paymentRouter = require("./routes/paymentRouter");
 const sizeRouter = require("./routes/sizeRouter");
+const brandRouter = require("./routes/brandRouter");
+
 var app = express();
 
 // view engine setup
@@ -59,6 +61,7 @@ app.use("/advertising", advertisingRouter);
 app.use("/messages", messageRouter);
 app.use("/payment", paymentRouter);
 app.use("/sizes", sizeRouter);
+app.use("/brands", brandRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
