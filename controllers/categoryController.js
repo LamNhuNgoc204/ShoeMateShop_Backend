@@ -3,10 +3,13 @@ const Category = require("../models/categoryModel");
 exports.createCategory = async (req, res) => {
   try {
     const { name, image, description } = req.body;
-    const existCategory = await Category.find({ name: name });
+    // const existCategory = await Category.findOne({ name: name });
+    const existCategory = await Category.findOne({
+      name: { $regex: new RegExp(`^${name}$`, "i") },
+    });
     if (existCategory) {
       return res
-        .status(400)
+        .status(402)
         .json({ status: false, message: "Category name already exists!" });
     }
     const savedCategory = await Category.create({
