@@ -11,7 +11,10 @@ exports.createSize = async (req, res) => {
       });
     }
 
-    const checkSize = await Size.findOne({ name: name });
+    const checkSize = await Size.findOne({
+      name: { $regex: new RegExp(`^${name}$`, "i") },
+    });
+
     if (checkSize) {
       return res.status(400).json({
         status: false,
