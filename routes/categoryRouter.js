@@ -3,12 +3,13 @@ const router = express.Router();
 const {
   validateCreateCategory,
   validateUpdateCategory,
+  checkCateId,
 } = require("../middlewares/categoryMiddleware");
 const categoryController = require("../controllers/categoryController");
 const { protect } = require("../middlewares/authMiddleware");
 const { managerMiddleware } = require("../middlewares/adminMiddleware");
 
-//http:localhost:3000/categories
+//http://localhost:3000/categories
 
 //create category
 router.post(
@@ -22,6 +23,7 @@ router.post(
 //delete category
 router.delete(
   "/delete-category/:categoryId",
+  checkCateId,
   protect,
   managerMiddleware,
   categoryController.deleteCategory
@@ -30,6 +32,7 @@ router.delete(
 //update category
 router.put(
   "/update-category/:categoryId",
+  checkCateId,
   protect,
   managerMiddleware,
   validateUpdateCategory,
@@ -40,6 +43,18 @@ router.put(
 router.get("/get-categories", protect, categoryController.getAllCategories);
 
 //get category by id
-router.get("/get-category/:id", protect, categoryController.getCategory);
+router.get(
+  "/get-category/:categoryId",
+  checkCateId,
+  protect,
+  categoryController.getCategory
+);
+
+router.get(
+  "/get-product-of-cate/:categoryId",
+  protect,
+  checkCateId,
+  categoryController.getProductOfCate
+);
 
 module.exports = router;

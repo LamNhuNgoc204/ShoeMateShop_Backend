@@ -1,3 +1,22 @@
+const Category = require("../models/categoryModel");
+
+exports.checkCateId = async (req, res, next) => {
+  const { categoryId } = req.params;
+  if (!categoryId) {
+    return res
+      .status(400)
+      .json({ status: false, message: "Category ID is required!" });
+  }
+  const category = await Category.findById(categoryId);
+  if (!category) {
+    return res
+      .status(400)
+      .json({ status: false, message: "Category not found!" });
+  }
+  req.categories = category;
+  next();
+};
+
 exports.validateCreateCategory = async (req, res, next) => {
   try {
     const { name, image } = req.body;

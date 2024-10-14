@@ -1,4 +1,5 @@
 const Category = require("../models/categoryModel");
+const Product = require("../models/productModel");
 
 exports.createCategory = async (req, res) => {
   try {
@@ -31,18 +32,7 @@ exports.createCategory = async (req, res) => {
 
 exports.deleteCategory = async (req, res) => {
   try {
-    const { categoryId } = req.params;
-    if (!categoryId) {
-      return res
-        .status(400)
-        .json({ status: false, message: "Category ID is required!" });
-    }
-    const category = await Category.findById(categoryId);
-    if (!category) {
-      return res
-        .status(400)
-        .json({ status: false, message: "Category not found!" });
-    }
+    const categoryId = req.categories._id;
     await Category.findByIdAndDelete(categoryId);
     return res
       .status(200)
@@ -55,20 +45,16 @@ exports.deleteCategory = async (req, res) => {
 
 exports.updateCategory = async (req, res) => {
   try {
-    const { categoryId } = req.params;
     const { name, image, description } = req.body;
-    const category = await Category.findById(categoryId);
-    if (!category) {
-      return res
-        .status(400)
-        .json({ status: false, message: "Category not found!" });
-    }
+    const category = req.categories;
     if (name) {
       category.name = name;
     }
     if (image) {
       category.image = image;
     }
+    category.description = description;
+
     const updatedCategory = await category.save();
     return res.status(200).json({
       status: true,
@@ -114,13 +100,7 @@ exports.getAllCategories = async (req, res) => {
 
 exports.getCategory = async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!id) {
-      return res
-        .status(400)
-        .json({ status: false, message: "Category ID is required!" });
-    }
-    const category = await Category.findById(id);
+    const category = req.categories;
     if (!category) {
       return res
         .status(400)
@@ -130,6 +110,25 @@ exports.getCategory = async (req, res) => {
       status: true,
       message: "Category retrieved successfully",
       data: category,
+    });
+  } catch (error) {
+    console.error("Error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
+exports.getProductOfCate = async (req, res) => {
+  try {
+    const categoryId = req.categories._id;
+
+    const productOfCate = await Product.find({ category: categoryId })
+      .populate("brand", "name")
+      .populate("size.sizeId", "name");
+
+    return res.status(200).json({
+      status: true,
+      message: "Get product of cate success",
+      data: productOfCate,
     });
   } catch (error) {
     console.error("Error: ", error);
