@@ -1,5 +1,6 @@
 const Order = require("../models/orderModel");
 const Brands = require("../models/brandModel");
+const mongoose = require("mongoose");
 
 exports.checckBrandId = async (req, res, next) => {
   const { brandId } = req.params;
@@ -7,13 +8,28 @@ exports.checckBrandId = async (req, res, next) => {
     return res.status(401).json({ status: false, message: "Id required" });
   }
 
-  const brand = await Brands.findById({ _id: brandId });
-  if (!brand) {
-    return res.status(401).json({ status: false, message: "Brand not exits" });
+  if (!mongoose.isValidObjectId(brandId)) {
+    return res
+      .status(400)
+      .json({ status: false, message: "Invalid ID format." });
   }
 
-  req.brand = brand;
-  next();
+  try {
+    const brand = await Brands.findById(brandId);
+    if (!brand) {
+      return res
+        .status(404)
+        .json({ status: false, message: "Brand does not exist." });
+    }
+    req.brand = brand;
+    next();
+  } catch (error) {
+    return res.status(500).json({
+      status: false,
+      message: "Internal server error.",
+      error: error.message,
+    });
+  }
 };
 
 // exports.checkOrderDetail = async (req, res, next) => {
