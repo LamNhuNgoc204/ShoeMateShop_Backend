@@ -8,4 +8,6 @@ const { protect } = require("../middlewares/authMiddleware");
 
 router.post("/add-new-size", protect, managerMiddleware, controller.createSize);
 
+router.post('/get-all-sizes', protect, controller.getAllSizes)
+
 module.exports = router;

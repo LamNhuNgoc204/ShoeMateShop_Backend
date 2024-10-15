@@ -37,3 +37,15 @@ exports.createSize = async (req, res) => {
     return res.status(500).json({ status: false, message: "Server error" });
   }
 };
+
+exports.getAllSizes = async (_, res) => {
+  try {
+    const data = await Size.find();
+
+    return res
+      .status(200)
+      .json({ status: true, message: "get size success", data: data });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
