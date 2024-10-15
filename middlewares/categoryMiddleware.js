@@ -44,15 +44,16 @@ exports.validateCreateCategory = async (req, res, next) => {
 
 exports.validateUpdateCategory = async (req, res, next) => {
   try {
-    const { categoryId, name, image } = req.body;
+    const { categoryId } = req.params;
+    const { name, image } = req.body;
     if (!categoryId) {
-      return res.status(400).json({
+      return res.status(401).json({
         status: false,
         message: "Category ID is required!",
       });
     }
     if (!name && !image) {
-      return res.status(400).json({
+      return res.status(402).json({
         status: false,
         message: "At least one field (name or image) is required!",
       });
