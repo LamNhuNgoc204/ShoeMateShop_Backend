@@ -59,29 +59,31 @@ exports.updateUserProfile = async (req, res, next) => {
 
 exports.updateRole = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const { userId } = req.params;
     const { role } = req.body;
 
     if (!["admin", "user", "employee"].includes(role)) {
-      return res.status(400).json({ message: "Invalid role" });
+      return res.status(404).json({ status: false, message: "Invalid role" });
     }
     const user = await User.findByIdAndUpdate(userId, { role }, { new: true });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(402).json({ status: false, message: "User not found" });
     }
 
     return res
       .status(200)
       .json({ status: true, message: "update role success", data: user });
   } catch (error) {
-    return res.status(500).json({ status: false, message: "Server error" });
+    return res
+      .status(500)
+      .json({ status: false, message: "Server error", error: error });
   }
 };
 
 exports.getAllUser = async (_, res) => {
   try {
     const users = await User.find({ role: { $ne: "admin" } });
-    
+
     return res
       .status(200)
       .json({ status: true, message: "Get all users success", data: users });

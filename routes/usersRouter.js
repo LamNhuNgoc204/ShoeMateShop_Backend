@@ -20,7 +20,12 @@ router.put(
   userController.updateUserProfile
 );
 
-router.put("/update-role", protect, adminMiddleware, userController.updateRole);
+router.put(
+  "/update-role/:userId",
+  protect,
+  adminMiddleware,
+  userController.updateRole
+);
 
 router.get(
   "/get-all-user",
