@@ -1,4 +1,5 @@
 const User = require("../models/userModel");
+const { hashPassword } = require("../utils/encryptionUtils");
 
 exports.getUserInfo = async (req, res) => {
   try {
@@ -87,6 +88,49 @@ exports.getAllUser = async (_, res) => {
     return res
       .status(200)
       .json({ status: true, message: "Get all users success", data: users });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
+exports.adddNewUser = async (req, res) => {
+  try {
+    const { email, password, name, phoneNumber, role } = req.body;
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Email already in use." });
+    }
+
+    if (!["admin", "user", "employee"].includes(role)) {
+      return res.status(404).json({ status: false, message: "Invalid role" });
+    }
+
+    const hashedPassword = await hashPassword(password);
+    const newUser = new User({
+      email,
+      password: hashedPassword,
+      name,
+      phoneNumber,
+      role: role,
+      isVerified: false,
+    });
+
+    await newUser.save();
+
+    return res.status(201).json({
+      status: true,
+      data: {
+        _id: newUser._id,
+        email: newUser.email,
+        name: newUser.name,
+        role: newUser.role,
+        phoneNumber: newUser.phoneNumber,
+        isVerified: newUser.isVerified,
+      },
+      message: "User registered successfully! Please verify your email.",
+    });
   } catch (error) {
     return res.status(500).json({ status: false, message: "Server error" });
   }

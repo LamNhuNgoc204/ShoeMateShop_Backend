@@ -1,7 +1,10 @@
 var express = require("express");
 var router = express.Router();
 const userController = require("../controllers/usersController");
-const { validateUpdateProfile } = require("../middlewares/userMiddleware");
+const {
+  validateUpdateProfile,
+  checkUser,
+} = require("../middlewares/userMiddleware");
 const { protect } = require("../middlewares/authMiddleware");
 const {
   managerMiddleware,
@@ -32,6 +35,13 @@ router.get(
   protect,
   managerMiddleware,
   userController.getAllUser
+);
+
+router.post(
+  "/add-new-user",
+  protect,
+  adminMiddleware,
+  userController.adddNewUser
 );
 
 module.exports = router;
