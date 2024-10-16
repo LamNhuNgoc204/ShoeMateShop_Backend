@@ -24,7 +24,9 @@ exports.protect = async (req, res, next) => {
         .status(400)
         .json({ status: false, message: "User not found." });
     }
+    
     req.user = user;
+
     next();
   } catch (error) {
     return res.status(401).json({ status: false, message: "Not authorized, token failed" });
