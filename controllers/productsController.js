@@ -3,6 +3,7 @@ const Size = require("../models/sizeModel");
 const Brand = require("../models/brandModel");
 const Categories = require("../models/categoryModel");
 const Wishlist = require("../models/wishlistModel");
+const Review = require("../models/reviewModel");
 
 // Thêm sản phẩm mới (Chỉ admin hoặc nhân viên)
 exports.createProduct = async (req, res) => {
@@ -115,6 +116,27 @@ exports.getAllProducts = async (req, res) => {
         path: "size.sizeId",
         select: "name",
       });
+
+    // Tính toán rating trung bình và số lượt đánh giá cho từng sản phẩm
+    for (let product of products) {
+      const reviews = await Review.find({ product_id: product._id }).select(
+        "rating"
+      );
+
+      // Tính tổng rating và số lượng đánh giá
+      const totalRating = reviews.reduce(
+        (acc, review) => acc + review.rating,
+        0
+      );
+      const numOfReviews = reviews.length;
+      const avgRating = numOfReviews
+        ? (totalRating / numOfReviews).toFixed(1)
+        : 0;
+
+      // Gán rating trung bình và số lượt đánh giá vào sản phẩm
+      product._doc.avgRating = avgRating;
+      product._doc.numOfReviews = numOfReviews;
+    }
 
     res.status(200).json(products);
   } catch (error) {
