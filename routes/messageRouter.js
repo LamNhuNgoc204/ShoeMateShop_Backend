@@ -16,7 +16,7 @@ router.put('/join-conversation', [protect,validateJoinMessage], messageControlle
 router.put('/leave-conversation', [protect,validateLeaveMessage], messageController.leaveConversation);
 
 //create conversation
-router.post('create-conversation', [protect, validateCreateConversation], messageController.createConversation);
+router.post('/create-conversation', [protect, validateCreateConversation], messageController.createConversation);
 
 //get conversations
 router.get('/get-conversations', protect, messageController.getConversations);
