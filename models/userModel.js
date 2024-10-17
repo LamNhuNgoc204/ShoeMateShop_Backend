@@ -2,7 +2,11 @@ const mongoose = require("mongoose");
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   phoneNumber: { type: String },
-  avatar: { type: String },
+  avatar: {
+    type: String,
+    default:
+      "https://i.pinimg.com/enabled_hi/564x/d4/35/42/d435423c9386e708c678b7663656b9c0.jpg",
+  },
   password: { type: String, required: true },
   passwordOTP: { type: String },
   passwordOTPExpire: { type: Date },
