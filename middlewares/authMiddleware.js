@@ -13,7 +13,9 @@ exports.protect = async (req, res, next) => {
   }
 
   if (!token) {
-    return res.status(401).json({ status: false, message: "Not authorized, no token" });
+    return res
+      .status(401)
+      .json({ status: false, message: "Not authorized, no token" });
   }
 
   try {
@@ -24,12 +26,14 @@ exports.protect = async (req, res, next) => {
         .status(400)
         .json({ status: false, message: "User not found." });
     }
-    
+
     req.user = user;
 
     next();
   } catch (error) {
-    return res.status(401).json({ status: false, message: "Not authorized, token failed" });
+    return res
+      .status(401)
+      .json({ status: false, message: "Not authorized, token failed" });
   }
 };
 
@@ -41,4 +45,28 @@ exports.adminOrEmployee = (req, res, next) => {
       .json({ message: "Access denied, admin or employee only" });
   }
   next();
+};
+
+exports.verifyToken = async (req, res, next) => {
+  const token = req.header("Authorization");
+
+  if (!token) {
+    return res
+      .status(401)
+      .json({ message: "Access Denied. No token provided." });
+  }
+
+  // Loại bỏ chuỗi "Bearer "
+  const actualToken = token.startsWith("Bearer ") ? token.slice(7) : token;
+
+  // Xác minh token
+  const verified = jwt.verify(actualToken, process.env.JWT_SECRET);
+
+  req.user = verified;
+
+  next();
+  try {
+  } catch (error) {
+    return res.status(400).json({ message: "Invalid token." });
+  }
 };

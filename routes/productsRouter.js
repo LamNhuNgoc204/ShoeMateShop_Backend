@@ -25,10 +25,10 @@ router.delete(
 );
 
 // API lấy tất cả sản phẩm
-router.get("/list-products", protect, productController.getAllProducts);
+router.get("/list-products", productController.getAllProducts);
 
 // API lấy sản phẩm theo ID
-router.get("/detail/:id", protect, productController.getProductById);
+router.get("/detail/:id", productController.getProductById);
 
 // API tìm kiếm sản phẩm
 router.get("/search", productController.searchProducts);
@@ -42,16 +42,17 @@ router.delete(
   protect,
   productController.removeFromWishlist
 );
+
 // API lấy danh sách sản phẩm yêu thích
 router.get("/wishlist/list", protect, productController.getWishlist);
 
 //Lấy tất cả thương hiệu
-router.get("/list-brands", protect, productController.getAllBrands);
+router.get("/list-brands",  productController.getAllBrands);
 
 // Lấy tất cả danh mục
-router.get("/list-categories", protect, productController.getAllCate);
+router.get("/list-categories",  productController.getAllCate);
 
 // Lấy tất cả sizes
-router.get("/list-sizes", protect, productController.getAllSize);
+router.get("/list-sizes",  productController.getAllSize);
 
 module.exports = router;
