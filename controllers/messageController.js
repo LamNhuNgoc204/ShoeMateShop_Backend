@@ -4,7 +4,7 @@ const Message = require('../models/messageModel');
 const { getIo } = require('../socket');
 const Conversation = require('../models/conversationModel');
 
-exports.sendMessage = async () => {
+exports.sendMessage = async (req, res) => {
     try {
         var {conversationId, senderId, text, orderId} = req.body;
         const conversation = await Conversation.findById(conversationId);
@@ -31,7 +31,7 @@ exports.sendMessage = async () => {
         })
         getIo().emit('sendMessage', {
             message: {
-                ...message,
+                ...message._doc,
                 senderId: {
                     name: sender.name,
                     avatar: sender.avatar
@@ -62,7 +62,7 @@ exports.joinConversation = async (req, res) => {
         })
         getIo().emit('sendMessage', {
             message: {
-                ...notify,
+                ...notify._doc,
                 senderId: {
                     name: staff.name,
                     avatar: staff.avatar
@@ -95,7 +95,7 @@ exports.leaveConversation = async (req, res) => {
         })
         getIo().emit('sendMessage', {
             message: {
-                ...notify,
+                ...notify._doc,
                 senderId: {
                     name: staff.name,
                     avatar: staff.avatar
@@ -120,6 +120,9 @@ exports.createConversation = async (req, res) => {
         const conversation = await Conversation.create({
             userId: user._id
         })
+        socket.emit('createConversation', {
+            conversation: conversation._doc
+        })
         return res.status(200).json({ status: true, message: "Conversation created successfully", data: conversation });
     } catch (error) {
         console.error("Error: ", error);
@@ -131,7 +134,10 @@ exports.createConversation = async (req, res) => {
 exports.getConversations = async (req, res) => {
     try {
         const user = req.user;
-        const conversations = await Conversation.find();
+        const conversations = await Conversation.find({$or: [
+            {staffId: user._id},
+            {userId: user._id}
+        ]});
         return res.status(200).json({ status: true, message: "Get conversations successfully", data: conversations });
     } catch (error) {
         console.error("Error: ", error);

@@ -16,7 +16,7 @@ exports.validateSendMessage = async (req, res, next) => {
                 message: 'Sender ID is required!'
             });
         }
-        if (!orderId || !text) {
+        if (!orderId && !text) {
             return res.status(400).json({
                 status: false,
                 message: 'Order ID and Text are required!'
