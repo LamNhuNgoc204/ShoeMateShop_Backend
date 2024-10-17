@@ -40,7 +40,7 @@ router.put(
 );
 
 //get all categories
-router.get("/get-categories", protect, categoryController.getAllCategories);
+router.get("/get-categories", categoryController.getAllCategories);
 
 //get category by id
 router.get(
