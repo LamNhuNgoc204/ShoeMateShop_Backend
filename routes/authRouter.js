@@ -9,11 +9,15 @@ const {
   checkUser,
   verifyOTP,
   saveNewPassword,
-
 } = require("../middlewares/userMiddleware");
+const { verifyToken } = require("../middlewares/authMiddleware");
 
 //methods:  PUT
 //http:  http://localhost:3000/auth
+
+//Verify token
+router.get("/protected", verifyToken, AuthController.getProtectedData);
+
 // Verify email
 router.post("/verify-email", AuthController.verifyOTP);
 //resend otp
