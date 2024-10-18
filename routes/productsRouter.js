@@ -44,15 +44,15 @@ router.delete(
 );
 
 // API lấy danh sách sản phẩm yêu thích
-router.get("/wishlist/list", protect, productController.getWishlist);
+router.get("/wishlist", protect, productController.getWishlist);
 
 //Lấy tất cả thương hiệu
-router.get("/list-brands",  productController.getAllBrands);
+router.get("/list-brands", productController.getAllBrands);
 
 // Lấy tất cả danh mục
-router.get("/list-categories",  productController.getAllCate);
+router.get("/list-categories", productController.getAllCate);
 
 // Lấy tất cả sizes
-router.get("/list-sizes",  productController.getAllSize);
+router.get("/list-sizes", productController.getAllSize);
 
 module.exports = router;

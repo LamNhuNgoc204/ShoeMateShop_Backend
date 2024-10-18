@@ -292,10 +292,22 @@ exports.getWishlist = async (req, res) => {
     const userId = req.user._id;
     console.log(userId);
     const wishlistItems = await Wishlist.find({ user_id: userId }).populate(
-      "product_id"
+      "product_id",
+      "assets name price"
     );
-    res.status(200).json({ status: true, data: wishlistItems });
+
+    for (const item of wishlistItems) {
+      const reviews = await Review.find({ product_id: item.product_id._id });
+      item._doc.rating =
+        (
+          reviews.reduce((sum, review) => sum + review.rating, 0) /
+          reviews.length
+        ).toFixed(1) || 0;
+      item._doc.reviewCount = reviews.length;
+    }
+
+    return res.status(200).json({ status: true, data: wishlistItems });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching wishlist", error });
+    return res.status(500).json({ message: "Error fetching wishlist", error });
   }
 };
