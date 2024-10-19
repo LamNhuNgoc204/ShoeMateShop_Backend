@@ -4,6 +4,13 @@ var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 const cors = require("cors");
+
+
+var app = express();
+
+
+
+app.use(cors()); 
 require("dotenv").config();
 const mongoose = require("mongoose");
 
@@ -25,7 +32,6 @@ const paymentRouter = require("./routes/paymentRouter");
 const sizeRouter = require("./routes/sizeRouter");
 const brandRouter = require("./routes/brandRouter");
 
-var app = express();
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
@@ -37,7 +43,6 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use(cors());
 
 const mongooseURL = process.env.MONGODB_URI;
 mongoose

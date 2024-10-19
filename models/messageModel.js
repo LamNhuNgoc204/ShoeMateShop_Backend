@@ -26,6 +26,10 @@ const messageSchema = new Schema({
     enum: [ 'notify', 'text', 'order'],
     default: 'text'
   },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
 })
 
 
