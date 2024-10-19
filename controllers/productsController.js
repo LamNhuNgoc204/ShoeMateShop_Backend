@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Size = require("../models/sizeModel");
 const Brand = require("../models/brandModel");
 const Review = require("../models/reviewModel");
@@ -269,6 +270,12 @@ exports.addToWishlist = async (req, res) => {
     const userId = req.user._id;
     const productId = req.params.id;
 
+    console.log("userid", userId, "productId", productId);
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({ message: "Invalid product ID" });
+    }
+
     const existingWishlistItem = await Wishlist.findOne({
       user_id: userId,
       product_id: productId,
@@ -281,35 +288,21 @@ exports.addToWishlist = async (req, res) => {
       });
 
       await newWishlistItem.save();
+      return res
+        .status(200)
+        .json({ status: true, message: "Added to wishlist" });
+    } else {
+      await Wishlist.deleteOne({ _id: existingWishlistItem._id });
+      return res
+        .status(200)
+        .json({ status: true, message: "Removed from wishlist" });
     }
-
-    const wishlist = await Wishlist.find({ user_id: userId }).populate(
-      "product_id"
-    );
-
-    res.status(200).json(wishlist);
   } catch (error) {
-    res.status(500).json({ message: "Error adding to wishlist", error });
+    console.error(error);
+    res.status(500).json({ message: "Error updating wishlist", error });
   }
 };
 
-// Xóa sản phẩm khỏi danh sách yêu thích
-exports.removeFromWishlist = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const productId = req.params.id;
-
-    await Wishlist.findOneAndDelete({ user_id: userId, product_id: productId });
-
-    const wishlist = await Wishlist.find({ user_id: userId }).populate(
-      "product_id"
-    );
-
-    res.status(200).json(wishlist);
-  } catch (error) {
-    res.status(500).json({ message: "Error removing from wishlist", error });
-  }
-};
 // Lấy danh sách sản phẩm yêu thích
 exports.getWishlist = async (req, res) => {
   try {
