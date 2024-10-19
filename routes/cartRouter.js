@@ -9,8 +9,11 @@ const { protect } = require("../middlewares/authMiddleware");
 // Add product to cart
 router.post("/add-product-to-cart", protect, cartController.addProductToCart)
 
+//lấy giỏ hàng
+router.get('/get-user-card', protect, cartController.getUserCard)
+
 // Update the quantity of a product in the cart
-router.post("/update-cart-quantity", protect, cartController.updateCartQuantity)
+router.put("/update-cart-quantity", protect, cartController.updateCartQuantity)
 
 // Remove a product from the cart
 router.post("/remove-product-from-cart", protect, cartController.removeProductFromCart)

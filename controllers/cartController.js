@@ -2,6 +2,26 @@ const Product = require("../models/productModel");
 const Cart = require("../models/cartModels");
 const Size = require("../models/sizeModel");
 
+exports.getUserCard = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const userCard = await Cart.find({ user_id: userId })
+      .populate("product_id", "assets name price")
+      .populate("size_id", "name");
+
+    return res.status(200).json({ status: true, data: userCard });
+  } catch (error) {
+    console.log("error", error);
+
+    return res.status(500).json({
+      status: false,
+      message: "Failed to add product to cart",
+      error: error,
+    });
+  }
+};
+
 // API để thêm sản phẩm vào giỏ hàng
 exports.addProductToCart = async (req, res) => {
   try {
@@ -61,38 +81,32 @@ exports.addProductToCart = async (req, res) => {
 // API để cập nhật số lượng của sản phẩm trong giỏ hàng
 exports.updateCartQuantity = async (req, res) => {
   try {
-    const { product_id, size_name, quantity } = req.body;
-    const user = req.user;
+    const { product_id, size_id, quantity } = req.body;
     const user_id = req.user._id;
 
-    // Kiểm tra xem kích thước có tồn tại trong bộ sưu tập Size cho sản phẩm này không
-    const size = await Size.findOne({ name: size_name });
+    // Kiểm tra xem kích thước có tồn tại không
+    const size = await Size.findById(size_id);
     if (!size) {
       return res
         .status(400)
         .json({ status: false, message: "Invalid size for this product" });
     }
 
-    // Kiểm tra xem sản phẩm với kích thước đã cho có tồn tại trong giỏ hàng của người dùng không
+    // Kiểm tra xem sản phẩm có trong giỏ hàng không
     let cartItem = await Cart.findOne({
       user_id,
       product_id,
-      size_id: size._id,
+      size_id,
     });
+    
     if (!cartItem) {
       return res
         .status(404)
         .json({ status: false, message: "Product not found in the cart" });
     }
 
-    // Cập nhật số lượng của mục giỏ hàng
     if (quantity <= 0) {
-      // Nếu số lượng bằng 0 hoặc ít hơn, xóa mục khỏi giỏ hàng
       await Cart.deleteOne({ _id: cartItem._id });
-      user.cart = user.cart.filter(
-        (item) => item.toString() !== cartItem._id.toString()
-      );
-      await user.save();
 
       return res.status(200).json({
         status: true,
@@ -111,12 +125,10 @@ exports.updateCartQuantity = async (req, res) => {
     }
   } catch (error) {
     console.log("Error: ", error);
-    return res
-      .status(500)
-      .json({
-        status: false,
-        message: "Failed to update product quantity in cart",
-      });
+    return res.status(500).json({
+      status: false,
+      message: "Failed to update product quantity in cart",
+    });
   }
 };
 
