@@ -5,22 +5,31 @@ const Size = require("../models/sizeModel");
 // API để thêm sản phẩm vào giỏ hàng
 exports.addProductToCart = async (req, res) => {
   try {
-    const { product_id, size_name, quantity } = req.body;
+    const { product_id, size_id, quantity } = req.body;
     const user = req.user;
     const user_id = req.user._id;
 
     // Kiểm tra xem sản phẩm có tồn tại hay không và lấy kích thước
-    const product = await Product.findById(product_id).populate('size');
-    if (!product) return res.status(404).json({ status: false, message: "Product not found" });
+    const product = await Product.findById(product_id).populate("size");
+    if (!product)
+      return res
+        .status(404)
+        .json({ status: false, message: "Product not found" });
 
     // Kiểm tra xem kích thước có tồn tại trong bộ sưu tập Size cho sản phẩm này không
-    const size = await Size.findOne({ name: size_name });
+    const size = await Size.findById(size_id);
     if (!size) {
-      return res.status(400).json({ status: false, message: "Invalid size for this product" });
+      return res
+        .status(400)
+        .json({ status: false, message: "Invalid size for this product" });
     }
 
     // Kiểm tra xem sản phẩm và kích thước đã tồn tại trong giỏ hàng của người dùng chưa
-    let cartItem = await Cart.findOne({ user_id, product_id, size_id: size._id });
+    let cartItem = await Cart.findOne({
+      user_id,
+      product_id,
+      size_id: size_id,
+    });
 
     if (cartItem) {
       // Nếu sản phẩm đã tồn tại, tăng số lượng
@@ -43,7 +52,9 @@ exports.addProductToCart = async (req, res) => {
     });
   } catch (error) {
     console.error("Error: ", error);
-    return res.status(500).json({ status: false, message: "Failed to add product to cart" });
+    return res
+      .status(500)
+      .json({ status: false, message: "Failed to add product to cart" });
   }
 };
 
@@ -57,20 +68,30 @@ exports.updateCartQuantity = async (req, res) => {
     // Kiểm tra xem kích thước có tồn tại trong bộ sưu tập Size cho sản phẩm này không
     const size = await Size.findOne({ name: size_name });
     if (!size) {
-      return res.status(400).json({ status: false, message: "Invalid size for this product" });
+      return res
+        .status(400)
+        .json({ status: false, message: "Invalid size for this product" });
     }
 
     // Kiểm tra xem sản phẩm với kích thước đã cho có tồn tại trong giỏ hàng của người dùng không
-    let cartItem = await Cart.findOne({ user_id, product_id, size_id: size._id });
+    let cartItem = await Cart.findOne({
+      user_id,
+      product_id,
+      size_id: size._id,
+    });
     if (!cartItem) {
-      return res.status(404).json({ status: false, message: "Product not found in the cart" });
+      return res
+        .status(404)
+        .json({ status: false, message: "Product not found in the cart" });
     }
 
     // Cập nhật số lượng của mục giỏ hàng
     if (quantity <= 0) {
       // Nếu số lượng bằng 0 hoặc ít hơn, xóa mục khỏi giỏ hàng
       await Cart.deleteOne({ _id: cartItem._id });
-      user.cart = user.cart.filter((item) => item.toString() !== cartItem._id.toString());
+      user.cart = user.cart.filter(
+        (item) => item.toString() !== cartItem._id.toString()
+      );
       await user.save();
 
       return res.status(200).json({
@@ -90,7 +111,12 @@ exports.updateCartQuantity = async (req, res) => {
     }
   } catch (error) {
     console.log("Error: ", error);
-    return res.status(500).json({ status: false, message: "Failed to update product quantity in cart" });
+    return res
+      .status(500)
+      .json({
+        status: false,
+        message: "Failed to update product quantity in cart",
+      });
   }
 };
 
@@ -104,20 +130,30 @@ exports.removeProductFromCart = async (req, res) => {
     // Kiểm tra xem kích thước có tồn tại trong bộ sưu tập Size cho sản phẩm này không
     const size = await Size.findOne({ name: size_name });
     if (!size) {
-      return res.status(400).json({ status: false, message: "Invalid size for this product" });
+      return res
+        .status(400)
+        .json({ status: false, message: "Invalid size for this product" });
     }
 
     // Kiểm tra xem sản phẩm với kích thước đã cho có tồn tại trong giỏ hàng của người dùng không
-    let cartItem = await Cart.findOne({ user_id, product_id, size_id: size._id });
+    let cartItem = await Cart.findOne({
+      user_id,
+      product_id,
+      size_id: size._id,
+    });
     if (!cartItem) {
-      return res.status(404).json({ status: false, message: "Product not found in the cart" });
+      return res
+        .status(404)
+        .json({ status: false, message: "Product not found in the cart" });
     }
 
     // Xóa mục giỏ hàng từ bộ sưu tập Cart
     await Cart.deleteOne({ _id: cartItem._id });
 
     // Xóa tham chiếu sản phẩm từ mảng giỏ hàng của người dùng
-    user.cart = user.cart.filter((item) => item.toString() !== cartItem._id.toString());
+    user.cart = user.cart.filter(
+      (item) => item.toString() !== cartItem._id.toString()
+    );
     await user.save();
 
     return res.status(200).json({
@@ -126,7 +162,9 @@ exports.removeProductFromCart = async (req, res) => {
     });
   } catch (error) {
     console.log("Error: ", error);
-    return res.status(500).json({ status: false, message: "Failed to remove product from cart" });
+    return res
+      .status(500)
+      .json({ status: false, message: "Failed to remove product from cart" });
   }
 };
 
@@ -143,14 +181,14 @@ exports.calculateCartTotal = async (req, res) => {
     }
 
     // Tạo một mảng chứa tất cả product_id từ cartItems
-    const productIds = cartItems.map(cartItem => cartItem.product_id);
+    const productIds = cartItems.map((cartItem) => cartItem.product_id);
 
     // Lấy tất cả sản phẩm cùng một lúc
     const products = await Product.find({ _id: { $in: productIds } });
 
     // Tạo một map để ánh xạ product_id với sản phẩm
     const productMap = {};
-    products.forEach(product => {
+    products.forEach((product) => {
       productMap[product._id] = product;
     });
 
@@ -177,7 +215,9 @@ exports.calculateCartTotal = async (req, res) => {
     });
   } catch (error) {
     console.log("Error: ", error);
-    return res.status(500).json({ status: false, message: "Failed to calculate cart total" });
+    return res
+      .status(500)
+      .json({ status: false, message: "Failed to calculate cart total" });
   }
 };
 
@@ -189,7 +229,9 @@ exports.clearCart = async (req, res) => {
 
     // Kiểm tra xem giỏ hàng của người dùng có trống không
     if (!user.cart.length) {
-      return res.status(400).json({ status: false, message: "Cart is already empty" });
+      return res
+        .status(400)
+        .json({ status: false, message: "Cart is already empty" });
     }
 
     // Xóa tất cả sản phẩm trong giỏ hàng của người dùng
@@ -205,6 +247,8 @@ exports.clearCart = async (req, res) => {
     });
   } catch (error) {
     console.log("Error: ", error);
-    return res.status(500).json({ status: false, message: "Failed to clear cart" });
+    return res
+      .status(500)
+      .json({ status: false, message: "Failed to clear cart" });
   }
 };

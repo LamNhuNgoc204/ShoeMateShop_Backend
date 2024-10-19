@@ -12,11 +12,11 @@ exports.protect = async (req, res, next) => {
     token = req.headers.authorization.split(" ")[1];
   }
 
-  if (!token) {
-    return res
-      .status(401)
-      .json({ status: false, message: "Not authorized, no token" });
-  }
+  // if (!token) {
+  //   return res
+  //     .status(401)
+  //     .json({ status: false, message: "Not authorized, no token" });
+  // }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -28,13 +28,11 @@ exports.protect = async (req, res, next) => {
     }
 
     req.user = user;
-
-    next();
   } catch (error) {
-    return res
-      .status(401)
-      .json({ status: false, message: "Not authorized, token failed" });
+    console.log({ status: false, message: "Not authorized, token failed" });
   }
+
+  next();
 };
 
 // Middleware kiểm tra quyền admin hoặc nhân viên
@@ -48,24 +46,24 @@ exports.adminOrEmployee = (req, res, next) => {
 };
 
 exports.verifyToken = async (req, res, next) => {
-  const token = req.header("Authorization");
-
-  if (!token) {
-    return res
-      .status(401)
-      .json({ message: "Access Denied. No token provided." });
-  }
-
-  // Loại bỏ chuỗi "Bearer "
-  const actualToken = token.startsWith("Bearer ") ? token.slice(7) : token;
-
-  // Xác minh token
-  const verified = jwt.verify(actualToken, process.env.JWT_SECRET);
-
-  req.user = verified;
-
-  next();
   try {
+    const token = req.header("Authorization");
+
+    if (!token) {
+      return res
+        .status(401)
+        .json({ message: "Access Denied. No token provided." });
+    }
+
+    // Loại bỏ chuỗi "Bearer "
+    const actualToken = token.startsWith("Bearer ") ? token.slice(7) : token;
+
+    // Xác minh token
+    const verified = jwt.verify(actualToken, process.env.JWT_SECRET);
+
+    req.user = verified;
+
+    next();
   } catch (error) {
     return res.status(400).json({ message: "Invalid token." });
   }

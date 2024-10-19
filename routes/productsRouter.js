@@ -25,10 +25,10 @@ router.delete(
 );
 
 // API lấy tất cả sản phẩm
-router.get("/list-products", productController.getAllProducts);
+router.get("/list-products", protect, productController.getAllProducts);
 
 // API lấy sản phẩm theo ID
-router.get("/detail/:id", productController.getProductById);
+router.get("/detail/:id", protect, productController.getProductById);
 
 // API tìm kiếm sản phẩm
 router.get("/search", productController.searchProducts);

@@ -104,6 +104,8 @@ exports.deleteProduct = async (req, res) => {
 // Lấy danh sách tất cả sản phẩm
 exports.getAllProducts = async (req, res) => {
   try {
+    let userId = req.user ? req.user._id : null;
+
     const products = await Product.find()
       .populate({
         path: "brand",
@@ -137,6 +139,17 @@ exports.getAllProducts = async (req, res) => {
       // Gán rating trung bình và số lượt đánh giá vào sản phẩm
       product._doc.avgRating = avgRating;
       product._doc.numOfReviews = numOfReviews;
+
+      // Kiểm tra sp có thuộc trong danh sách yêu thích của user không
+      if (userId) {
+        const isFavorite = await Wishlist.exists({
+          user_id: userId,
+          product_id: product._id,
+        });
+        product._doc.isFavorite = !!isFavorite;
+      } else {
+        product._doc.isFavorite = false;
+      }
     }
 
     res.status(200).json(products);
@@ -175,6 +188,7 @@ exports.getAllSize = async (_, res) => {
 // Lấy chi tiết sản phẩm theo ID
 exports.getProductById = async (req, res) => {
   try {
+    const userId = req.user ? req.user._id : null;
     const { id } = req.params;
     const product = await Product.findById(id)
       .populate({
@@ -209,6 +223,16 @@ exports.getProductById = async (req, res) => {
 
     const reviewsOfProduct = await Review.find({ product_id: product._id });
     product._doc.reviewsOfProduct = reviewsOfProduct;
+
+    if (userId) {
+      const isFavorite = await Wishlist.exists({
+        user_id: userId,
+        product_id: id,
+      });
+      product._doc.isFavorite = !!isFavorite;
+    } else {
+      product._doc.isFavorite = false;
+    }
 
     return res.status(200).json(product);
   } catch (error) {
