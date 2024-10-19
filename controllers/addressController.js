@@ -1,6 +1,4 @@
 const Address = require("../models/addressModel");
-const User = require("../models/userModel");
-const { isValidPhoneNumber } = require("../utils/numberUtils");
 
 exports.addAddress = async (req, res) => {
   try {
@@ -13,7 +11,7 @@ exports.addAddress = async (req, res) => {
     });
     if (existingAddress) {
       return res
-        .status(409)
+        .status(400)
         .json({ message: "This address already exists for this user" });
     }
 
@@ -34,10 +32,6 @@ exports.addAddress = async (req, res) => {
       isDefault: isDefault || false,
     });
     await newAddress.save();
-
-    const currUser = await User.findById(user._id);
-    currUser.address.push(newAddress._id);
-    await currUser.save();
 
     return res.status(200).json({
       status: true,
