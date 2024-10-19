@@ -26,6 +26,9 @@ router.get('/get-conversations', protect, messageController.getConversations);
 router.get('/get-messages/:conversationId', protect, messageController.getMessages)
 
 
+//get all conversations 
+router.get('/get-all-conversations',protect, messageController.getAllConversations)
 
+router.get('/get-conversation/:conversationId', protect, messageController.getConversation);
 
 module.exports = router
