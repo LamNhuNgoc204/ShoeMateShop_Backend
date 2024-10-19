@@ -170,6 +170,7 @@ exports.getDefaultAddress = async (req, res) => {
       userId: userId,
       isDefault: true,
     });
+    
     if (!defaultAddress) {
       return res
         .status(404)
