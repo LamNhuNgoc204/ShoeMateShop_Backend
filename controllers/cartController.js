@@ -59,10 +59,6 @@ exports.addProductToCart = async (req, res) => {
       // Nếu không, tạo một mục giỏ hàng mới
       cartItem = new Cart({ user_id, product_id, size_id: size._id, quantity });
       await cartItem.save();
-
-      // Thêm mục giỏ hàng mới vào giỏ hàng của người dùng
-      user.cart.push(cartItem._id);
-      await user.save();
     }
 
     return res.status(200).json({
@@ -98,7 +94,7 @@ exports.updateCartQuantity = async (req, res) => {
       product_id,
       size_id,
     });
-    
+
     if (!cartItem) {
       return res
         .status(404)
@@ -135,24 +131,30 @@ exports.updateCartQuantity = async (req, res) => {
 // API để xóa một sản phẩm khỏi giỏ hàng
 exports.removeProductFromCart = async (req, res) => {
   try {
-    const { product_id, size_name } = req.body;
-    const user = req.user;
+    const { product_id, size_id } = req.body;
     const user_id = req.user._id;
 
-    // Kiểm tra xem kích thước có tồn tại trong bộ sưu tập Size cho sản phẩm này không
-    const size = await Size.findOne({ name: size_name });
+    console.log("size_id", size_id, " - ", product_id);
+
+    const product = await Product.findById(product_id);
+    if (!product)
+      return res
+        .status(401)
+        .json({ status: false, message: "Product not found" });
+
+    const size = await Size.findById(size_id);
     if (!size) {
       return res
         .status(400)
         .json({ status: false, message: "Invalid size for this product" });
     }
 
-    // Kiểm tra xem sản phẩm với kích thước đã cho có tồn tại trong giỏ hàng của người dùng không
-    let cartItem = await Cart.findOne({
+    const cartItem = await Cart.findOne({
       user_id,
       product_id,
-      size_id: size._id,
+      size_id: size_id,
     });
+
     if (!cartItem) {
       return res
         .status(404)
@@ -162,21 +164,17 @@ exports.removeProductFromCart = async (req, res) => {
     // Xóa mục giỏ hàng từ bộ sưu tập Cart
     await Cart.deleteOne({ _id: cartItem._id });
 
-    // Xóa tham chiếu sản phẩm từ mảng giỏ hàng của người dùng
-    user.cart = user.cart.filter(
-      (item) => item.toString() !== cartItem._id.toString()
-    );
-    await user.save();
-
     return res.status(200).json({
       status: true,
       message: "Product removed from cart successfully",
     });
   } catch (error) {
-    console.log("Error: ", error);
-    return res
-      .status(500)
-      .json({ status: false, message: "Failed to remove product from cart" });
+    console.error("Error removing product from cart: ", error);
+    return res.status(500).json({
+      status: false,
+      message: "Failed to remove product from cart",
+      error: error,
+    });
   }
 };
 
@@ -236,11 +234,12 @@ exports.calculateCartTotal = async (req, res) => {
 // API để xóa toàn bộ giỏ hàng
 exports.clearCart = async (req, res) => {
   try {
-    const user = req.user;
     const user_id = req.user._id;
 
     // Kiểm tra xem giỏ hàng của người dùng có trống không
-    if (!user.cart.length) {
+    const cartItems = await Cart.find({ user_id });
+
+    if (!cartItems.length) {
       return res
         .status(400)
         .json({ status: false, message: "Cart is already empty" });
@@ -249,16 +248,11 @@ exports.clearCart = async (req, res) => {
     // Xóa tất cả sản phẩm trong giỏ hàng của người dùng
     await Cart.deleteMany({ user_id });
 
-    // Xóa mảng giỏ hàng trong tài liệu của người dùng
-    user.cart = [];
-    await user.save();
-
     return res.status(200).json({
       status: true,
       message: "Cart cleared successfully",
     });
   } catch (error) {
-    console.log("Error: ", error);
     return res
       .status(500)
       .json({ status: false, message: "Failed to clear cart" });

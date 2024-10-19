@@ -7,22 +7,29 @@ const { protect } = require("../middlewares/authMiddleware");
 // http://localhost:3000/cart
 
 // Add product to cart
-router.post("/add-product-to-cart", protect, cartController.addProductToCart)
+router.post("/add-product-to-cart", protect, cartController.addProductToCart);
 
 //lấy giỏ hàng
-router.get('/get-user-card', protect, cartController.getUserCard)
+router.get("/get-user-card", protect, cartController.getUserCard);
 
 // Update the quantity of a product in the cart
-router.put("/update-cart-quantity", protect, cartController.updateCartQuantity)
-
-// Remove a product from the cart
-router.post("/remove-product-from-cart", protect, cartController.removeProductFromCart)
+router.put("/update-cart-quantity", protect, cartController.updateCartQuantity);
 
 // Calculate the total value of the cart
-router.post("/calculate-cart-total", protect, cartController.calculateCartTotal)
+router.post(
+  "/calculate-cart-total",
+  protect,
+  cartController.calculateCartTotal
+);
+
+// Remove a product from the cart
+router.delete(
+  "/remove-product-from-cart",
+  protect,
+  cartController.removeProductFromCart
+);
 
 // Clear the entire cart
-router.post("/clear-cart", protect, cartController.clearCart)
+router.delete("/clear-cart", protect, cartController.clearCart);
 
-
-module.exports = router
+module.exports = router;

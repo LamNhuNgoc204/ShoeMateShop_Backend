@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema({
   wallet: { type: mongoose.Schema.Types.ObjectId, ref: "wallet" },
   address: [{ type: mongoose.Schema.Types.ObjectId, ref: "address" }],
   search: [{ type: mongoose.Schema.Types.ObjectId, ref: "search" }],
-  cart: [{ type: mongoose.Schema.Types.ObjectId, ref: "cart" }],
+  // cart: [{ type: mongoose.Schema.Types.ObjectId, ref: "cart" }],
   wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "wishlist" }],
   isVerified: { type: Boolean, default: false },
   otpCode: { type: String },
