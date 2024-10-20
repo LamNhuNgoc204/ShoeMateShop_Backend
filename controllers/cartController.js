@@ -101,6 +101,11 @@ exports.removeProductFromCart = async (req, res) => {
     const user = req.user;
     const user_id = req.user._id;
 
+    if (!product_id || !size_name) {
+      console.log("Missing product_id or size_name");
+      return res.status(400).json({ status: false, message: "Missing product_id or size_name" });
+    }
+
     // Kiểm tra xem kích thước có tồn tại trong bộ sưu tập Size cho sản phẩm này không
     const size = await Size.findOne({ name: size_name });
     if (!size) {
@@ -110,11 +115,13 @@ exports.removeProductFromCart = async (req, res) => {
     // Kiểm tra xem sản phẩm với kích thước đã cho có tồn tại trong giỏ hàng của người dùng không
     let cartItem = await Cart.findOne({ user_id, product_id, size_id: size._id });
     if (!cartItem) {
+      console.log("Product not found in the cart for user:", user_id);
       return res.status(404).json({ status: false, message: "Product not found in the cart" });
     }
 
     // Xóa mục giỏ hàng từ bộ sưu tập Cart
     await Cart.deleteOne({ _id: cartItem._id });
+    console.log("Deleted cartItem:", cartItem._id);
 
     // Xóa tham chiếu sản phẩm từ mảng giỏ hàng của người dùng
     user.cart = user.cart.filter((item) => item.toString() !== cartItem._id.toString());
@@ -125,7 +132,7 @@ exports.removeProductFromCart = async (req, res) => {
       message: "Product removed from cart successfully",
     });
   } catch (error) {
-    console.log("Error: ", error);
+    console.log("Error in removeProductFromCart:", error);
     return res.status(500).json({ status: false, message: "Failed to remove product from cart" });
   }
 };
@@ -206,5 +213,51 @@ exports.clearCart = async (req, res) => {
   } catch (error) {
     console.log("Error: ", error);
     return res.status(500).json({ status: false, message: "Failed to clear cart" });
+  }
+};
+
+// API để lấy chi tiết giỏ hàng của người dùng
+exports.getCartByUserId = async (req, res) => {
+  try {
+    const user_id = req.user._id;
+
+    let cartItems = await Cart.find({ user_id });
+
+    if (!cartItems.length) {
+      return res.status(404).json({ status: false, message: "Giỏ hàng trống" });
+    }
+
+    const cartDetails = [];
+
+    for (const item of cartItems) {
+      const product = await Product.findById(item.product_id);
+      const size = await Size.findById(item.size_id);
+
+      if (!product || !size) {
+        console.warn(`Không tìm thấy sản phẩm hoặc kích thước cho item ID: ${item._id}`);
+        continue;
+      }
+
+      cartDetails.push({
+        name: product.name,
+        product_id: product._id,
+        assets: product.assets,
+        price: product.price,
+        productDiscount: product.discount,
+        sizeName: size.name,
+        size_id: size._id,
+        quantity: item.quantity,
+        finalPrice: (product.price * (1 - (product.discount || 0) / 100)).toFixed(2),
+      });
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: "Lấy giỏ hàng thành công",
+      cart: cartDetails,
+    });
+  } catch (error) {
+    console.log("Lỗi: ", error);
+    return res.status(500).json({ status: false, message: "Lấy chi tiết giỏ hàng thất bại" });
   }
 };

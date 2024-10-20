@@ -10,7 +10,7 @@ const { protect } = require("../middlewares/authMiddleware");
 router.post("/add-product-to-cart", protect, cartController.addProductToCart)
 
 // Update the quantity of a product in the cart
-router.post("/update-cart-quantity", protect, cartController.updateCartQuantity)
+router.put("/update-cart-quantity", protect, cartController.updateCartQuantity)
 
 // Remove a product from the cart
 router.post("/remove-product-from-cart", protect, cartController.removeProductFromCart)
@@ -19,7 +19,9 @@ router.post("/remove-product-from-cart", protect, cartController.removeProductFr
 router.post("/calculate-cart-total", protect, cartController.calculateCartTotal)
 
 // Clear the entire cart
-router.post("/clear-cart", protect, cartController.clearCart)
+router.delete("/clear-cart", protect, cartController.clearCart)
 
+// Get Cart By User Id
+router.get("/get-cart-by-user-id", protect, cartController.getCartByUserId)
 
 module.exports = router
