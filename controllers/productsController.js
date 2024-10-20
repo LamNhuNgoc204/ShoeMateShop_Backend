@@ -289,7 +289,6 @@ exports.addToWishlist = async (req, res) => {
         .status(200)
         .json({ status: true, message: "Added to wishlist" });
     } else {
-      await Wishlist.deleteOne({ _id: existingWishlistItem._id });
       return res
         .status(200)
         .json({ status: true, message: "Removed from wishlist" });
@@ -305,8 +304,7 @@ exports.getWishlist = async (req, res) => {
     const userId = req.user._id;
     // console.log("userId", userId);
     const wishlistItems = await Wishlist.find({ user_id: userId }).populate(
-      "product_id",
-      "assets name price"
+      "product_id"
     );
 
     // console.log("wishlistItems", wishlistItems);
