@@ -48,4 +48,11 @@ router.get("/list-categories", productController.getAllCate);
 // Lấy tất cả sizes
 router.get("/list-sizes", productController.getAllSize);
 
+//Xoa 1 sp
+router.delete(
+  "/remove-item-wishlist/:productId",
+  protect,
+  productController.removeFromWishlist
+);
+
 module.exports = router;
