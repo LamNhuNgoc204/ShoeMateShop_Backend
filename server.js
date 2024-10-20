@@ -31,6 +31,7 @@ const messageRouter = require("./routes/messageRouter");
 const paymentRouter = require("./routes/paymentRouter");
 const sizeRouter = require("./routes/sizeRouter");
 const brandRouter = require("./routes/brandRouter");
+const filterRouter = require('./routes/filterRouter');
 
 
 // view engine setup
@@ -67,6 +68,7 @@ app.use("/messages", messageRouter);
 app.use("/payment", paymentRouter);
 app.use("/sizes", sizeRouter);
 app.use("/brands", brandRouter);
+app.use('/filter', filterRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
