@@ -72,3 +72,19 @@ exports.updateBrand = async (req, res) => {
     return res.status(500).json({ status: false, message: "Server error" });
   }
 };
+
+
+exports.getAllBrand = async (req, res) => {
+  try {
+    const brand = await Brands.find({});
+    return res.status(200).json({
+      status: true,
+      message: "Get all brand success",
+      data: brand,
+    });
+  } catch (error) {
+    console.error("Error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+    
+  }
+}

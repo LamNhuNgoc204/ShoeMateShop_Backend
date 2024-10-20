@@ -1,9 +1,10 @@
-const Product = require("../models/productModel");
+const mongoose = require("mongoose");
 const Size = require("../models/sizeModel");
 const Brand = require("../models/brandModel");
-const Categories = require("../models/categoryModel");
-const Wishlist = require("../models/wishlistModel");
 const Review = require("../models/reviewModel");
+const Product = require("../models/productModel");
+const Wishlist = require("../models/wishlistModel");
+const Categories = require("../models/categoryModel");
 
 // Thêm sản phẩm mới (Chỉ admin hoặc nhân viên)
 exports.createProduct = async (req, res) => {
@@ -42,6 +43,7 @@ exports.createProduct = async (req, res) => {
     res.status(500).json({ message: "Error creating product", error });
   }
 };
+
 // Cập nhật sản phẩm theo ID (Chỉ admin hoặc nhân viên)
 exports.updateProduct = async (req, res) => {
   try {
@@ -103,6 +105,8 @@ exports.deleteProduct = async (req, res) => {
 // Lấy danh sách tất cả sản phẩm
 exports.getAllProducts = async (req, res) => {
   try {
+    let userId = req.user ? req.user._id : null;
+
     const products = await Product.find()
       .populate({
         path: "brand",
@@ -136,6 +140,17 @@ exports.getAllProducts = async (req, res) => {
       // Gán rating trung bình và số lượt đánh giá vào sản phẩm
       product._doc.avgRating = avgRating;
       product._doc.numOfReviews = numOfReviews;
+
+      // Kiểm tra sp có thuộc trong danh sách yêu thích của user không
+      if (userId) {
+        const isFavorite = await Wishlist.exists({
+          user_id: userId,
+          product_id: product._id,
+        });
+        product._doc.isFavorite = !!isFavorite;
+      } else {
+        product._doc.isFavorite = false;
+      }
     }
 
     res.status(200).json(products);
@@ -171,10 +186,11 @@ exports.getAllSize = async (_, res) => {
   }
 };
 
-// Lấy chi tiết sản phẩm theo ID
 exports.getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id)
+    const userId = req.user ? req.user._id : null;
+    const { id } = req.params;
+    const product = await Product.findById(id)
       .populate({
         path: "brand",
         select: "name",
@@ -192,13 +208,38 @@ exports.getProductById = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    res.status(200).json(product);
+    const reviews = await Review.find({ product_id: product._id }).select(
+      "rating"
+    );
+
+    const totalRating = reviews.reduce((acc, review) => acc + review.rating, 0);
+    const numOfReviews = reviews.length;
+    const avgRating = numOfReviews
+      ? (totalRating / numOfReviews).toFixed(1)
+      : 0;
+
+    product._doc.avgRating = avgRating;
+    product._doc.numOfReviews = numOfReviews;
+
+    const reviewsOfProduct = await Review.find({ product_id: product._id });
+    product._doc.reviewsOfProduct = reviewsOfProduct;
+
+    if (userId) {
+      const isFavorite = await Wishlist.exists({
+        user_id: userId,
+        product_id: id,
+      });
+      product._doc.isFavorite = !!isFavorite;
+    } else {
+      product._doc.isFavorite = false;
+    }
+
+    return res.status(200).json(product);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching product", error });
+    return res.status(500).json({ message: "Error fetching product", error });
   }
 };
 
-// Tìm kiếm sản phẩm theo tên hoặc mô tả
 exports.searchProducts = async (req, res) => {
   const { query } = req.query;
 
@@ -221,11 +262,16 @@ exports.searchProducts = async (req, res) => {
   }
 };
 
-// Thêm sản phẩm vào danh sách yêu thích
 exports.addToWishlist = async (req, res) => {
   try {
     const userId = req.user._id;
     const productId = req.params.id;
+
+    console.log("userid", userId, "productId", productId);
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({ message: "Invalid product ID" });
+    }
 
     const existingWishlistItem = await Wishlist.findOne({
       user_id: userId,
@@ -239,45 +285,92 @@ exports.addToWishlist = async (req, res) => {
       });
 
       await newWishlistItem.save();
+      return res
+        .status(200)
+        .json({ status: true, message: "Added to wishlist" });
+    } else {
+      return res
+        .status(200)
+        .json({ status: true, message: "Removed from wishlist" });
     }
-
-    const wishlist = await Wishlist.find({ user_id: userId }).populate(
-      "product_id"
-    );
-
-    res.status(200).json(wishlist);
   } catch (error) {
-    res.status(500).json({ message: "Error adding to wishlist", error });
+    console.error(error);
+    res.status(500).json({ message: "Error updating wishlist", error });
   }
 };
 
-// Xóa sản phẩm khỏi danh sách yêu thích
-exports.removeFromWishlist = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const productId = req.params.id;
-
-    await Wishlist.findOneAndDelete({ user_id: userId, product_id: productId });
-
-    const wishlist = await Wishlist.find({ user_id: userId }).populate(
-      "product_id"
-    );
-
-    res.status(200).json(wishlist);
-  } catch (error) {
-    res.status(500).json({ message: "Error removing from wishlist", error });
-  }
-};
-// Lấy danh sách sản phẩm yêu thích
 exports.getWishlist = async (req, res) => {
   try {
     const userId = req.user._id;
-    console.log(userId);
+    // console.log("userId", userId);
     const wishlistItems = await Wishlist.find({ user_id: userId }).populate(
       "product_id"
     );
-    res.status(200).json({ status: true, data: wishlistItems });
+
+    // console.log("wishlistItems", wishlistItems);
+
+    for (const item of wishlistItems) {
+      // console.log("item.product_id", item.product_id);
+
+      const reviews = await Review.find({
+        product_id: item.product_id._id,
+      }).select("rating");
+
+      const totalRating = reviews.reduce(
+        (acc, review) => acc + review.rating,
+        0
+      );
+      const numOfReviews = reviews.length;
+      const avgRating = numOfReviews
+        ? (totalRating / numOfReviews).toFixed(1)
+        : 0;
+
+      item._doc.avgRating = avgRating;
+      item._doc.numOfReviews = numOfReviews;
+      item._doc.isFavorite = true;
+    }
+
+    return res.status(200).json({ status: true, data: wishlistItems });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching wishlist", error });
+    console.error("Error fetching wishlist:", error);
+    return res.status(500).json({
+      status: false,
+      message: "Error fetching wishlist",
+      error: error,
+    });
+  }
+};
+
+exports.removeFromWishlist = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { productId } = req.params;
+    // console.log("productId", productId);
+
+    const existingWishlistItem = await Wishlist.findOne({
+      user_id: userId,
+      product_id: productId,
+    });
+
+    if (!existingWishlistItem) {
+      return res.status(404).json({
+        status: false,
+        message: "Product not found in wishlist or already removed.",
+      });
+    }
+
+    await Wishlist.deleteOne({ _id: existingWishlistItem._id });
+
+    return res.status(200).json({
+      status: true,
+      message: "Product removed from wishlist successfully.",
+    });
+  } catch (error) {
+    console.error("Error removing product from wishlist:", error);
+    return res.status(500).json({
+      status: false,
+      message: "Error removing product from wishlist.",
+      error: error.message,
+    });
   }
 };

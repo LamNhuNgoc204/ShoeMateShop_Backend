@@ -25,34 +25,34 @@ router.delete(
 );
 
 // API lấy tất cả sản phẩm
-router.get("/list-products", productController.getAllProducts);
+router.get("/list-products", protect, productController.getAllProducts);
 
 // API lấy sản phẩm theo ID
-router.get("/detail/:id", productController.getProductById);
+router.get("/detail/:id", protect, productController.getProductById);
 
 // API tìm kiếm sản phẩm
 router.get("/search", productController.searchProducts);
 
 // API thêm sản phẩm vào danh sách yêu thích
-router.post("/wishlist/add/:id", protect, productController.addToWishlist);
+router.post("/addtowishlist/:id", protect, productController.addToWishlist);
 
-// API xóa sản phẩm khỏi danh sách yêu thích
+// API lấy danh sách sản phẩm yêu thích
+router.get("/wishlist", protect, productController.getWishlist);
+
+//Lấy tất cả thương hiệu
+router.get("/list-brands", productController.getAllBrands);
+
+// Lấy tất cả danh mục
+router.get("/list-categories", productController.getAllCate);
+
+// Lấy tất cả sizes
+router.get("/list-sizes", productController.getAllSize);
+
+//Xoa 1 sp
 router.delete(
-  "/wishlist/remove/:id",
+  "/remove-item-wishlist/:productId",
   protect,
   productController.removeFromWishlist
 );
-
-// API lấy danh sách sản phẩm yêu thích
-router.get("/wishlist/list", protect, productController.getWishlist);
-
-//Lấy tất cả thương hiệu
-router.get("/list-brands",  productController.getAllBrands);
-
-// Lấy tất cả danh mục
-router.get("/list-categories",  productController.getAllCate);
-
-// Lấy tất cả sizes
-router.get("/list-sizes",  productController.getAllSize);
 
 module.exports = router;

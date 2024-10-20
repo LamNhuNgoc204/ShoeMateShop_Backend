@@ -7,7 +7,7 @@ const { protect } = require("../middlewares/authMiddleware");
 // http://localhost:3000/cart
 
 // Add product to cart
-router.post("/add-product-to-cart", protect, cartController.addProductToCart)
+router.post("/add-product-to-cart", protect, cartController.addProductToCart);
 
 // Update the quantity of a product in the cart
 router.put("/update-cart-quantity", protect, cartController.updateCartQuantity)
@@ -16,7 +16,11 @@ router.put("/update-cart-quantity", protect, cartController.updateCartQuantity)
 router.post("/remove-product-from-cart", protect, cartController.removeProductFromCart)
 
 // Calculate the total value of the cart
-router.post("/calculate-cart-total", protect, cartController.calculateCartTotal)
+router.post(
+  "/calculate-cart-total",
+  protect,
+  cartController.calculateCartTotal
+);
 
 // Clear the entire cart
 router.delete("/clear-cart", protect, cartController.clearCart)

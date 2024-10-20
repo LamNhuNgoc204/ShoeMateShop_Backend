@@ -33,4 +33,7 @@ router.put(
   controller.updateBrand
 );
 
+
+router.get('/get-all-brand', protect, controller.getAllBrand);
+
 module.exports = router;
