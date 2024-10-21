@@ -3,36 +3,6 @@ const router = express.Router();
 const PaymentController = require("../controllers/paymentController");
 //localhost:3000/payment
 
-router.post("/", PaymentController.paymentFunction);
-
-router.post("/callback", PaymentController.notifycation);
-
-router.post("order-status/:app_trans_id", PaymentController.orderStatus);
-
-// THEM PAYMENT METHOD
-router.post('/add-payment-method', PaymentController.createNewMethod)
-
-router.get('/getall-payment', PaymentController.getAllPaymentMethod)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 //Confirm successful payment
 router.post("/confirm-payment", PaymentController.confirmPayment);
 
