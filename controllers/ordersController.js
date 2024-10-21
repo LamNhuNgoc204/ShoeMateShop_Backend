@@ -9,7 +9,6 @@ const User = require("../models/userModel");
 // API Create a new order
 exports.createNewOrder = async (req, res) => {
   let {
-    user_id,
     voucher_id,
     payment_method,
     receiver,
@@ -18,6 +17,8 @@ exports.createNewOrder = async (req, res) => {
     items,
     total_price,
   } = req.body;
+
+  const user_id = req.user._id;
 
   try {
     // Validate user
@@ -125,7 +126,6 @@ exports.createNewOrder = async (req, res) => {
     });
   }
 }
-
 
 // API to update order status
 exports.updateOrderStatus = async (req, res) => {
@@ -306,8 +306,8 @@ exports.getOrderStatus = async (req, res) => {
 
 // API to create a return request for an order
 exports.createReturnRequest = async (req, res) => {
-  const { order_id } = req.params; // Get order ID from the route parameters
-  const { reason } = req.body; // Get the return reason from the request body
+  const { order_id } = req.params;
+  const { reason } = req.body;
 
   try {
     // Find the order by ID
@@ -390,7 +390,7 @@ exports.getAllReturnRequests = async (req, res) => {
 
 // API to get completed orders for a specific user
 exports.getCompletedOrdersByUser = async (req, res) => {
-  const { user_id } = req.params; // User ID from request parameters
+  const { user_id } = req.params;
 
   try {
     // Find completed orders for the given user

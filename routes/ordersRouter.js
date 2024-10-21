@@ -1,17 +1,18 @@
 var express = require('express');
 var router = express.Router();
 const orderController = require("../controllers/ordersController");
+const { protect, adminOrEmployee} = require("../middlewares/authMiddleware");
 
 //http://localhost:3000/orders
 
 //Create a new order
-router.post("/create-new-order", orderController.createNewOrder);
+router.post("/create-new-order", protect, orderController.createNewOrder);
 
 //Update order status
-router.post("/update-order-status", orderController.updateOrderStatus);
+router.post("/update-order-status", adminOrEmployee, orderController.updateOrderStatus);
 
 //Get user's order history
-router.get("/user-order-history/:user_id", orderController.getUserOrderHistory);
+router.get("/user-order-history/:user_id", adminOrEmployee, orderController.getUserOrderHistory);
 
 //Cancel an order
 router.delete("/cancel-order/:order_id", orderController.cancelOrder);
@@ -35,12 +36,12 @@ router.get("/completed-orders/:user_id", orderController.getCompletedOrdersByUse
 router.get("/all-orders", orderController.getAllOrders);
 
 //Get pending orders by user
-router.get("/pending-orders/:user_id", orderController.getPendingOrdersByUser);
+router.get("/pending-orders/:user_id", adminOrEmployee, orderController.getPendingOrdersByUser);
 
 //Get canceled orders
-router.get("/canceled-orders", orderController.getCanceledOrders);
+router.get("/canceled-orders", adminOrEmployee, orderController.getCanceledOrders);
 
 //Get completed orders
-router.get("/completed-orders", orderController.getCompletedOrders);
+router.get("/completed-orders", adminOrEmployee, orderController.getCompletedOrders);
 
 module.exports = router;
