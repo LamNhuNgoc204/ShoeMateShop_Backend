@@ -115,12 +115,66 @@ exports.getUserOrder = async (req, res) => {
 
       // Phân loại đơn hàng theo trạng thái
       categorizedOrders[order.status].push({
-        ...order.toObject(), // Chuyển đổi order thành object
-        orderDetails: details, // Gán OrderDetail vào đơn hàng
+        ...order.toObject(),
+        orderDetails: details,
       });
     });
 
     return res.status(201).json({ status: true, data: categorizedOrders });
+  } catch (error) {
+    console.log("create new order error: ", error);
+    return res
+      .status(500)
+      .json({ status: false, message: "Server error", error: error.message });
+  }
+};
+
+exports.getAllOrdersForAdmin = async (req, res) => {
+  try {
+    const orders = await Order.find({})
+      .populate("user_id", "username email")
+      .populate("payment_id.payment_method_id", "payment_method")
+      .populate(
+        "voucher_id",
+        "discount_value voucher_name min_order_value max_discount_value"
+      )
+      .populate("shipping_id", "name cost createdAt updatedAt")
+      .populate({
+        path: "orderDetails",
+        select:
+          "product.id product.name product.size_name product.price product.pd_image product.pd_quantity",
+      });
+    return res.status(200).json({ status: true, data: orders });
+  } catch (error) {
+    console.log("create new order error: ", error);
+    return res
+      .status(500)
+      .json({ status: false, message: "Server error", error: error.message });
+  }
+};
+
+exports.updateOrderAddress = async (req, res) => {
+  try {
+    const orderId = req.order._id;
+    const { receiver, receiverPhone, address } = req.body;
+
+    const updatedOrder = await Order.findByIdAndUpdate(
+      orderId,
+      { receiver, receiverPhone, address },
+      { new: true }
+    );
+
+    if (!updatedOrder) {
+      return res
+        .status(404)
+        .json({ status: false, message: "Order not found!" });
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: "Order updated successfully!",
+      data: updatedOrder,
+    });
   } catch (error) {
     console.log("create new order error: ", error);
     return res

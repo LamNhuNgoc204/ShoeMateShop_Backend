@@ -20,6 +20,20 @@ router.get(
   control.getUserOrder
 );
 
+router.get(
+  "/get-all-orders",
+  protect,
+  adminOrEmployee,
+  control.getAllOrdersForAdmin
+);
+
+router.put(
+  "/update-order-address/:orderId",
+  // protect,
+  middle.checkOrderUpdate,
+  control.updateOrderAddress
+);
+
 module.exports = router;
 
 // //Create a new order

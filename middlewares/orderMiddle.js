@@ -65,4 +65,33 @@ const checkUserOrder = async (req, res, next) => {
   next();
 };
 
-module.exports = { validateOrder, checkUserOrder };
+const checkOrderUpdate = async (req, res, next) => {
+  const { orderId } = req.params;
+  const { receiver, receiverPhone, address } = req.body;
+
+  if (!isValidPhoneNumber(receiverPhone)) {
+    return res.status(404).json({ status: false, message: "Invalid phone!" });
+  }
+
+  if (!receiver) {
+    return res
+      .status(404)
+      .json({ status: false, message: "Rêciver is required!" });
+  }
+
+  if (!address) {
+    return res
+      .status(404)
+      .json({ status: false, message: "Rêciver is required!" });
+  }
+
+  const order = await Order.findById(orderId);
+  if (!order) {
+    return res.status(404).json({ status: false, message: "Order not found!" });
+  }
+
+  req.order = order;
+  next();
+};
+
+module.exports = { validateOrder, checkUserOrder, checkOrderUpdate };

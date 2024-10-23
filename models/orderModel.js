@@ -15,6 +15,12 @@ const orderSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "shipping",
   },
+  orderDetails: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "orderDetail",
+    },
+  ],
   total_price: { type: Number, required: true },
   //Comfimed order
   status: {
