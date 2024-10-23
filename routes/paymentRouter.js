@@ -4,26 +4,23 @@ const PaymentController = require("../controllers/paymentController");
 //localhost:3000/payment
 
 // ZALO PAY
-router.post("/", PaymentController.paymentFunction);
+router.post("/", PaymentController.Zalopayment);
 
-router.post("/callback", PaymentController.notifycation);
+router.post("/zalo/callback", PaymentController.notifycation);
 
 router.post("order-status/:app_trans_id", PaymentController.orderStatus);
 
+// MOMO
+router.post("/momo", PaymentController.paymnetMomo);
+
+router.post("/momo/callback", PaymentController.callback);
+
+router.post("/momo/order-status", PaymentController.momoOrderStatus);
+
 // THEM PAYMENT METHOD
-router.post('/add-payment-method', PaymentController.createNewMethod)
+router.post("/add-payment-method", PaymentController.createNewMethod);
 
-router.get('/getall-payment', PaymentController.getAllPaymentMethod)
-
-
-
-
-
-
-
-
-
-
+router.get("/getall-payment", PaymentController.getAllPaymentMethod);
 
 // THANH TOÁn ONLINE DO SHOP TỰ ĐI THU :)
 

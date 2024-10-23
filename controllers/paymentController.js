@@ -14,7 +14,7 @@ const config = {
   endpoint: "https://sb-openapi.zalopay.vn/v2/create",
 };
 
-exports.paymentFunction = async (req, res) => {
+exports.Zalopayment = async (req, res) => {
   const { username, amount } = req.body;
   const embed_data = "{}";
   const items = "[{}]";
@@ -30,7 +30,8 @@ exports.paymentFunction = async (req, res) => {
     amount: amount,
     description: `ShoeMate - Payment for the order #${transID}`,
     bank_code: "",
-    callback_url: "localhost://3000/payment/callbaclk",
+    callback_url:
+      "https://72cc-2405-4802-93f3-ab70-9d52-6883-a556-f78.ngrok-free.app/zalo/callback",
   };
 
   // appid|app_trans_id|appuser|amount|apptime|embeddata|item
@@ -164,6 +165,146 @@ exports.getAllPaymentMethod = async (req, res) => {
   }
 };
 
+// MOMO
+const crypto = require("crypto");
+var accessKey = "F8BBA842ECF85";
+var secretKey = "K951B6PE1waDMi640xX08PD3vg6EkVlz";
+
+exports.paymnetMomo = async (req, res) => {
+  var partnerCode = "MOMO";
+  var orderInfo = "pay with MoMo";
+  var redirectUrl = "";
+  var ipnUrl =
+    "https://72cc-2405-4802-93f3-ab70-9d52-6883-a556-f78.ngrok-free.app/momo/callback";
+  var requestType = "payWithMethod";
+  var amount = "50000";
+  var orderId = partnerCode + new Date().getTime();
+  var requestId = orderId;
+  var extraData = "";
+  var paymentCode =
+    "T8Qii53fAXyUftPV3m9ysyRhEanUs9KlOPfHgpMR0ON50U10Bh+vZdpJU7VY4z+Z2y77fJHkoDc69scwwzLuW5MzeUKTwPo3ZMaB29imm6YulqnWfTkgzqRaion+EuD7FN9wZ4aXE1+mRt0gHsU193y+yxtRgpmY7SDMU9hCKoQtYyHsfFR5FUAOAKMdw2fzQqpToei3rnaYvZuYaxolprm9+/+WIETnPUDlxCYOiw7vPeaaYQQH0BF0TxyU3zu36ODx980rJvPAgtJzH1gUrlxcSS1HQeQ9ZaVM1eOK/jl8KJm6ijOwErHGbgf/hVymUQG65rHU2MWz9U8QUjvDWA==";
+  var orderGroupId = "";
+  var autoCapture = true;
+  var lang = "vi";
+
+  var rawSignature =
+    "accessKey=" +
+    accessKey +
+    "&amount=" +
+    amount +
+    "&extraData=" +
+    extraData +
+    "&ipnUrl=" +
+    ipnUrl +
+    "&orderId=" +
+    orderId +
+    "&orderInfo=" +
+    orderInfo +
+    "&partnerCode=" +
+    partnerCode +
+    "&redirectUrl=" +
+    redirectUrl +
+    "&requestId=" +
+    requestId +
+    "&requestType=" +
+    requestType;
+  //puts raw signature
+  console.log("--------------------RAW SIGNATURE----------------");
+  console.log(rawSignature);
+  //signature
+  var signature = crypto
+    .createHmac("sha256", secretKey)
+    .update(rawSignature)
+    .digest("hex");
+  console.log("--------------------SIGNATURE----------------");
+  console.log(signature);
+
+  //json object send to MoMo endpoint
+  const requestBody = JSON.stringify({
+    partnerCode: partnerCode,
+    partnerName: "Test",
+    storeId: "MomoTestStore",
+    requestId: requestId,
+    amount: amount,
+    orderId: orderId,
+    orderInfo: orderInfo,
+    redirectUrl: redirectUrl,
+    ipnUrl: ipnUrl,
+    lang: lang,
+    requestType: requestType,
+    autoCapture: autoCapture,
+    extraData: extraData,
+    orderGroupId: orderGroupId,
+    signature: signature,
+  });
+
+  const option = {
+    method: "POST",
+    url: "https://test-payment.momo.vn/v2/gateway/api/create",
+    headers: {
+      "Content-Type": "application/json",
+      "Content-Length": Buffer.byteLength(requestBody),
+    },
+    data: requestBody,
+  };
+
+  let result;
+  try {
+    result = await axios(option);
+    return res.status(200).json(result.data);
+  } catch (error) {
+    console.log("errror ===> ", error);
+
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
+exports.callback = async (req, res) => {
+  //https://72cc-2405-4802-93f3-ab70-9d52-6883-a556-f78.ngrok-free.app
+  console.log("callback: ");
+  console.log(req.body);
+
+  return res.status(200).json(req.body);
+};
+
+exports.momoOrderStatus = async (req, res) => {
+  var { orderId } = req.body;
+
+  const rawSignature = `accessKey=${accessKey}&orderId=${orderId}&partnerCode=MOMO&requestId=${orderId}`;
+
+  var signature = crypto
+    .createHmac("sha256", secretKey)
+    .update(rawSignature)
+    .digest("hex");
+
+  const requestBody = JSON.stringify({
+    partnerCode: "MOMO",
+    orderId: orderId,
+    requestId: orderId,
+    lang: "vi",
+    signature: signature,
+  });
+
+  let options = {
+    method: "POST",
+    url: "https://test-payment.momo.vn/v2/gateway/api/query",
+    headers: {
+      "Content-Type": "application/json",
+      "Content-Length": Buffer.byteLength(requestBody),
+    },
+    data: requestBody,
+  };
+
+  try {
+    const result = await axios(options);
+    return res.status(200).json(result.data);
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json(error);
+  }
+};
+
 // API Confirm successful payment
 exports.confirmPayment = async (req, res) => {
   const { order_id, payment_id } = req.body;
@@ -248,12 +389,10 @@ exports.processRefund = async (req, res) => {
     }
 
     // Respond with success message
-    res
-      .status(200)
-      .json({
-        message: "Refund request processed successfully",
-        order_id: order._id,
-      });
+    res.status(200).json({
+      message: "Refund request processed successfully",
+      order_id: order._id,
+    });
   } catch (error) {
     console.error("Error processing refund:", error);
     res.status(500).json({
@@ -302,12 +441,10 @@ exports.savePaymentInfo = async (req, res) => {
     await order.save();
 
     // Phản hồi thành công
-    res
-      .status(201)
-      .json({
-        message: "Payment information saved and updated successfully",
-        payment_id: payment._id,
-      });
+    res.status(201).json({
+      message: "Payment information saved and updated successfully",
+      payment_id: payment._id,
+    });
   } catch (error) {
     console.error("Error saving payment information:", error);
     res.status(500).json({
@@ -331,12 +468,10 @@ exports.getPayments = async (req, res) => {
       }
 
       // Trả về thông tin thanh toán
-      return res
-        .status(200)
-        .json({
-          message: "Payment information retrieved successfully",
-          payment,
-        });
+      return res.status(200).json({
+        message: "Payment information retrieved successfully",
+        payment,
+      });
     } else {
       // Nếu không có payment_id, lấy tất cả các bản ghi thanh toán
       const payments = await Payment.find().populate("order_id"); // Có thể populate để lấy thông tin đơn hàng
@@ -451,13 +586,11 @@ exports.cancelPayment = async (req, res) => {
     }
 
     // Phản hồi thành công
-    res
-      .status(200)
-      .json({
-        message:
-          "Payment canceled successfully, and order status updated to pending.",
-        payment,
-      });
+    res.status(200).json({
+      message:
+        "Payment canceled successfully, and order status updated to pending.",
+      payment,
+    });
   } catch (error) {
     console.error("Error canceling payment and updating order:", error);
     res.status(500).json({
