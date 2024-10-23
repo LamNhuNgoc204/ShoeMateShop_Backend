@@ -14,6 +14,10 @@ const shippingSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  order_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "order",
+  },
   trackingAvailable: {
     type: Boolean,
     default: false,
