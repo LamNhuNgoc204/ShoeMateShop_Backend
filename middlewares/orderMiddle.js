@@ -1,10 +1,35 @@
 const { isValidPhoneNumber } = require("../utils/numberUtils");
 const Order = require("../models/orderModel");
 const mongoose = require("mongoose");
+const paymentMethod = require("../models/paymentMethod");
+const Voucher = require("../models/voucherModel");
+const Ship = require("../models/shippingModel");
 
 const validateOrder = (req, res, next) => {
-  const { products, method_id, total_price, receiver, receiverPhone, address } =
-    req.body;
+  const {
+    products,
+    method_id,
+    voucher_id,
+    shipping_id,
+    total_price,
+    receiver,
+    receiverPhone,
+    address,
+  } = req.body;
+
+  if (!paymentMethod.findById(method_id)) {
+    return res
+      .status(400)
+      .json({ status: false, mesage: "Payment method not found" });
+  }
+
+  if (voucher_id && !Voucher.findById(voucher_id)) {
+    return res.status(400).json({ status: false, mesage: "Voucher not found" });
+  }
+
+  if (!Ship.findById(shipping_id)) {
+    return res.status(400).json({ status: false, mesage: "Ship not found" });
+  }
 
   if (!Array.isArray(products) || products.length === 0) {
     return res.status(400).json({

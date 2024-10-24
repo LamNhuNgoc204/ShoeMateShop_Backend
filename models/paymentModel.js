@@ -18,6 +18,8 @@ const paymentSchema = new mongoose.Schema({
     default: "pending",
   },
   amount: { type: Number, required: true },
+  //ID giao dịch
+  transaction_id: { type: String },
   createdAt: { type: Date, default: Date.now },
 });
 

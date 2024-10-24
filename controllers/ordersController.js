@@ -1,6 +1,5 @@
 const Order = require("../models/orderModel");
 const OrderDetail = require("../models/orderDetailModel");
-const Voucher = require("../models/voucherModel");
 const Payment = require("../models/paymentModel");
 const Size = require("../models/sizeModel");
 const Product = require("../models/productModel");

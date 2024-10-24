@@ -1,21 +1,20 @@
 const express = require("express");
 const router = express.Router();
-const PaymentController = require("../controllers/paymentController");
+const control = require("../controllers/paymentController");
+const { protect } = require("../middlewares/authMiddleware");
+const { checkOrderByID } = require("../middlewares/orderMiddle");
+
 //localhost:3000/payment
 
 // ZALO PAY
-router.post("/", PaymentController.Zalopayment);
+router.post("/", control.Zalopayment);
 
-router.post("/zalo/callback", PaymentController.notifycation);
-
-router.post("order-status/:app_trans_id", PaymentController.orderStatus);
+router.post("order-status/:app_trans_id", control.orderStatus);
 
 // MOMO
-router.post("/momo", PaymentController.paymnetMomo);
+router.post("/momo", control.paymnetMomo);
 
-router.post("/momo/callback", PaymentController.callback);
-
-router.post("/momo/order-status", PaymentController.momoOrderStatus);
+router.post("/momo/order-status", control.momoOrderStatus);
 
 // THANH TOÁn ONLINE DO SHOP TỰ ĐI THU :)
 // //Confirm successful payment

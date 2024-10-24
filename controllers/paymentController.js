@@ -1,6 +1,7 @@
 const Order = require("../models/orderModel");
 const Payment = require("../models/paymentModel");
 const PaymentMethod = require("../models/paymentMethod");
+const PaidHistory = require("../models/paidHistoryModel");
 
 // THEM PHUONG THUC THANH TOAN: name, image
 exports.createNewMethod = async (req, res) => {
@@ -39,6 +40,68 @@ exports.getAllPaymentMethod = async (req, res) => {
   }
 };
 
+// exports.processPayment = async (req, res) => {
+//   try {
+//     const order = req.order;
+//     const { paymentMethod_id, amount } = req.body;
+
+//     const populatedOrder = await order.populate(
+//       "payment_id",
+//       "payment_method_id"
+//     );
+
+//     if (
+//       populatedOrder.payment_id.payment_method_id.toString() !==
+//       paymentMethod_id
+//     ) {
+//       return res.status(400).json({
+//         status: false,
+//         message: "Invalid payment method for this order",
+//       });
+//     }
+
+//     const paymentMethod = await PaymentMethod.findById(paymentMethod_id);
+//     if (!paymentMethod) {
+//       return res.status(404).json({
+//         status: false,
+//         message: `Payment method with ID ${paymentMethod_id} not found`,
+//       });
+//     }
+
+//     switch (paymentMethod.payment_method) {
+//       case "Thanh toán khi nhận hàng":
+//         order.payment_id = await createPayment(order._id, "COD", amount);
+//         order.status = "processing";
+//         await order.save();
+//         return res
+//           .status(200)
+//           .json({ message: "Order will be paid on delivery", order });
+
+//       case "Zalo Pay":
+//         const zaloPayment = await initiateZaloPay(order._id, amount);
+//         order.payment_id = zaloPayment._id;
+//         await order.save();
+//         return res.status(200).json({
+//           message: "Redirect to ZaloPay",
+//           url: zaloPayment.redirectUrl,
+//         });
+
+//       case "Momo":
+//         const momoPayment = await initiateMoMo(order._id, amount);
+//         order.payment_id = momoPayment._id;
+//         await order.save();
+//         return res
+//           .status(200)
+//           .json({ message: "Redirect to MoMo", url: momoPayment.redirectUrl });
+
+//       default:
+//         return res.status(400).json({ message: "Invalid payment method" });
+//     }
+//   } catch (error) {
+//     return res.status(500).json({ status: false, message: "Server error" });
+//   }
+// };
+
 // ZALO PAY
 const axios = require("axios").default;
 const CryptoJS = require("crypto-js");
@@ -46,22 +109,32 @@ const moment = require("moment");
 const qs = require("qs");
 
 const config = {
-  app_id: "2553",
-  key1: "PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL",
-  key2: "kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz",
+  app_id: "2554",
+  key1: "sdngKKJmqEMzvh5QQcdD2A9XBSKUNaYn",
+  key2: "trMrHtvjo6myautxDUiAcYsVtaeQ8nhf",
   endpoint: "https://sb-openapi.zalopay.vn/v2/create",
 };
 
 exports.Zalopayment = async (req, res) => {
-  const { username, amount } = req.body;
+  const { userid, orderId, amount } = req.body;
   const embed_data = "{}";
   const items = "[{}]";
 
-  const transID = Math.floor(Math.random() * 1000000);
+  const orderCheck = await Order.findById(orderId).populate(
+    "payment_id",
+    "transaction_id"
+  );
+
+  if (!orderCheck) {
+    return res.status(400).json({ status: false, message: "Order not found" });
+  }
+
+  const transID = orderId;
+  //Math.floor(Math.random() * 1000000);
   const order = {
     app_id: config.app_id,
     app_trans_id: `${moment().format("YYMMDD")}_${transID}`, // translation missing: vi.docs.shared.sample_code.comments.app_trans_id
-    app_user: username,
+    app_user: userid,
     app_time: Date.now(), // miliseconds
     item: items,
     embed_data: embed_data,
@@ -69,7 +142,7 @@ exports.Zalopayment = async (req, res) => {
     description: `ShoeMate - Payment for the order #${transID}`,
     bank_code: "",
     callback_url:
-      "https://72cc-2405-4802-93f3-ab70-9d52-6883-a556-f78.ngrok-free.app/zalo/callback",
+      "https://aeab-2405-4802-93f3-ab70-7599-b707-8b72-7a02.ngrok-free.app/zalo/callback",
   };
 
   // appid|app_trans_id|appuser|amount|apptime|embeddata|item
@@ -93,49 +166,92 @@ exports.Zalopayment = async (req, res) => {
     const response = await axios.post(config.endpoint, null, { params: order });
     console.log(response.data);
 
+    await updatePaymentAndOrderStatus(
+      orderCheck,
+      response.data.transaction_id,
+      amount,
+      userid
+    );
+
     return res.status(200).json({ status: true, data: response.data });
   } catch (error) {
-    console.log(err);
+    console.log(error);
     res.status(500).send("Error creating ZaloPay order");
   }
 };
 
-//Thong bao sau thanh toan thanh cong
-exports.notifycation = async (req, res) => {
-  let result = {};
-
+async function updatePaymentAndOrderStatus(
+  orderCheck,
+  transactionId,
+  amount,
+  userid
+) {
   try {
-    let dataStr = req.body.data;
-    let reqMac = req.body.mac;
+    // Update the transaction ID in payment
+    orderCheck.payment_id.transaction_id = transactionId;
 
-    let mac = CryptoJS.HmacSHA256(dataStr, config.key2).toString();
-    console.log("mac =", mac);
+    // Update payment status
+    const paymentUpdate = await Payment.findByIdAndUpdate(
+      orderCheck.payment_id._id,
+      { status: "completed", transaction_id: transactionId },
+      { new: true }
+    );
 
-    // kiểm tra callback hợp lệ (đến từ ZaloPay server)
-    if (reqMac !== mac) {
-      // callback không hợp lệ
-      result.return_code = -1;
-      result.return_message = "mac not equal";
-    } else {
-      // thanh toán thành công
-      // merchant cập nhật trạng thái cho đơn hàng
-      let dataJson = JSON.parse(dataStr, config.key2);
-      console.log(
-        "update order's status = success where app_trans_id =",
-        dataJson["app_trans_id"]
-      );
-
-      result.return_code = 1;
-      result.return_message = "success";
+    if (!paymentUpdate) {
+      throw new Error("Payment not found");
     }
-  } catch (ex) {
-    result.return_code = 0; // ZaloPay server sẽ callback lại (tối đa 3 lần)
-    result.return_message = ex.message;
-  }
 
-  // thông báo kết quả cho ZaloPay server
-  res.json(result);
-};
+    // Update order status to "processing"
+    const orderUpdate = await Order.findByIdAndUpdate(
+      orderCheck._id,
+      { status: "processing" },
+      { new: true }
+    );
+
+    if (!orderUpdate) {
+      throw new Error("Order not found");
+    }
+
+    // Save the payment history
+    await savePaymentHistory(userid, amount);
+
+    console.log(
+      "Payment and order successfully updated:",
+      paymentUpdate,
+      orderUpdate
+    );
+  } catch (error) {
+    console.log("Error updating payment or order:", error.message);
+    throw error;
+  }
+}
+
+// Function to save payment history in the PaidHistory model
+async function savePaymentHistory(userid, amount) {
+  try {
+    const user = await userModel.findOne({ _id: userid });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const history = new PaidHistory({
+      user_id: user._id,
+      title: `Payment for order by zalo pay`,
+      money: amount,
+      point: calculatePoints(amount),
+    });
+
+    await history.save();
+    console.log("Payment history saved:", history);
+  } catch (err) {
+    console.log("Error saving payment history:", err.message);
+  }
+}
+
+// Optional function to calculate points based on amount
+function calculatePoints(amount) {
+  return Math.floor(amount / 100); // Example: 1 point for every 100 units of money
+}
 
 exports.orderStatus = async (req, res) => {
   const app_trans_id = req.params.app_trans_id;
@@ -168,18 +284,20 @@ exports.orderStatus = async (req, res) => {
 
 // MOMO
 const crypto = require("crypto");
+const { log } = require("console");
+const userModel = require("../models/userModel");
 var accessKey = "F8BBA842ECF85";
 var secretKey = "K951B6PE1waDMi640xX08PD3vg6EkVlz";
 
 exports.paymnetMomo = async (req, res) => {
+  const { userid, orderId, amount } = req.body;
+
   var partnerCode = "MOMO";
   var orderInfo = "pay with MoMo";
   var redirectUrl = "";
   var ipnUrl =
     "https://72cc-2405-4802-93f3-ab70-9d52-6883-a556-f78.ngrok-free.app/momo/callback";
   var requestType = "payWithMethod";
-  var amount = "50000";
-  var orderId = partnerCode + new Date().getTime();
   var requestId = orderId;
   var extraData = "";
   var paymentCode =
@@ -252,6 +370,14 @@ exports.paymnetMomo = async (req, res) => {
   let result;
   try {
     result = await axios(option);
+
+    await updatePaymentAndOrderStatus(
+      orderId,
+      result.data.transactionId,
+      amount,
+      userid
+    );
+
     return res.status(200).json(result.data);
   } catch (error) {
     console.log("errror ===> ", error);
@@ -260,11 +386,93 @@ exports.paymnetMomo = async (req, res) => {
   }
 };
 
-exports.callback = async (req, res) => {
-  //https://72cc-2405-4802-93f3-ab70-9d52-6883-a556-f78.ngrok-free.app
-  console.log("callback: ");
-  console.log(req.body);
+async function updatePaymentAndOrderStatus(
+  orderId,
+  transactionId,
+  amount,
+  userid
+) {
+  try {
+    // Find the order by its ID and populate its payment
+    const orderCheck = await Order.findById(orderId).populate(
+      "payment_id",
+      "transaction_id"
+    );
 
+    if (!orderCheck) {
+      throw new Error("Order not found");
+    }
+
+    // Update the transaction ID in payment
+    orderCheck.payment_id.transaction_id = transactionId;
+
+    // Update payment status to "completed"
+    const paymentUpdate = await Payment.findByIdAndUpdate(
+      orderCheck.payment_id._id,
+      { status: "completed", transaction_id: transactionId },
+      { new: true }
+    );
+
+    if (!paymentUpdate) {
+      throw new Error("Payment not found");
+    }
+
+    // Update order status to "processing"
+    const orderUpdate = await Order.findByIdAndUpdate(
+      orderCheck._id,
+      { status: "processing" },
+      { new: true }
+    );
+
+    if (!orderUpdate) {
+      throw new Error("Order not found");
+    }
+
+    // Save the payment history
+    await savePaymentHistory(userid, amount);
+
+    console.log(
+      "Payment and order successfully updated:",
+      paymentUpdate,
+      orderUpdate
+    );
+  } catch (error) {
+    console.log("Error updating payment or order:", error.message);
+    throw error;
+  }
+}
+
+// Function to save payment history in the PaidHistory model
+async function savePaymentHistory(userid, amount) {
+  try {
+    const user = await userModel.findOne({ userid });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const history = new PaidHistory({
+      user_id: user._id,
+      title: `Payment for order`,
+      money: amount,
+      point: calculatePoints(amount), // Assuming there's a function to calculate points
+    });
+
+    await history.save();
+    console.log("Payment history saved:", history);
+  } catch (err) {
+    console.log("Error saving payment history:", err.message);
+  }
+}
+
+// Optional function to calculate points based on amount
+function calculatePoints(amount) {
+  return Math.floor(amount / 100); // Example: 1 point for every 100 units of money
+}
+
+// MoMo callback handler (if you need to handle callbacks in the future)
+exports.callback = async (req, res) => {
+  console.log("MoMo callback: ");
+  console.log(req.body);
   return res.status(200).json(req.body);
 };
 
