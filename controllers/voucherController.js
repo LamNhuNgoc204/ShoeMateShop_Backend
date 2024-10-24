@@ -104,9 +104,11 @@ exports.deleteVoucher = async (req, res) => {
 exports.getAllVouchers = async (req, res) => {
   try {
     const vouchers = await Voucher.find();
-    res.status(200).json(vouchers);
+    res.status(200).json({ status: true, data: vouchers });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching vouchers", error });
+    res
+      .status(500)
+      .json({ status: false, message: "Error fetching vouchers", error });
   }
 };
 

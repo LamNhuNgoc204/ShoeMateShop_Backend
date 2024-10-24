@@ -4,6 +4,9 @@ const Payment = require("../models/paymentModel");
 const Size = require("../models/sizeModel");
 const Product = require("../models/productModel");
 const User = require("../models/userModel");
+const axios = require("axios");
+const crypto = require("crypto");
+const updatePaymentHistory = require("../service/updatePaymentHistory");
 
 exports.createNewOrder = async (req, res) => {
   try {
@@ -289,6 +292,41 @@ exports.cancelOrder = async (req, res) => {
         .json({ status: false, mesage: "Order cannot be cancelled" });
     }
 
+    const detailOrder = await order.populate(
+      "payment_id.payment_method_id",
+      "payment_method"
+    );
+
+    // Xử lý hoàn tiền nếu đơn hàng đã thanh toán
+    if (order.payment_id && order.payment_id.status === "completed") {
+      // Refund using ZaloPay
+      if (
+        detailOrder.payment_id.payment_method_id.payment_method === "Zalo Pay"
+      ) {
+        const refundResponse = await refundZaloPay(order, order.total_price);
+        if (refundResponse.return_code !== 1) {
+          return res.status(500).json({
+            message: "Refund failed",
+            error: refundResponse.return_message,
+          });
+        }
+
+        // Cập nhật trạng thái hoàn tiền
+        order.payment_id.status = "refunded";
+        await order.payment_id.save();
+
+        // Cập nhật lịch sử hoàn tiền
+        await updatePaymentHistory(
+          order.user_id,
+          "Refund for order",
+          order.total_price
+        );
+      } else if (order.payment_id.method === "Thanh toán khi nhận hàng") {
+        order.payment_id.status = "completed";
+        await order.payment_id.save();
+      }
+    }
+
     return res.status(200).json({
       status: true,
       message: "Order cancelled successfully!",
@@ -301,6 +339,59 @@ exports.cancelOrder = async (req, res) => {
       .json({ status: false, message: "Server error", error: error.message });
   }
 };
+
+const config = {
+  app_id: "2554",
+  key1: "sdngKKJmqEMzvh5QQcdD2A9XBSKUNaYn",
+  key2: "trMrHtvjo6myautxDUiAcYsVtaeQ8nhf",
+  refund_url: "https://sb-openapi.zalopay.vn/v2/refund",
+};
+
+async function refundZaloPay(order, refundAmount) {
+  try {
+    const detailOrder = await order.populate(
+      "payment_id.payment_method_id",
+      "payment_method transaction_id"
+    );
+    const timestamp = Date.now();
+    const refundId = `refund_${order._id}_${timestamp}`;
+
+    // Tạo data cần thiết cho request
+    const requestData = {
+      app_id: config.app_id,
+      // Mã giao dịch ZaloPay bạn nhận được khi thanh toán
+      zp_trans_id: detailOrder.payment_id.payment_method_id.transaction_id,
+      amount: refundAmount,
+      description: `Refund for order #${order._id}`,
+      refund_id: refundId,
+      timestamp: timestamp,
+    };
+
+    // Tạo checksum để bảo mật
+    const checksumString = `${requestData.app_id}|${requestData.zp_trans_id}|${requestData.amount}|${requestData.timestamp}|${config.key1}`;
+    const checksum = crypto
+      .createHmac("sha256", config.key1)
+      .update(checksumString)
+      .digest("hex");
+
+    // Thêm checksum vào request
+    requestData.mac = checksum;
+
+    // Gửi yêu cầu hoàn tiền đến ZaloPay
+    const response = await axios.post(config.refund_url, requestData);
+
+    if (response.data.return_code === 1) {
+      console.log("Refund successful:", response.data);
+      return response.data;
+    } else {
+      console.error("Refund failed:", response.data.return_message);
+      throw new Error(response.data.return_message);
+    }
+  } catch (error) {
+    console.error("Error processing refund:", error);
+    throw error;
+  }
+}
 
 // // API Create a new order
 // exports.createNewOrder = async (req, res) => {

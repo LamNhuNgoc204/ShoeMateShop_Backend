@@ -4,7 +4,11 @@ const voucherController = require("../controllers/voucherController");
 const { protect, adminOrEmployee } = require("../middlewares/authMiddleware");
 
 // Tạo voucher mới (Chỉ admin hoặc nhân viên) - Route: /add
-router.post("/add", protect, adminOrEmployee, voucherController.createVoucher);
+router.post(
+  "/add",
+  // protect, adminOrEmployee,
+  voucherController.createVoucher
+);
 
 // Cập nhật voucher theo ID (Chỉ admin hoặc nhân viên) - Route: /update/:id
 router.put(

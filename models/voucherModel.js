@@ -10,6 +10,7 @@ const voucherSchema = new mongoose.Schema({
   start_date: { type: Date, required: true },
   min_order_value: { type: Number, required: true },
   max_discount_value: { type: Number, required: true },
+  usage_conditions: { type: String, required: true },
   usage_scope: { type: String },
   status: { type: String, enum: ["active", "inactive"], default: "active" },
   isInMiniGame: { type: Boolean, default: false },
