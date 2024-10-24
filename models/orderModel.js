@@ -29,15 +29,14 @@ const orderSchema = new mongoose.Schema({
     default: "pending",
   },
   //Refund order
-  refund: {
+  returnRequest: {
     reason: { type: String },
     status: {
       type: String,
-      enum: ["pending", "confirmed", "rejected", "refunded"],
+      enum: ["pending", "accepted", "rejected", "refunded"],
     },
-    requestDate: { type: Date, default: Date.now },
+    requestDate: { type: Date },
     responseDate: { type: Date },
-    createdAt: { type: Date, default: Date.now },
   },
   receiver: { type: String, required: true },
   receiverPhone: { type: String, required: true },

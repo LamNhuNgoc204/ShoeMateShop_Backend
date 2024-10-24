@@ -183,6 +183,126 @@ exports.updateOrderAddress = async (req, res) => {
   }
 };
 
+exports.requestReturnOrder = async (req, res) => {
+  try {
+    const order = req.order;
+    const { reason } = req.body;
+
+    if (!reason) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Reason is required!" });
+    }
+
+    if (
+      order.status !== "completed" &&
+      order.shipping_id.status !== "delivered"
+    ) {
+      return res.status(400).json({
+        status: false,
+        message: "Only completed or delivered orders can be returned!",
+      });
+    }
+
+    order.returnRequest = {
+      reason,
+      requestDate: Date.now(),
+      status: "pending",
+    };
+
+    const result = await order.save();
+    return res.status(200).json({
+      status: true,
+      message: "Return request submitted successfully!",
+      data: result,
+    });
+  } catch (error) {
+    console.log("create new order error: ", error);
+    return res
+      .status(500)
+      .json({ status: false, message: "Server error", error: error.message });
+  }
+};
+
+exports.handleReturnRq = async (req, res) => {
+  try {
+    const order = req.order;
+    const { returnStatus } = req.body;
+
+    if (order.returnRequest.status !== "pending") {
+      return (
+        res.status(400),
+        json({ status: false, message: "The request has been processed" })
+      );
+    }
+
+    const validReturnStatuses = ["accepted", "rejected"];
+    if (!validReturnStatuses.includes(returnStatus)) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Invalid return status!" });
+    }
+
+    order.returnRequest.status = returnStatus;
+    order.returnRequest.responseDate = Date.now();
+
+    if (returnStatus === "accepted") {
+      order.status = "refunded";
+    }
+
+    const result = await order.save();
+    if (!result) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Save order failed!" });
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: `Return request ${returnStatus} successfully!`,
+      data: order,
+    });
+  } catch (error) {
+    console.log("create new order error: ", error);
+    return res
+      .status(500)
+      .json({ status: false, message: "Server error", error: error.message });
+  }
+};
+
+exports.cancelOrder = async (req, res) => {
+  try {
+    const order = req.order;
+
+    if (order.status !== "pending") {
+      return res.status(400).json({
+        status: false,
+        message: "Only pending orders can be cancelled!",
+      });
+    }
+
+    order.status = "cancelled";
+    order.shipping_id.status = "cancelled";
+    const result = await order.save();
+    if (!result) {
+      return res
+        .status(400)
+        .json({ status: false, mesage: "Order cannot be cancelled" });
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: "Order cancelled successfully!",
+      data: result,
+    });
+  } catch (error) {
+    console.log("create new order error: ", error);
+    return res
+      .status(500)
+      .json({ status: false, message: "Server error", error: error.message });
+  }
+};
+
 // // API Create a new order
 // exports.createNewOrder = async (req, res) => {
 //   let {

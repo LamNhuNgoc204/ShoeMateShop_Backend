@@ -1,5 +1,6 @@
 const { isValidPhoneNumber } = require("../utils/numberUtils");
 const Order = require("../models/orderModel");
+const mongoose = require("mongoose");
 
 const validateOrder = (req, res, next) => {
   const { products, method_id, total_price, receiver, receiverPhone, address } =
@@ -94,4 +95,33 @@ const checkOrderUpdate = async (req, res, next) => {
   next();
 };
 
-module.exports = { validateOrder, checkUserOrder, checkOrderUpdate };
+const checkOrderByID = async (req, res, next) => {
+  const { orderId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(orderId)) {
+    return res
+      .status(400)
+      .json({ status: false, message: "Invalid order ID!" });
+  }
+
+  const order = await Order.findById(orderId).populate("shipping_id", "status");
+  if (!order) {
+    return res.status(404).json({ status: false, mesage: "Order not found!" });
+  }
+
+  if (!order.shipping_id) {
+    return res
+      .status(400)
+      .json({ status: false, message: "Shipping information not available!" });
+  }
+
+  req.order = order;
+  next();
+};
+
+module.exports = {
+  validateOrder,
+  checkUserOrder,
+  checkOrderUpdate,
+  checkOrderByID,
+};

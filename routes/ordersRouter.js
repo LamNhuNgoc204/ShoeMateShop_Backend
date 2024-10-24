@@ -34,6 +34,28 @@ router.put(
   control.updateOrderAddress
 );
 
+router.put(
+  "/request-return-order/:orderId",
+  protect,
+  middle.checkOrderByID,
+  control.requestReturnOrder
+);
+
+router.put(
+  "/return-request/:orderId",
+  protect,
+  adminOrEmployee,
+  middle.checkOrderByID,
+  control.handleReturnRq
+);
+
+router.put(
+  "/cancel-order/:orderId",
+  // protect,
+  middle.checkOrderByID,
+  control.cancelOrder
+);
+
 module.exports = router;
 
 // //Create a new order
