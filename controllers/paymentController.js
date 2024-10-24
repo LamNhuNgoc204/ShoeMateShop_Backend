@@ -187,7 +187,7 @@ async function updatePaymentAndOrderStatus(
   userid
 ) {
   try {
-    // Update the transaction ID in payment
+    // Cập nhât transaction ID trong bảng payment
     orderCheck.payment_id.transaction_id = transactionId;
 
     // Update payment status
@@ -201,7 +201,7 @@ async function updatePaymentAndOrderStatus(
       throw new Error("Payment not found");
     }
 
-    // Update order status to "processing"
+    // Cập nhật trạng thái order to "processing"
     const orderUpdate = await Order.findByIdAndUpdate(
       orderCheck._id,
       { status: "processing" },
@@ -212,7 +212,7 @@ async function updatePaymentAndOrderStatus(
       throw new Error("Order not found");
     }
 
-    // Save the payment history
+    // Lưu lịch sử thanh toán
     await savePaymentHistory(userid, amount);
 
     console.log(
@@ -226,7 +226,7 @@ async function updatePaymentAndOrderStatus(
   }
 }
 
-// Function to save payment history in the PaidHistory model
+// Lưu lịch sử thanh toán
 async function savePaymentHistory(userid, amount) {
   try {
     const user = await userModel.findOne({ _id: userid });
@@ -248,9 +248,9 @@ async function savePaymentHistory(userid, amount) {
   }
 }
 
-// Optional function to calculate points based on amount
+// Tính điểm
 function calculatePoints(amount) {
-  return Math.floor(amount / 100); // Example: 1 point for every 100 units of money
+  return Math.floor(amount / 100);
 }
 
 exports.orderStatus = async (req, res) => {
@@ -442,7 +442,7 @@ async function updatePaymentAndOrderStatus(
   }
 }
 
-// Function to save payment history in the PaidHistory model
+// Lưu lịch sử giao dịch
 async function savePaymentHistory(userid, amount) {
   try {
     const user = await userModel.findOne({ userid });
@@ -454,7 +454,7 @@ async function savePaymentHistory(userid, amount) {
       user_id: user._id,
       title: `Payment for order`,
       money: amount,
-      point: calculatePoints(amount), // Assuming there's a function to calculate points
+      point: calculatePoints(amount),
     });
 
     await history.save();
@@ -464,12 +464,11 @@ async function savePaymentHistory(userid, amount) {
   }
 }
 
-// Optional function to calculate points based on amount
+// Tính điểm
 function calculatePoints(amount) {
-  return Math.floor(amount / 100); // Example: 1 point for every 100 units of money
+  return Math.floor(amount / 100);
 }
 
-// MoMo callback handler (if you need to handle callbacks in the future)
 exports.callback = async (req, res) => {
   console.log("MoMo callback: ");
   console.log(req.body);

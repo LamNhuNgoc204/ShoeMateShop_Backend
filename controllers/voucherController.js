@@ -1,6 +1,5 @@
 const Voucher = require("../models/voucherModel");
 
-
 exports.createVoucher = async (req, res) => {
   try {
     const {
@@ -12,21 +11,27 @@ exports.createVoucher = async (req, res) => {
       expiry_date,
       usage_conditions,
       usage_scope,
-      status,
       isInMiniGame,
       min_order_value,
-      max_discount_value
+      max_discount_value,
     } = req.body;
 
     // Kiểm tra xem mã voucher có bị thiếu hay không
     if (!voucher_code) {
-      return res.status(400).json({ status: false, message: "Voucher code is required" });
+      return res
+        .status(400)
+        .json({ status: false, message: "Voucher code is required" });
     }
 
     // Kiểm tra xem mã voucher đã tồn tại hay chưa
-    const existingVoucher = await Voucher.findOne({ voucher_code });
+    const existingVoucher = await Voucher.findOne({
+      voucher_code,
+      status: "inactive",
+    });
     if (existingVoucher) {
-      return res.status(400).json({ status: false, message: "Voucher code already exists" });
+      return res
+        .status(400)
+        .json({ status: false, message: "Voucher code already exists" });
     }
 
     // Tạo đối tượng voucher mới
@@ -39,28 +44,32 @@ exports.createVoucher = async (req, res) => {
       expiry_date,
       usage_conditions,
       usage_scope,
-      status,
       isInMiniGame,
       min_order_value,
-      max_discount_value
+      max_discount_value,
     });
 
     // Lưu voucher mới vào cơ sở dữ liệu
     const savedVoucher = await newVoucher.save();
-    res.status(201).json({ status: true, message: "Voucher created successfully", data: savedVoucher });
+    res.status(201).json({
+      status: true,
+      message: "Voucher created successfully",
+      data: savedVoucher,
+    });
   } catch (error) {
     // Xử lý lỗi nếu có
     res.status(500).json({ message: "Error creating voucher", error });
   }
 };
 
-  
-  
-
 // Cập nhật voucher theo ID (Chỉ admin hoặc nhân viên)
 exports.updateVoucher = async (req, res) => {
   try {
-    const updatedVoucher = await Voucher.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const updatedVoucher = await Voucher.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
 
     if (!updatedVoucher) {
       return res.status(404).json({ message: "Voucher not found" });
@@ -81,7 +90,9 @@ exports.deleteVoucher = async (req, res) => {
       return res.status(404).json({ message: "Voucher not found" });
     }
 
-    res.status(200).json({ status: true, message: "Voucher deleted successfully" });
+    res
+      .status(200)
+      .json({ status: true, message: "Voucher deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Error deleting voucher", error });
   }
@@ -120,8 +131,8 @@ exports.searchVouchers = async (req, res) => {
     const vouchers = await Voucher.find({
       $or: [
         { voucher_name: new RegExp(query, "i") },
-        { voucher_code: new RegExp(query, "i") }
-      ]
+        { voucher_code: new RegExp(query, "i") },
+      ],
     });
     res.status(200).json(vouchers);
   } catch (error) {
@@ -137,7 +148,9 @@ exports.applyVoucher = async (req, res) => {
     const voucher = await Voucher.findOne({ voucher_code });
 
     if (!voucher) {
-      return res.status(404).json({ status: false, message: "Voucher not found" });
+      return res
+        .status(404)
+        .json({ status: false, message: "Voucher not found" });
     }
 
     if (totalOrderValue < voucher.min_order_value) {
@@ -148,22 +161,26 @@ exports.applyVoucher = async (req, res) => {
     }
 
     if (voucher.quantity <= 0) {
-      return res.status(400).json({ status: false, message: "No vouchers available" });
+      return res
+        .status(400)
+        .json({ status: false, message: "No vouchers available" });
     }
 
     if (voucher.usedBy.includes(userId)) {
-      return res.status(200).json({ status: false, message: "This voucher has already been used by you" });
+      return res.status(200).json({
+        status: false,
+        message: "This voucher has already been used by you",
+      });
     }
     let discountAmount = (voucher.discount_value / 100) * totalOrderValue;
     if (discountAmount > voucher.max_discount_value) {
-      discountAmount = voucher.max_discount_value; 
+      discountAmount = voucher.max_discount_value;
     }
     const discountedPrice = totalOrderValue - discountAmount;
 
-   
-    voucher.quantity -= 1; 
-    voucher.usedBy.push(userId); 
-    await voucher.save(); 
+    voucher.quantity -= 1;
+    voucher.usedBy.push(userId);
+    await voucher.save();
 
     res.status(200).json({
       status: true,
@@ -176,5 +193,3 @@ exports.applyVoucher = async (req, res) => {
     res.status(500).json({ message: "Error applying voucher", error });
   }
 };
-
-  
