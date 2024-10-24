@@ -1,50 +1,59 @@
 const Voucher = require("../models/voucherModel");
 
-// Tạo voucher mới (Chỉ admin hoặc nhân viên)
+
 exports.createVoucher = async (req, res) => {
-    try {
-      const {
-        discount_value,
-        voucher_name,
-        quantity,
-        voucher_image,
-        voucher_code,
-        expiry_date,
-        usage_conditions,
-        usage_scope,
-        status,
-        isInMiniGame,
-        min_order_value,
-        max_discount_value 
-      } = req.body;
-  
-      // Kiểm tra xem mã voucher đã tồn tại hay chưa
-      const existingVoucher = await Voucher.findOne({ voucher_code });
-      if (existingVoucher) {
-        return res.status(400).json({ status: false, message: "Voucher code already exists" });
-      }
-  
-      const newVoucher = new Voucher({
-        discount_value,
-        voucher_name,
-        quantity,
-        voucher_image,
-        voucher_code,
-        expiry_date,
-        usage_conditions,
-        usage_scope,
-        status,
-        isInMiniGame,
-        min_order_value,
-        max_discount_value 
-      });
-  
-      const savedVoucher = await newVoucher.save();
-      res.status(201).json({ status: true, message: "Voucher created successfully", data: savedVoucher });
-    } catch (error) {
-      res.status(500).json({ message: "Error creating voucher", error });
+  try {
+    const {
+      discount_value,
+      voucher_name,
+      quantity,
+      voucher_image,
+      voucher_code,
+      expiry_date,
+      usage_conditions,
+      usage_scope,
+      status,
+      isInMiniGame,
+      min_order_value,
+      max_discount_value
+    } = req.body;
+
+    // Kiểm tra xem mã voucher có bị thiếu hay không
+    if (!voucher_code) {
+      return res.status(400).json({ status: false, message: "Voucher code is required" });
     }
-  };
+
+    // Kiểm tra xem mã voucher đã tồn tại hay chưa
+    const existingVoucher = await Voucher.findOne({ voucher_code });
+    if (existingVoucher) {
+      return res.status(400).json({ status: false, message: "Voucher code already exists" });
+    }
+
+    // Tạo đối tượng voucher mới
+    const newVoucher = new Voucher({
+      discount_value,
+      voucher_name,
+      quantity,
+      voucher_image,
+      voucher_code,
+      expiry_date,
+      usage_conditions,
+      usage_scope,
+      status,
+      isInMiniGame,
+      min_order_value,
+      max_discount_value
+    });
+
+    // Lưu voucher mới vào cơ sở dữ liệu
+    const savedVoucher = await newVoucher.save();
+    res.status(201).json({ status: true, message: "Voucher created successfully", data: savedVoucher });
+  } catch (error) {
+    // Xử lý lỗi nếu có
+    res.status(500).json({ message: "Error creating voucher", error });
+  }
+};
+
   
   
 
@@ -143,7 +152,7 @@ exports.applyVoucher = async (req, res) => {
     }
 
     if (voucher.usedBy.includes(userId)) {
-      return res.status(400).json({ status: false, message: "This voucher has already been used by you" });
+      return res.status(200).json({ status: false, message: "This voucher has already been used by you" });
     }
     let discountAmount = (voucher.discount_value / 100) * totalOrderValue;
     if (discountAmount > voucher.max_discount_value) {
