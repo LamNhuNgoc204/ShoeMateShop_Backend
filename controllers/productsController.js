@@ -290,8 +290,8 @@ exports.addToWishlist = async (req, res) => {
         .json({ status: true, message: "Added to wishlist" });
     } else {
       return res
-        .status(200)
-        .json({ status: true, message: "Removed from wishlist" });
+        .status(400)
+        .json({ status: false, message: "Removed from wishlist" });
     }
   } catch (error) {
     console.error(error);
