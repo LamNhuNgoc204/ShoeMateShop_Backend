@@ -7,13 +7,16 @@ const voucherSchema = new mongoose.Schema({
   voucher_image: { type: String },
   voucher_code: { type: String, required: true, unique: true },
   expiry_date: { type: Date, required: true },
-  min_order_value: { type: Number, required: true }, 
-  max_discount_value: { type: Number, required: true }, 
+  start_date: { type: Date, required: true },
+  min_order_value: { type: Number, required: true },
+  max_discount_value: { type: Number, required: true },
+  usage_conditions: { type: String, required: true },
   usage_scope: { type: String },
   status: { type: String, enum: ["active", "inactive"], default: "active" },
   isInMiniGame: { type: Boolean, default: false },
-  usedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  createAt: { type: Date, default: Date.now },
+  usedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
+  createdAt: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.models.vouchers || mongoose.model("voucher", voucherSchema);
+module.exports =
+  mongoose.models.vouchers || mongoose.model("voucher", voucherSchema);

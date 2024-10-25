@@ -1,35 +1,148 @@
 const Order = require("../models/orderModel");
 const Payment = require("../models/paymentModel");
+const PaymentMethod = require("../models/paymentMethod");
+const PaidHistory = require("../models/paidHistoryModel");
+
+// THEM PHUONG THUC THANH TOAN: name, image
+exports.createNewMethod = async (req, res) => {
+  try {
+    const { payment_method, image } = req.body;
+    if (!payment_method || !image) {
+      return res
+        .status(400)
+        .json({ status: false, message: "All field is required" });
+    }
+
+    const checkpayment_method = await PaymentMethod.findOne({
+      payment_method: payment_method,
+    });
+    if (checkpayment_method) {
+      return res
+        .status(400)
+        .json({ status: false, message: "This method is exits" });
+    }
+
+    const payment = new PaymentMethod({ payment_method, image });
+    await payment.save();
+
+    return res.status(200).json({ status: true, data: payment });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
+exports.getAllPaymentMethod = async (req, res) => {
+  try {
+    const payments = await PaymentMethod.find();
+    return res.status(200).json({ status: true, data: payments });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
+// exports.processPayment = async (req, res) => {
+//   try {
+//     const order = req.order;
+//     const { paymentMethod_id, amount } = req.body;
+
+//     const populatedOrder = await order.populate(
+//       "payment_id",
+//       "payment_method_id"
+//     );
+
+//     if (
+//       populatedOrder.payment_id.payment_method_id.toString() !==
+//       paymentMethod_id
+//     ) {
+//       return res.status(400).json({
+//         status: false,
+//         message: "Invalid payment method for this order",
+//       });
+//     }
+
+//     const paymentMethod = await PaymentMethod.findById(paymentMethod_id);
+//     if (!paymentMethod) {
+//       return res.status(404).json({
+//         status: false,
+//         message: `Payment method with ID ${paymentMethod_id} not found`,
+//       });
+//     }
+
+//     switch (paymentMethod.payment_method) {
+//       case "Thanh toán khi nhận hàng":
+//         order.payment_id = await createPayment(order._id, "COD", amount);
+//         order.status = "processing";
+//         await order.save();
+//         return res
+//           .status(200)
+//           .json({ message: "Order will be paid on delivery", order });
+
+//       case "Zalo Pay":
+//         const zaloPayment = await initiateZaloPay(order._id, amount);
+//         order.payment_id = zaloPayment._id;
+//         await order.save();
+//         return res.status(200).json({
+//           message: "Redirect to ZaloPay",
+//           url: zaloPayment.redirectUrl,
+//         });
+
+//       case "Momo":
+//         const momoPayment = await initiateMoMo(order._id, amount);
+//         order.payment_id = momoPayment._id;
+//         await order.save();
+//         return res
+//           .status(200)
+//           .json({ message: "Redirect to MoMo", url: momoPayment.redirectUrl });
+
+//       default:
+//         return res.status(400).json({ message: "Invalid payment method" });
+//     }
+//   } catch (error) {
+//     return res.status(500).json({ status: false, message: "Server error" });
+//   }
+// };
+
+// ZALO PAY
 const axios = require("axios").default;
 const CryptoJS = require("crypto-js");
 const moment = require("moment");
 const qs = require("qs");
 
-// ZALO PAY
 const config = {
-  app_id: "2553",
-  key1: "PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL",
-  key2: "kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz",
+  app_id: "2554",
+  key1: "sdngKKJmqEMzvh5QQcdD2A9XBSKUNaYn",
+  key2: "trMrHtvjo6myautxDUiAcYsVtaeQ8nhf",
   endpoint: "https://sb-openapi.zalopay.vn/v2/create",
 };
 
-exports.paymentFunction = async (req, res) => {
-  const { username, amount } = req.body;
+exports.Zalopayment = async (req, res) => {
+  const { userid, orderId, amount } = req.body;
   const embed_data = "{}";
   const items = "[{}]";
 
-  const transID = Math.floor(Math.random() * 1000000);
+  const orderCheck = await Order.findById(orderId).populate(
+    "payment_id",
+    "transaction_id"
+  );
+
+  if (!orderCheck) {
+    return res.status(400).json({ status: false, message: "Order not found" });
+  }
+
+  const transID = orderId;
+  //Math.floor(Math.random() * 1000000);
   const order = {
     app_id: config.app_id,
     app_trans_id: `${moment().format("YYMMDD")}_${transID}`, // translation missing: vi.docs.shared.sample_code.comments.app_trans_id
-    app_user: username,
+    app_user: userid,
     app_time: Date.now(), // miliseconds
     item: items,
     embed_data: embed_data,
     amount: amount,
     description: `ShoeMate - Payment for the order #${transID}`,
     bank_code: "",
-    callback_url: "localhost://3000/payment/callbaclk",
+    callback_url:
+      "https://aeab-2405-4802-93f3-ab70-7599-b707-8b72-7a02.ngrok-free.app/zalo/callback",
   };
 
   // appid|app_trans_id|appuser|amount|apptime|embeddata|item
@@ -53,49 +166,92 @@ exports.paymentFunction = async (req, res) => {
     const response = await axios.post(config.endpoint, null, { params: order });
     console.log(response.data);
 
+    await updatePaymentAndOrderStatus(
+      orderCheck,
+      response.data.transaction_id,
+      amount,
+      userid
+    );
+
     return res.status(200).json({ status: true, data: response.data });
   } catch (error) {
-    console.log(err);
+    console.log(error);
     res.status(500).send("Error creating ZaloPay order");
   }
 };
 
-//Thong bao sau thanh toan thanh cong
-exports.notifycation = async (req, res) => {
-  let result = {};
-
+async function updatePaymentAndOrderStatus(
+  orderCheck,
+  transactionId,
+  amount,
+  userid
+) {
   try {
-    let dataStr = req.body.data;
-    let reqMac = req.body.mac;
+    // Cập nhât transaction ID trong bảng payment
+    orderCheck.payment_id.transaction_id = transactionId;
 
-    let mac = CryptoJS.HmacSHA256(dataStr, config.key2).toString();
-    console.log("mac =", mac);
+    // Update payment status
+    const paymentUpdate = await Payment.findByIdAndUpdate(
+      orderCheck.payment_id._id,
+      { status: "completed", transaction_id: transactionId },
+      { new: true }
+    );
 
-    // kiểm tra callback hợp lệ (đến từ ZaloPay server)
-    if (reqMac !== mac) {
-      // callback không hợp lệ
-      result.return_code = -1;
-      result.return_message = "mac not equal";
-    } else {
-      // thanh toán thành công
-      // merchant cập nhật trạng thái cho đơn hàng
-      let dataJson = JSON.parse(dataStr, config.key2);
-      console.log(
-        "update order's status = success where app_trans_id =",
-        dataJson["app_trans_id"]
-      );
-
-      result.return_code = 1;
-      result.return_message = "success";
+    if (!paymentUpdate) {
+      throw new Error("Payment not found");
     }
-  } catch (ex) {
-    result.return_code = 0; // ZaloPay server sẽ callback lại (tối đa 3 lần)
-    result.return_message = ex.message;
-  }
 
-  // thông báo kết quả cho ZaloPay server
-  res.json(result);
-};
+    // Cập nhật trạng thái order to "processing"
+    const orderUpdate = await Order.findByIdAndUpdate(
+      orderCheck._id,
+      { status: "processing" },
+      { new: true }
+    );
+
+    if (!orderUpdate) {
+      throw new Error("Order not found");
+    }
+
+    // Lưu lịch sử thanh toán
+    await savePaymentHistory(userid, amount);
+
+    console.log(
+      "Payment and order successfully updated:",
+      paymentUpdate,
+      orderUpdate
+    );
+  } catch (error) {
+    console.log("Error updating payment or order:", error.message);
+    throw error;
+  }
+}
+
+// Lưu lịch sử thanh toán
+async function savePaymentHistory(userid, amount) {
+  try {
+    const user = await userModel.findOne({ _id: userid });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const history = new PaidHistory({
+      user_id: user._id,
+      title: `Payment for order by zalo pay`,
+      money: amount,
+      point: calculatePoints(amount),
+    });
+
+    await history.save();
+    console.log("Payment history saved:", history);
+  } catch (err) {
+    console.log("Error saving payment history:", err.message);
+  }
+}
+
+// Tính điểm
+function calculatePoints(amount) {
+  return Math.floor(amount / 100);
+}
 
 exports.orderStatus = async (req, res) => {
   const app_trans_id = req.params.app_trans_id;
@@ -126,334 +282,527 @@ exports.orderStatus = async (req, res) => {
     });
 };
 
-// THEM PHUONG THUC THANH TOAN: name, image
-exports.createNewMethod = async (req, res) => {
+// MOMO
+const crypto = require("crypto");
+const { log } = require("console");
+const userModel = require("../models/userModel");
+var accessKey = "F8BBA842ECF85";
+var secretKey = "K951B6PE1waDMi640xX08PD3vg6EkVlz";
+
+exports.paymnetMomo = async (req, res) => {
+  const { userid, orderId, amount } = req.body;
+
+  var partnerCode = "MOMO";
+  var orderInfo = "pay with MoMo";
+  var redirectUrl = "";
+  var ipnUrl =
+    "https://72cc-2405-4802-93f3-ab70-9d52-6883-a556-f78.ngrok-free.app/momo/callback";
+  var requestType = "payWithMethod";
+  var requestId = orderId;
+  var extraData = "";
+  var paymentCode =
+    "T8Qii53fAXyUftPV3m9ysyRhEanUs9KlOPfHgpMR0ON50U10Bh+vZdpJU7VY4z+Z2y77fJHkoDc69scwwzLuW5MzeUKTwPo3ZMaB29imm6YulqnWfTkgzqRaion+EuD7FN9wZ4aXE1+mRt0gHsU193y+yxtRgpmY7SDMU9hCKoQtYyHsfFR5FUAOAKMdw2fzQqpToei3rnaYvZuYaxolprm9+/+WIETnPUDlxCYOiw7vPeaaYQQH0BF0TxyU3zu36ODx980rJvPAgtJzH1gUrlxcSS1HQeQ9ZaVM1eOK/jl8KJm6ijOwErHGbgf/hVymUQG65rHU2MWz9U8QUjvDWA==";
+  var orderGroupId = "";
+  var autoCapture = true;
+  var lang = "vi";
+
+  var rawSignature =
+    "accessKey=" +
+    accessKey +
+    "&amount=" +
+    amount +
+    "&extraData=" +
+    extraData +
+    "&ipnUrl=" +
+    ipnUrl +
+    "&orderId=" +
+    orderId +
+    "&orderInfo=" +
+    orderInfo +
+    "&partnerCode=" +
+    partnerCode +
+    "&redirectUrl=" +
+    redirectUrl +
+    "&requestId=" +
+    requestId +
+    "&requestType=" +
+    requestType;
+  //puts raw signature
+  console.log("--------------------RAW SIGNATURE----------------");
+  console.log(rawSignature);
+  //signature
+  var signature = crypto
+    .createHmac("sha256", secretKey)
+    .update(rawSignature)
+    .digest("hex");
+  console.log("--------------------SIGNATURE----------------");
+  console.log(signature);
+
+  //json object send to MoMo endpoint
+  const requestBody = JSON.stringify({
+    partnerCode: partnerCode,
+    partnerName: "Test",
+    storeId: "MomoTestStore",
+    requestId: requestId,
+    amount: amount,
+    orderId: orderId,
+    orderInfo: orderInfo,
+    redirectUrl: redirectUrl,
+    ipnUrl: ipnUrl,
+    lang: lang,
+    requestType: requestType,
+    autoCapture: autoCapture,
+    extraData: extraData,
+    orderGroupId: orderGroupId,
+    signature: signature,
+  });
+
+  const option = {
+    method: "POST",
+    url: "https://test-payment.momo.vn/v2/gateway/api/create",
+    headers: {
+      "Content-Type": "application/json",
+      "Content-Length": Buffer.byteLength(requestBody),
+    },
+    data: requestBody,
+  };
+
+  let result;
   try {
-    const { payment_method, image } = req.body;
-    if (!payment_method || !image) {
-      return res
-        .status(400)
-        .json({ status: false, message: "All field is required" });
-    }
+    result = await axios(option);
 
-    const checkpayment_method = await Payment.findOne({
-      payment_method: payment_method,
-    });
-    if (checkpayment_method) {
-      return res
-        .status(400)
-        .json({ status: false, message: "This method is exits" });
-    }
+    await updatePaymentAndOrderStatus(
+      orderId,
+      result.data.transactionId,
+      amount,
+      userid
+    );
 
-    const payment = new Payment({ payment_method, image });
-    await payment.save();
-
-    return res.status(200).json({ status: true, data: payment });
+    return res.status(200).json(result.data);
   } catch (error) {
+    console.log("errror ===> ", error);
+
     return res.status(500).json({ status: false, message: "Server error" });
   }
 };
 
-exports.getAllPaymentMethod = async (req, res) => {
+async function updatePaymentAndOrderStatus(
+  orderId,
+  transactionId,
+  amount,
+  userid
+) {
   try {
-    const payments = await Payment.find();
-    return res.status(200).json({ status: true, data: payments });
+    // Find the order by its ID and populate its payment
+    const orderCheck = await Order.findById(orderId).populate(
+      "payment_id",
+      "transaction_id"
+    );
+
+    if (!orderCheck) {
+      throw new Error("Order not found");
+    }
+
+    // Update the transaction ID in payment
+    orderCheck.payment_id.transaction_id = transactionId;
+
+    // Update payment status to "completed"
+    const paymentUpdate = await Payment.findByIdAndUpdate(
+      orderCheck.payment_id._id,
+      { status: "completed", transaction_id: transactionId },
+      { new: true }
+    );
+
+    if (!paymentUpdate) {
+      throw new Error("Payment not found");
+    }
+
+    // Update order status to "processing"
+    const orderUpdate = await Order.findByIdAndUpdate(
+      orderCheck._id,
+      { status: "processing" },
+      { new: true }
+    );
+
+    if (!orderUpdate) {
+      throw new Error("Order not found");
+    }
+
+    // Save the payment history
+    await savePaymentHistory(userid, amount);
+
+    console.log(
+      "Payment and order successfully updated:",
+      paymentUpdate,
+      orderUpdate
+    );
   } catch (error) {
-    return res.status(500).json({ status: false, message: "Server error" });
+    console.log("Error updating payment or order:", error.message);
+    throw error;
+  }
+}
+
+// Lưu lịch sử giao dịch
+async function savePaymentHistory(userid, amount) {
+  try {
+    const user = await userModel.findOne({ userid });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const history = new PaidHistory({
+      user_id: user._id,
+      title: `Payment for order`,
+      money: amount,
+      point: calculatePoints(amount),
+    });
+
+    await history.save();
+    console.log("Payment history saved:", history);
+  } catch (err) {
+    console.log("Error saving payment history:", err.message);
+  }
+}
+
+// Tính điểm
+function calculatePoints(amount) {
+  return Math.floor(amount / 100);
+}
+
+exports.callback = async (req, res) => {
+  console.log("MoMo callback: ");
+  console.log(req.body);
+  return res.status(200).json(req.body);
+};
+
+exports.momoOrderStatus = async (req, res) => {
+  var { orderId } = req.body;
+
+  const rawSignature = `accessKey=${accessKey}&orderId=${orderId}&partnerCode=MOMO&requestId=${orderId}`;
+
+  var signature = crypto
+    .createHmac("sha256", secretKey)
+    .update(rawSignature)
+    .digest("hex");
+
+  const requestBody = JSON.stringify({
+    partnerCode: "MOMO",
+    orderId: orderId,
+    requestId: orderId,
+    lang: "vi",
+    signature: signature,
+  });
+
+  let options = {
+    method: "POST",
+    url: "https://test-payment.momo.vn/v2/gateway/api/query",
+    headers: {
+      "Content-Type": "application/json",
+      "Content-Length": Buffer.byteLength(requestBody),
+    },
+    data: requestBody,
+  };
+
+  try {
+    const result = await axios(options);
+    return res.status(200).json(result.data);
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json(error);
   }
 };
 
-// THANH TOAN DO SHOP TU QUAN LY :)
-// API Confirm successful payment
-exports.confirmPayment = async (req, res) => {
-  const { order_id, payment_id } = req.body;
+// // API Confirm successful payment
+// exports.confirmPayment = async (req, res) => {
+//   const { order_id, payment_id } = req.body;
 
-  try {
-    // Find the order by ID
-    const order = await Order.findById(order_id);
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
+//   try {
+//     // Find the order by ID
+//     const order = await Order.findById(order_id);
+//     if (!order) {
+//       return res.status(404).json({ message: "Order not found" });
+//     }
 
-    // Find the payment by ID
-    const payment = await Payment.findById(payment_id);
-    if (!payment) {
-      return res.status(404).json({ message: "Payment not found" });
-    }
+//     // Find the payment by ID
+//     const payment = await Payment.findById(payment_id);
+//     if (!payment) {
+//       return res.status(404).json({ message: "Payment not found" });
+//     }
 
-    // Check if the payment is already confirmed
-    if (payment.status === "completed") {
-      return res
-        .status(400)
-        .json({ message: "Payment has already been confirmed" });
-    }
+//     // Check if the payment is already confirmed
+//     if (payment.status === "completed") {
+//       return res
+//         .status(400)
+//         .json({ message: "Payment has already been confirmed" });
+//     }
 
-    // Update payment status to 'completed'
-    payment.status = "completed";
-    await payment.save();
+//     // Update payment status to 'completed'
+//     payment.status = "completed";
+//     await payment.save();
 
-    // Update order status to 'completed'
-    order.status = "completed";
-    await order.save();
+//     // Update order status to 'completed'
+//     order.status = "completed";
+//     await order.save();
 
-    // Respond with success message
-    res
-      .status(200)
-      .json({ message: "Payment confirmed and order completed successfully" });
-  } catch (error) {
-    console.error("Error confirming payment:", error);
-    res.status(500).json({
-      message: `An error occurred while confirming the payment: ${error.message}`,
-    });
-  }
-};
+//     // Respond with success message
+//     res
+//       .status(200)
+//       .json({ message: "Payment confirmed and order completed successfully" });
+//   } catch (error) {
+//     console.error("Error confirming payment:", error);
+//     res.status(500).json({
+//       message: `An error occurred while confirming the payment: ${error.message}`,
+//     });
+//   }
+// };
 
-//API Process refund for an order
-exports.processRefund = async (req, res) => {
-  const { order_id, reason } = req.body;
+// //API Process refund for an order
+// exports.processRefund = async (req, res) => {
+//   const { order_id, reason } = req.body;
 
-  try {
-    // Find the order by ID
-    const order = await Order.findById(order_id);
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
+//   try {
+//     // Find the order by ID
+//     const order = await Order.findById(order_id);
+//     if (!order) {
+//       return res.status(404).json({ message: "Order not found" });
+//     }
 
-    // Check if the order is already refunded or canceled
-    if (order.status === "canceled" || order.refund.status === "confirmed") {
-      return res
-        .status(400)
-        .json({ message: "Order is already canceled or refunded" });
-    }
+//     // Check if the order is already refunded or canceled
+//     if (order.status === "canceled" || order.refund.status === "confirmed") {
+//       return res
+//         .status(400)
+//         .json({ message: "Order is already canceled or refunded" });
+//     }
 
-    // Update order status to 'canceled'
-    order.status = "canceled";
+//     // Update order status to 'canceled'
+//     order.status = "canceled";
 
-    // Create a refund request
-    order.refund = {
-      reason,
-      status: "pending",
-      requestDate: new Date(),
-      createdAt: new Date(),
-    };
+//     // Create a refund request
+//     order.refund = {
+//       reason,
+//       status: "pending",
+//       requestDate: new Date(),
+//       createdAt: new Date(),
+//     };
 
-    // Update the order in the database
-    await order.save();
+//     // Update the order in the database
+//     await order.save();
 
-    // Update payment status (assuming the payment is stored with reference)
-    const payment = await Payment.findById(order.payment_id);
-    if (payment) {
-      payment.status = "failed"; // or any status representing a refund
-      await payment.save();
-    }
+//     // Update payment status (assuming the payment is stored with reference)
+//     const payment = await Payment.findById(order.payment_id);
+//     if (payment) {
+//       payment.status = "failed"; // or any status representing a refund
+//       await payment.save();
+//     }
 
-    // Respond with success message
-    res.status(200).json({
-      message: "Refund request processed successfully",
-      order_id: order._id,
-    });
-  } catch (error) {
-    console.error("Error processing refund:", error);
-    res.status(500).json({
-      message: `An error occurred while processing the refund: ${error.message}`,
-    });
-  }
-};
+//     // Respond with success message
+//     res.status(200).json({
+//       message: "Refund request processed successfully",
+//       order_id: order._id,
+//     });
+//   } catch (error) {
+//     console.error("Error processing refund:", error);
+//     res.status(500).json({
+//       message: `An error occurred while processing the refund: ${error.message}`,
+//     });
+//   }
+// };
 
-//API Save payment information and update payment record
-exports.savePaymentInfo = async (req, res) => {
-  const { order_id, payment_method } = req.body;
+// //API Save payment information and update payment record
+// exports.savePaymentInfo = async (req, res) => {
+//   const { order_id, payment_method } = req.body;
 
-  try {
-    // Tìm đơn hàng theo ID
-    const order = await Order.findById(order_id);
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
+//   try {
+//     // Tìm đơn hàng theo ID
+//     const order = await Order.findById(order_id);
+//     if (!order) {
+//       return res.status(404).json({ message: "Order not found" });
+//     }
 
-    // Lấy total_price từ đơn hàng
-    const amount = order.total_price; // Lấy giá trị total_price làm amount
+//     // Lấy total_price từ đơn hàng
+//     const amount = order.total_price; // Lấy giá trị total_price làm amount
 
-    // Tìm bản ghi thanh toán dựa trên order_id
-    let payment = await Payment.findOne({ order_id: order._id });
-    if (!payment) {
-      // Nếu không có bản ghi thanh toán, tạo mới
-      payment = new Payment({
-        order_id: order._id,
-        payment_method,
-        status: "completed",
-        amount, // Lưu số tiền thanh toán
-      });
-    } else {
-      // Cập nhật thông tin thanh toán nếu đã tồn tại
-      payment.payment_method = payment_method;
-      payment.amount = amount; // Cập nhật số tiền thanh toán
-      payment.status = "completed"; // Hoặc cập nhật trạng thái nếu cần
-    }
+//     // Tìm bản ghi thanh toán dựa trên order_id
+//     let payment = await Payment.findOne({ order_id: order._id });
+//     if (!payment) {
+//       // Nếu không có bản ghi thanh toán, tạo mới
+//       payment = new Payment({
+//         order_id: order._id,
+//         payment_method,
+//         status: "completed",
+//         amount, // Lưu số tiền thanh toán
+//       });
+//     } else {
+//       // Cập nhật thông tin thanh toán nếu đã tồn tại
+//       payment.payment_method = payment_method;
+//       payment.amount = amount; // Cập nhật số tiền thanh toán
+//       payment.status = "completed"; // Hoặc cập nhật trạng thái nếu cần
+//     }
 
-    // Lưu bản ghi thanh toán
-    await payment.save();
+//     // Lưu bản ghi thanh toán
+//     await payment.save();
 
-    // Cập nhật lại thông tin thanh toán trong đơn hàng
-    order.payment_id = payment._id; // Gán payment_id cho đơn hàng
-    order.status = "completed"; // Cập nhật trạng thái đơn hàng
-    await order.save();
+//     // Cập nhật lại thông tin thanh toán trong đơn hàng
+//     order.payment_id = payment._id; // Gán payment_id cho đơn hàng
+//     order.status = "completed"; // Cập nhật trạng thái đơn hàng
+//     await order.save();
 
-    // Phản hồi thành công
-    res.status(201).json({
-      message: "Payment information saved and updated successfully",
-      payment_id: payment._id,
-    });
-  } catch (error) {
-    console.error("Error saving payment information:", error);
-    res.status(500).json({
-      message: `An error occurred while saving payment information: ${error.message}`,
-    });
-  }
-};
+//     // Phản hồi thành công
+//     res.status(201).json({
+//       message: "Payment information saved and updated successfully",
+//       payment_id: payment._id,
+//     });
+//   } catch (error) {
+//     console.error("Error saving payment information:", error);
+//     res.status(500).json({
+//       message: `An error occurred while saving payment information: ${error.message}`,
+//     });
+//   }
+// };
 
-//API Get all payments or payment by payment_id
-exports.getPayments = async (req, res) => {
-  const { payment_id } = req.params; // Nhận payment_id từ tham số URL
+// //API Get all payments or payment by payment_id
+// exports.getPayments = async (req, res) => {
+//   const { payment_id } = req.params; // Nhận payment_id từ tham số URL
 
-  try {
-    if (payment_id) {
-      // Nếu payment_id được cung cấp, tìm bản ghi thanh toán theo ID
-      const payment = await Payment.findById(payment_id).populate("order_id"); // Có thể populate để lấy thông tin đơn hàng
+//   try {
+//     if (payment_id) {
+//       // Nếu payment_id được cung cấp, tìm bản ghi thanh toán theo ID
+//       const payment = await Payment.findById(payment_id).populate("order_id"); // Có thể populate để lấy thông tin đơn hàng
 
-      // Kiểm tra xem bản ghi thanh toán có tồn tại không
-      if (!payment) {
-        return res.status(404).json({ message: "Payment not found." });
-      }
+//       // Kiểm tra xem bản ghi thanh toán có tồn tại không
+//       if (!payment) {
+//         return res.status(404).json({ message: "Payment not found." });
+//       }
 
-      // Trả về thông tin thanh toán
-      return res.status(200).json({
-        message: "Payment information retrieved successfully",
-        payment,
-      });
-    } else {
-      // Nếu không có payment_id, lấy tất cả các bản ghi thanh toán
-      const payments = await Payment.find().populate("order_id"); // Có thể populate để lấy thông tin đơn hàng
-      return res
-        .status(200)
-        .json({ message: "Payments retrieved successfully", payments });
-    }
-  } catch (error) {
-    console.error("Error retrieving payments:", error);
-    res.status(500).json({
-      message: `An error occurred while retrieving payments: ${error.message}`,
-    });
-  }
-};
+//       // Trả về thông tin thanh toán
+//       return res.status(200).json({
+//         message: "Payment information retrieved successfully",
+//         payment,
+//       });
+//     } else {
+//       // Nếu không có payment_id, lấy tất cả các bản ghi thanh toán
+//       const payments = await Payment.find().populate("order_id"); // Có thể populate để lấy thông tin đơn hàng
+//       return res
+//         .status(200)
+//         .json({ message: "Payments retrieved successfully", payments });
+//     }
+//   } catch (error) {
+//     console.error("Error retrieving payments:", error);
+//     res.status(500).json({
+//       message: `An error occurred while retrieving payments: ${error.message}`,
+//     });
+//   }
+// };
 
-//API Update payment status for an existing order
-exports.updatePaymentStatus = async (req, res) => {
-  const { order_id, status } = req.body; // Nhận order_id và status từ body
+// //API Update payment status for an existing order
+// exports.updatePaymentStatus = async (req, res) => {
+//   const { order_id, status } = req.body; // Nhận order_id và status từ body
 
-  try {
-    // Tìm đơn hàng theo order_id
-    const order = await Order.findById(order_id);
-    if (!order) {
-      return res.status(404).json({ message: "Order not found." });
-    }
+//   try {
+//     // Tìm đơn hàng theo order_id
+//     const order = await Order.findById(order_id);
+//     if (!order) {
+//       return res.status(404).json({ message: "Order not found." });
+//     }
 
-    // Tìm bản ghi thanh toán theo order_id
-    const payment = await Payment.findOne({ order_id: order._id });
-    if (!payment) {
-      return res
-        .status(404)
-        .json({ message: "Payment record not found for this order." });
-    }
+//     // Tìm bản ghi thanh toán theo order_id
+//     const payment = await Payment.findOne({ order_id: order._id });
+//     if (!payment) {
+//       return res
+//         .status(404)
+//         .json({ message: "Payment record not found for this order." });
+//     }
 
-    // Cập nhật trạng thái thanh toán
-    payment.status = status; // status có thể là "pending", "completed", "failed"
-    await payment.save();
+//     // Cập nhật trạng thái thanh toán
+//     payment.status = status; // status có thể là "pending", "completed", "failed"
+//     await payment.save();
 
-    // Cập nhật trạng thái đơn hàng nếu cần
-    if (status === "completed") {
-      order.status = "completed"; // Hoặc cập nhật trạng thái khác nếu cần
-    } else if (status === "failed") {
-      order.status = "canceled"; // Hoặc cập nhật trạng thái khác nếu cần
-    }
-    await order.save();
+//     // Cập nhật trạng thái đơn hàng nếu cần
+//     if (status === "completed") {
+//       order.status = "completed"; // Hoặc cập nhật trạng thái khác nếu cần
+//     } else if (status === "failed") {
+//       order.status = "canceled"; // Hoặc cập nhật trạng thái khác nếu cần
+//     }
+//     await order.save();
 
-    // Phản hồi thành công
-    res
-      .status(200)
-      .json({ message: "Payment status updated successfully.", payment });
-  } catch (error) {
-    console.error("Error updating payment status:", error);
-    res.status(500).json({
-      message: `An error occurred while updating payment status: ${error.message}`,
-    });
-  }
-};
+//     // Phản hồi thành công
+//     res
+//       .status(200)
+//       .json({ message: "Payment status updated successfully.", payment });
+//   } catch (error) {
+//     console.error("Error updating payment status:", error);
+//     res.status(500).json({
+//       message: `An error occurred while updating payment status: ${error.message}`,
+//     });
+//   }
+// };
 
-// API Get payments by status
-exports.getPaymentsByStatus = async (req, res) => {
-  const { status } = req.body; // Nhận status từ body
+// // API Get payments by status
+// exports.getPaymentsByStatus = async (req, res) => {
+//   const { status } = req.body; // Nhận status từ body
 
-  try {
-    // Kiểm tra xem status có hợp lệ hay không
-    const validStatuses = ["pending", "completed", "failed"];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ message: "Invalid status provided." });
-    }
+//   try {
+//     // Kiểm tra xem status có hợp lệ hay không
+//     const validStatuses = ["pending", "completed", "failed"];
+//     if (!validStatuses.includes(status)) {
+//       return res.status(400).json({ message: "Invalid status provided." });
+//     }
 
-    // Tìm các bản ghi thanh toán theo trạng thái
-    const payments = await Payment.find({ status });
+//     // Tìm các bản ghi thanh toán theo trạng thái
+//     const payments = await Payment.find({ status });
 
-    // Kiểm tra nếu không có bản ghi nào
-    if (payments.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No payments found with the provided status." });
-    }
+//     // Kiểm tra nếu không có bản ghi nào
+//     if (payments.length === 0) {
+//       return res
+//         .status(404)
+//         .json({ message: "No payments found with the provided status." });
+//     }
 
-    // Trả về danh sách các bản ghi thanh toán
-    res.status(200).json(payments);
-  } catch (error) {
-    console.error("Error retrieving payments by status:", error);
-    res.status(500).json({
-      message: `An error occurred while retrieving payments: ${error.message}`,
-    });
-  }
-};
+//     // Trả về danh sách các bản ghi thanh toán
+//     res.status(200).json(payments);
+//   } catch (error) {
+//     console.error("Error retrieving payments by status:", error);
+//     res.status(500).json({
+//       message: `An error occurred while retrieving payments: ${error.message}`,
+//     });
+//   }
+// };
 
-// API Cancel Payment
-exports.cancelPayment = async (req, res) => {
-  const { payment_id } = req.body; // Nhận payment_id từ body
+// // API Cancel Payment
+// exports.cancelPayment = async (req, res) => {
+//   const { payment_id } = req.body; // Nhận payment_id từ body
 
-  try {
-    // Tìm thanh toán theo ID
-    const payment = await Payment.findById(payment_id);
-    if (!payment) {
-      return res.status(404).json({ message: "Payment not found." });
-    }
+//   try {
+//     // Tìm thanh toán theo ID
+//     const payment = await Payment.findById(payment_id);
+//     if (!payment) {
+//       return res.status(404).json({ message: "Payment not found." });
+//     }
 
-    // Cập nhật trạng thái thanh toán thành "failed" hoặc "canceled"
-    payment.status = "failed"; // Hoặc "canceled" tùy thuộc vào yêu cầu
-    await payment.save();
+//     // Cập nhật trạng thái thanh toán thành "failed" hoặc "canceled"
+//     payment.status = "failed"; // Hoặc "canceled" tùy thuộc vào yêu cầu
+//     await payment.save();
 
-    // Cập nhật trạng thái đơn hàng về "pending"
-    const order = await Order.findById(payment.order_id);
-    if (order) {
-      order.status = "pending"; // Đưa đơn hàng về trạng thái chờ
-      await order.save();
-    } else {
-      console.warn("Order not found for the payment, but payment was updated.");
-    }
+//     // Cập nhật trạng thái đơn hàng về "pending"
+//     const order = await Order.findById(payment.order_id);
+//     if (order) {
+//       order.status = "pending"; // Đưa đơn hàng về trạng thái chờ
+//       await order.save();
+//     } else {
+//       console.warn("Order not found for the payment, but payment was updated.");
+//     }
 
-    // Phản hồi thành công
-    res.status(200).json({
-      message:
-        "Payment canceled successfully, and order status updated to pending.",
-      payment,
-    });
-  } catch (error) {
-    console.error("Error canceling payment and updating order:", error);
-    res.status(500).json({
-      message: `An error occurred while canceling the payment and updating the order: ${error.message}`,
-    });
-  }
-};
+//     // Phản hồi thành công
+//     res.status(200).json({
+//       message:
+//         "Payment canceled successfully, and order status updated to pending.",
+//       payment,
+//     });
+//   } catch (error) {
+//     console.error("Error canceling payment and updating order:", error);
+//     res.status(500).json({
+//       message: `An error occurred while canceling the payment and updating the order: ${error.message}`,
+//     });
+//   }
+// };

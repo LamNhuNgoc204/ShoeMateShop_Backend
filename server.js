@@ -4,6 +4,7 @@ var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 const cors = require("cors");
+const ngrok = require("ngrok");
 
 var app = express();
 
@@ -30,6 +31,7 @@ const sizeRouter = require("./routes/sizeRouter");
 const brandRouter = require("./routes/brandRouter");
 const filterRouter = require("./routes/filterRouter");
 const shipRouter = require("./routes/shipRouter");
+const paymentMethodRouter = require("./routes/paymentMethodRouter");
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
@@ -66,6 +68,21 @@ app.use("/sizes", sizeRouter);
 app.use("/brands", brandRouter);
 app.use("/filter", filterRouter);
 app.use("/ship", shipRouter);
+app.use("/payment-method", paymentMethodRouter);
+
+(async function () {
+  try {
+    const authToken = "2np5lhGS7PPW5guLFQFPp7n3496_2uycZ4LzSVFT2SL33CSTK";
+    await ngrok.authtoken(authToken);
+
+    const port = 3000;
+    const url = await ngrok.connect(port);
+
+    console.log(`Ngrok tunnel created at: ${url}`);
+  } catch (error) {
+    console.error("Error starting ngrok:", error);
+  }
+})();
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

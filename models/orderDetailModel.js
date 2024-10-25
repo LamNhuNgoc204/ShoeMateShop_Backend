@@ -5,19 +5,16 @@ const orderDetailSchema = new mongoose.Schema({
     ref: "order",
     required: true,
   },
-  size_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "size",
-    required: true,
-  },
-  quantity: { type: Number, required: true, min: 1 },
-  size_name: { type: String, required: true },
   product: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "product",
-    required: true,
+    id: { type: String, required: true },
+    pd_image: [{ type: String, default: [] }],
+    name: { type: String, required: true },
+    size_name: { type: String, required: true },
+    price: { type: Number, required: true },
+    pd_quantity: { type: Number, required: true, min: 1 },
   },
   createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
 });
 
 module.exports =
