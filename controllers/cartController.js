@@ -2,10 +2,30 @@ const Product = require("../models/productModel");
 const Cart = require("../models/cartModels");
 const Size = require("../models/sizeModel");
 
+exports.getUserCard = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const userCard = await Cart.find({ user_id: userId })
+      .populate("product_id", "assets name price")
+      .populate("size_id", "name");
+
+    return res.status(200).json({ status: true, data: userCard });
+  } catch (error) {
+    console.log("error", error);
+
+    return res.status(500).json({
+      status: false,
+      message: "Failed to add product to cart",
+      error: error,
+    });
+  }
+};
+
 // API để thêm sản phẩm vào giỏ hàng
 exports.addProductToCart = async (req, res) => {
   try {
-    const { product_id, size_name, quantity } = req.body;
+    const { product_id, size_id, quantity } = req.body;
     const user = req.user;
     const user_id = req.user._id;
 
@@ -17,8 +37,11 @@ exports.addProductToCart = async (req, res) => {
         .json({ status: false, message: "Product not found" });
 
     // Kiểm tra xem kích thước có tồn tại trong bộ sưu tập Size cho sản phẩm này không
-    const size = await Size.findOne({ name: size_name });
+    const size = await Size.findById(size_id);
     if (!size) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Invalid size for this product" });
       return res
         .status(400)
         .json({ status: false, message: "Invalid size for this product" });
@@ -28,7 +51,7 @@ exports.addProductToCart = async (req, res) => {
     let cartItem = await Cart.findOne({
       user_id,
       product_id,
-      size_id: size._id,
+      size_id: size_id,
     });
 
     if (cartItem) {
@@ -39,6 +62,10 @@ exports.addProductToCart = async (req, res) => {
       // Nếu không, tạo một mục giỏ hàng mới
       cartItem = new Cart({ user_id, product_id, size_id: size._id, quantity });
       await cartItem.save();
+
+      // Thêm mục giỏ hàng mới vào giỏ hàng của người dùng
+      user.cart.push(cartItem._id);
+      await user.save();
     }
 
     return res.status(200).json({
@@ -57,11 +84,11 @@ exports.addProductToCart = async (req, res) => {
 // API để cập nhật số lượng của sản phẩm trong giỏ hàng
 exports.updateCartQuantity = async (req, res) => {
   try {
-    const { product_id, size_name, quantity } = req.body;
+    const { product_id, size_id, quantity } = req.body;
     const user_id = req.user._id;
 
-    // Kiểm tra xem kích thước có tồn tại trong bộ sưu tập Size cho sản phẩm này không
-    const size = await Size.findOne({ name: size_name });
+    // Kiểm tra xem kích thước có tồn tại không
+    const size = await Size.findById(size_id);
     if (!size) {
       return res
         .status(400)
@@ -72,16 +99,17 @@ exports.updateCartQuantity = async (req, res) => {
     let cartItem = await Cart.findOne({
       user_id,
       product_id,
-      size_id: size._id,
+      size_id,
     });
-
     if (!cartItem) {
       return res
         .status(404)
         .json({ status: false, message: "Product not found in the cart" });
     }
 
+    // Cập nhật số lượng của mục giỏ hàng
     if (quantity <= 0) {
+      // Nếu số lượng bằng 0 hoặc ít hơn, xóa mục khỏi giỏ hàng
       await Cart.deleteOne({ _id: cartItem._id });
 
       return res.status(200).json({
@@ -105,6 +133,10 @@ exports.updateCartQuantity = async (req, res) => {
       status: false,
       message: "Failed to update product quantity in cart",
     });
+    return res.status(500).json({
+      status: false,
+      message: "Failed to update product quantity in cart",
+    });
   }
 };
 
@@ -116,7 +148,9 @@ exports.removeProductFromCart = async (req, res) => {
 
     if (!product_id || !size_name) {
       console.log("Missing product_id or size_name");
-      return res.status(400).json({ status: false, message: "Missing product_id or size_name" });
+      return res
+        .status(400)
+        .json({ status: false, message: "Missing product_id or size_name" });
     }
 
     // Kiểm tra xem kích thước có tồn tại trong bộ sưu tập Size cho sản phẩm này không
@@ -263,7 +297,9 @@ exports.getCartByUserId = async (req, res) => {
       const size = await Size.findById(item.size_id);
 
       if (!product || !size) {
-        console.warn(`Không tìm thấy sản phẩm hoặc kích thước cho item ID: ${item._id}`);
+        console.warn(
+          `Không tìm thấy sản phẩm hoặc kích thước cho item ID: ${item._id}`
+        );
         continue;
       }
 
@@ -276,7 +312,10 @@ exports.getCartByUserId = async (req, res) => {
         sizeName: size.name,
         size_id: size._id,
         quantity: item.quantity,
-        finalPrice: (product.price * (1 - (product.discount || 0) / 100)).toFixed(2),
+        finalPrice: (
+          product.price *
+          (1 - (product.discount || 0) / 100)
+        ).toFixed(2),
       });
     }
 
@@ -287,6 +326,8 @@ exports.getCartByUserId = async (req, res) => {
     });
   } catch (error) {
     console.log("Lỗi: ", error);
-    return res.status(500).json({ status: false, message: "Lấy chi tiết giỏ hàng thất bại" });
+    return res
+      .status(500)
+      .json({ status: false, message: "Lấy chi tiết giỏ hàng thất bại" });
   }
 };

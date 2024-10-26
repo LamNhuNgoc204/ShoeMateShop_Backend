@@ -7,7 +7,7 @@ const { checkOrderByID } = require("../middlewares/orderMiddle");
 //localhost:3000/payment
 
 // ZALO PAY
-router.post("/", control.Zalopayment);
+router.post("/", protect, control.Zalopayment);
 
 router.post("order-status/:app_trans_id", control.orderStatus);
 

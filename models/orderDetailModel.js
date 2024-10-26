@@ -12,9 +12,9 @@ const orderDetailSchema = new mongoose.Schema({
     size_name: { type: String, required: true },
     price: { type: Number, required: true },
     pd_quantity: { type: Number, required: true, min: 1 },
+    size_id: { type: String, required: true },
   },
   createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
 });
 
 module.exports =
