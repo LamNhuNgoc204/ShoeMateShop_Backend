@@ -3,7 +3,7 @@ const OrderDetail = require("../models/orderDetailModel");
 const Payment = require("../models/paymentModel");
 const Size = require("../models/sizeModel");
 const Product = require("../models/productModel");
-const User = require("../models/userModel");
+const Cart = require("../models/cartModels");
 const axios = require("axios");
 const crypto = require("crypto");
 const updatePaymentHistory = require("../service/updatePaymentHistory");
@@ -37,7 +37,7 @@ exports.createNewOrder = async (req, res) => {
     const newOrder = new Order({
       user_id,
       payment_id: savedPayment._id,
-      voucher_id,
+      voucher_id: voucher_id || null,
       shipping_id,
       total_price,
       receiver,
@@ -58,19 +58,50 @@ exports.createNewOrder = async (req, res) => {
     const orderDetails = products.map((product) => {
       return new OrderDetail({
         order_id: savedOrder._id,
-        quantity: products.length,
         product: {
-          id: product.product._id,
-          pd_image: product.product.assets,
-          name: product.product.name,
-          size_name: product.product.size_name,
-          price: product.product.price,
-          pd_quantity: product.product.quantity,
+          id: product._id,
+          pd_image: product.assets,
+          name: product.name,
+          size_name: product.size_name,
+          price: product.price,
+          pd_quantity: product.quantity,
+          size_id: product.size_id,
         },
       });
     });
 
-    await OrderDetail.insertMany(orderDetails);
+    console.log("Order Details:", orderDetails);
+    try {
+      await OrderDetail.insertMany(orderDetails);
+    } catch (err) {
+      console.error("Error saving order details:", err);
+      return res
+        .status(400)
+        .json({ status: false, message: "Failed to save order details." });
+    }
+
+    // Luu vao order
+    savedOrder.orderDetails = orderDetails.map((detail) => detail._id);
+    await savedOrder.save();
+
+    // Xóa sản phẩm trong giỏ hàng sau khi tạo đơn hàng thành công
+    await Cart.deleteMany({
+      user_id,
+      size_id: { $in: products.map((product) => product.size_id) },
+      product_id: { $in: products.map((product) => product._id) },
+    });
+
+    // Cập nhật số lượng sản phẩm trong kho
+    // for (const product of products) {
+    //   await Product.findByIdAndUpdate(
+    //     product._id, // ID sản phẩm
+    //     { $inc: { "size.$[elem].quantity": -product.quantity } }, // Giảm số lượng
+    //     {
+    //       arrayFilters: [{ "elem.sizeId": product.sizeId }], // Lọc theo sizeId
+    //       new: true,
+    //     }
+    //   );
+    // }
 
     return res.status(201).json({
       status: true,

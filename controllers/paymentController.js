@@ -116,7 +116,10 @@ const config = {
 };
 
 exports.Zalopayment = async (req, res) => {
-  const { userid, orderId, amount } = req.body;
+  const { orderId, amount } = req.body;
+  const userid = req.user._id;
+  console.log("userid zalo pay", userid);
+
   const embed_data = "{}";
   const items = "[{}]";
 
@@ -141,8 +144,6 @@ exports.Zalopayment = async (req, res) => {
     amount: amount,
     description: `ShoeMate - Payment for the order #${transID}`,
     bank_code: "",
-    callback_url:
-      "https://aeab-2405-4802-93f3-ab70-7599-b707-8b72-7a02.ngrok-free.app/zalo/callback",
   };
 
   // appid|app_trans_id|appuser|amount|apptime|embeddata|item
@@ -166,12 +167,20 @@ exports.Zalopayment = async (req, res) => {
     const response = await axios.post(config.endpoint, null, { params: order });
     console.log(response.data);
 
-    await updatePaymentAndOrderStatus(
-      orderCheck,
-      response.data.transaction_id,
-      amount,
-      userid
-    );
+    try {
+      await updatePaymentAndOrderStatus(
+        orderCheck,
+        response.data.transaction_id,
+        amount,
+        userid
+      );
+    } catch (error) {
+      console.log("Failed to update payment and order status:", error.message);
+      return res.status(500).json({
+        status: false,
+        message: "Failed to update payment and order status.",
+      });
+    }
 
     return res.status(200).json({ status: true, data: response.data });
   } catch (error) {
@@ -213,7 +222,14 @@ async function updatePaymentAndOrderStatus(
     }
 
     // Lưu lịch sử thanh toán
-    await savePaymentHistory(userid, amount);
+    const user = await userModel.findOne({
+      _id: new mongoose.Types.ObjectId(userid),
+    });
+    if (user) {
+      await savePaymentHistory(userid, amount);
+    } else {
+      console.log("check user before save : ", user);
+    }
 
     console.log(
       "Payment and order successfully updated:",
@@ -229,7 +245,11 @@ async function updatePaymentAndOrderStatus(
 // Lưu lịch sử thanh toán
 async function savePaymentHistory(userid, amount) {
   try {
-    const user = await userModel.findOne({ _id: userid });
+    const userIdObj = new mongoose.Types.ObjectId(userid); // Đảm bảo userid là ObjectId
+    const user = await userModel.findOne({ _id: userIdObj });
+    console.log("Searching for user with ID:", userIdObj);
+    // const user = await userModel.findOne({ _id: userid });
+    // console.log("Searching for user with ID:", userid);
     if (!user) {
       throw new Error("User not found");
     }
