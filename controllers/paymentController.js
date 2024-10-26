@@ -116,8 +116,8 @@ const config = {
 };
 
 exports.Zalopayment = async (req, res) => {
-  const { orderId, amount } = req.body;
-  const userid = req.user._id;
+  const { userid, orderId, amount } = req.body;
+  // const userid = req.user._id;
   console.log("userid zalo pay", userid);
 
   const embed_data = "{}";

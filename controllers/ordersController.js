@@ -162,6 +162,101 @@ exports.getUserOrder = async (req, res) => {
   }
 };
 
+// API để lấy đơn hàng với trạng thái "pending"
+exports.getPendingOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({ status: 'pending', user_id: req.user._id });
+    const orderIds = orders.map(order => order._id);
+    const orderDetails = await OrderDetail.find({ order_id: { $in: orderIds } }).populate('product.id');
+
+    const ordersWithDetails = orders.map(order => {
+      const details = orderDetails.filter(detail => detail.order_id.equals(order._id));
+      return { ...order.toObject(), orderDetails: details };
+    });
+
+    return res.status(200).json({ status: true, data: ordersWithDetails });
+  } catch (error) {
+    console.log('Error fetching pending orders: ', error);
+    return res.status(500).json({ status: false, message: 'Server error', error: error.message });
+  }
+};
+
+// API để lấy đơn hàng với trạng thái "processing"
+exports.getProcessingOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({ status: 'processing', user_id: req.user._id });
+    const orderIds = orders.map(order => order._id);
+    const orderDetails = await OrderDetail.find({ order_id: { $in: orderIds } }).populate('product.id');
+
+    const ordersWithDetails = orders.map(order => {
+      const details = orderDetails.filter(detail => detail.order_id.equals(order._id));
+      return { ...order.toObject(), orderDetails: details };
+    });
+
+    return res.status(200).json({ status: true, data: ordersWithDetails });
+  } catch (error) {
+    console.log('Error fetching processing orders: ', error);
+    return res.status(500).json({ status: false, message: 'Server error', error: error.message });
+  }
+};
+
+// API để lấy đơn hàng với trạng thái "completed"
+exports.getCompletedOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({ status: 'completed', user_id: req.user._id });
+    const orderIds = orders.map(order => order._id);
+    const orderDetails = await OrderDetail.find({ order_id: { $in: orderIds } }).populate('product.id');
+
+    const ordersWithDetails = orders.map(order => {
+      const details = orderDetails.filter(detail => detail.order_id.equals(order._id));
+      return { ...order.toObject(), orderDetails: details };
+    });
+
+    return res.status(200).json({ status: true, data: ordersWithDetails });
+  } catch (error) {
+    console.log('Error fetching completed orders: ', error);
+    return res.status(500).json({ status: false, message: 'Server error', error: error.message });
+  }
+};
+
+// API để lấy đơn hàng với trạng thái "cancelled"
+exports.getCancelledOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({ status: 'cancelled', user_id: req.user._id });
+    const orderIds = orders.map(order => order._id);
+    const orderDetails = await OrderDetail.find({ order_id: { $in: orderIds } }).populate('product.id');
+
+    const ordersWithDetails = orders.map(order => {
+      const details = orderDetails.filter(detail => detail.order_id.equals(order._id));
+      return { ...order.toObject(), orderDetails: details };
+    });
+
+    return res.status(200).json({ status: true, data: ordersWithDetails });
+  } catch (error) {
+    console.log('Error fetching cancelled orders: ', error);
+    return res.status(500).json({ status: false, message: 'Server error', error: error.message });
+  }
+};
+
+// API để lấy đơn hàng với trạng thái "refunded"
+exports.getRefundedOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({ status: 'refunded', user_id: req.user._id });
+    const orderIds = orders.map(order => order._id);
+    const orderDetails = await OrderDetail.find({ order_id: { $in: orderIds } }).populate('product.id');
+
+    const ordersWithDetails = orders.map(order => {
+      const details = orderDetails.filter(detail => detail.order_id.equals(order._id));
+      return { ...order.toObject(), orderDetails: details };
+    });
+
+    return res.status(200).json({ status: true, data: ordersWithDetails });
+  } catch (error) {
+    console.log('Error fetching refunded orders: ', error);
+    return res.status(500).json({ status: false, message: 'Server error', error: error.message });
+  }
+};
+
 exports.getAllOrdersForAdmin = async (req, res) => {
   try {
     const orders = await Order.find({})
