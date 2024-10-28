@@ -42,9 +42,6 @@ exports.addProductToCart = async (req, res) => {
       return res
         .status(400)
         .json({ status: false, message: "Invalid size for this product" });
-      return res
-        .status(400)
-        .json({ status: false, message: "Invalid size for this product" });
     }
 
     // Kiểm tra xem sản phẩm và kích thước đã tồn tại trong giỏ hàng của người dùng chưa
@@ -62,10 +59,6 @@ exports.addProductToCart = async (req, res) => {
       // Nếu không, tạo một mục giỏ hàng mới
       cartItem = new Cart({ user_id, product_id, size_id: size._id, quantity });
       await cartItem.save();
-
-      // Thêm mục giỏ hàng mới vào giỏ hàng của người dùng
-      user.cart.push(cartItem._id);
-      await user.save();
     }
 
     return res.status(200).json({
@@ -129,10 +122,6 @@ exports.updateCartQuantity = async (req, res) => {
     }
   } catch (error) {
     console.log("Error: ", error);
-    return res.status(500).json({
-      status: false,
-      message: "Failed to update product quantity in cart",
-    });
     return res.status(500).json({
       status: false,
       message: "Failed to update product quantity in cart",
