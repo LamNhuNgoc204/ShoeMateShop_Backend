@@ -13,8 +13,6 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   role: { type: String, enum: ["admin", "user", "employee"], default: "user" },
   device_info: { type: Object },
-  wallet: { type: mongoose.Schema.Types.ObjectId, ref: "wallet" },
-  search: [{ type: mongoose.Schema.Types.ObjectId, ref: "search" }],
   isVerified: { type: Boolean, default: false },
   otpCode: { type: String },
   otpExpires: { type: Date },

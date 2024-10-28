@@ -9,6 +9,8 @@ const addressSchema = new mongoose.Schema({
   recieverPhoneNumber: { type: String, required: true },
   recieverName: { type: String, required: true },
   isDefault: { type: Boolean, default: false },
+  createAt: { type: Date, default: Date.now },
+  updateAt: { type: Date },
 });
 
 module.exports =
