@@ -458,6 +458,16 @@ exports.cancelOrder = async (req, res) => {
 
     order.status = "cancelled";
     order.shipping_id.status = "cancelled";
+
+    // Cộng lại sản phẩm vào kho
+    const orderDetails = await OrderDetail.find({ order_id: order._id });
+    for (const detail of orderDetails) {
+      await Product.updateOne(
+        { _id: detail.product.id, "size.sizeId": detail.product.size_id },
+        { $inc: { "size.$.quantity": detail.product.pd_quantity } }
+      );
+    }
+
     const result = await order.save();
     if (!result) {
       return res
