@@ -92,16 +92,18 @@ exports.createNewOrder = async (req, res) => {
     });
 
     // Cập nhật số lượng sản phẩm trong kho
-    // for (const product of products) {
-    //   await Product.findByIdAndUpdate(
-    //     product._id, // ID sản phẩm
-    //     { $inc: { "size.$[elem].quantity": -product.quantity } }, // Giảm số lượng
-    //     {
-    //       arrayFilters: [{ "elem.sizeId": product.sizeId }], // Lọc theo sizeId
-    //       new: true,
-    //     }
-    //   );
-    // }
+    for (const product of products) {
+      const updatedProduct = await Product.updateOne(
+        { _id: product._id, "size.sizeId": product.size_id },
+        { $inc: { "size.$.quantity": -product.quantity } }
+      );
+
+      if (updatedProduct.matchedCount === 0) {
+        console.warn(
+          `Không tìm thấy sản phẩm với _id: ${product._id} và sizeId: ${product.size_id}`
+        );
+      }
+    }
 
     return res.status(201).json({
       status: true,
