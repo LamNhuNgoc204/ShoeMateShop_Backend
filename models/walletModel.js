@@ -5,7 +5,7 @@ const walletSchema = new mongoose.Schema({
     ref: "user",
     required: true,
   },
-  money: { type: Number, default: 0 },
+  balance: { type: Number, default: 0 },
   point: { type: Number, default: 0 },
   pin: { type: String, required: true },
   create_at: { type: Date, default: Date.now },
