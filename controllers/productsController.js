@@ -204,6 +204,16 @@ exports.getProductById = async (req, res) => {
         select: "name",
       });
 
+    if (userId) {
+      const isFavorite = await Wishlist.exists({
+        user_id: userId,
+        product_id: id,
+      });
+      product._doc.isFavorite = !!isFavorite;
+    } else {
+      product._doc.isFavorite = false;
+    }
+
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
