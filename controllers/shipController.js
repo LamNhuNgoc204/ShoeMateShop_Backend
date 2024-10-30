@@ -1,15 +1,33 @@
 const Ship = require("../models/shippingModel");
 
+exports.getShipDefault = async (_, res) => {
+  try {
+    const result = await Ship.findOne({ isDefault: true });
+
+    if (result) {
+      return res.status(200).json({ status: true, data: result });
+    }
+  } catch (error) {
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 exports.createShip = async (req, res) => {
-  const { name, deliveryTime, cost, trackingAvailable } = req.body;
+  const { name, deliveryTime, cost, trackingAvailable, isDefault } = req.body;
 
   try {
+    if (isDefault) {
+      await Ship.updateMany({ isDefault: true }, { isDefault: false });
+    }
+
     const newCompany = await Ship.create({
       name,
       deliveryTime,
       cost,
       trackingAvailable,
+      isDefault: !!isDefault,
     });
+
     res.status(201).json(newCompany);
   } catch (error) {
     res.status(400).json({ message: error.message });

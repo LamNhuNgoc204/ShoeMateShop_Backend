@@ -1,3 +1,6 @@
+const User = require("../models/userModel");
+const { hashPassword } = require("../utils/encryptionUtils");
+
 exports.updateUserPermissions = async (req, res) => {
   try {
     const { newRole } = req.body;
@@ -28,6 +31,34 @@ exports.updateUserPermissions = async (req, res) => {
       message: "User role updated successfully.",
       data: infor,
     });
+  } catch (error) {
+    console.error("Error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
+exports.changePass = async (req, res) => {
+  try {
+    const { email, newPass } = req.body;
+
+    if (!email || !newPass) {
+      return res
+        .status(400)
+        .json({ status: false, mesage: "Fields are required" });
+    }
+
+    const userExits = await User.findOne({ email: email });
+    if (!userExits) {
+      return res.status(400).json({ status: false, mesage: "User not found!" });
+    }
+
+    const passUpdate = await hashPassword(newPass);
+    userExits.password = passUpdate;
+    await userExits.save();
+
+    return res
+      .status(200)
+      .json({ status: true, message: "Update password success" });
   } catch (error) {
     console.error("Error: ", error);
     return res.status(500).json({ status: false, message: "Server error" });

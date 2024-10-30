@@ -139,7 +139,7 @@ exports.createConversation = async (req, res) => {
         const conversation = await Conversation.create({
             userId: user._id
         })
-        socket.emit('createConversation', {
+        getIo().emit('createConversation', {
             conversation: conversation._doc
         })
         return res.status(200).json({ status: true, message: "Conversation created successfully", data: conversation });

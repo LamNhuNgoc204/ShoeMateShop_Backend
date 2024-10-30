@@ -36,6 +36,7 @@ const shippingSchema = new mongoose.Schema({
     ],
     default: "pending",
   },
+  isDefault: { type: Boolean, default: false },
   createdAt: {
     type: Date,
     default: Date.now,
