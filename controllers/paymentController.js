@@ -3,14 +3,29 @@ const Payment = require("../models/paymentModel");
 const PaymentMethod = require("../models/paymentMethod");
 const PaidHistory = require("../models/paidHistoryModel");
 
+exports.getPaymentDefault = async (_, res) => {
+  try {
+    const data = await PaymentMethod.findOne({ isDefault: true });
+    if (data) {
+      return res.status(200).json({ status: true, data: data });
+    }
+  } catch (error) {
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
 // THEM PHUONG THUC THANH TOAN: name, image
 exports.createNewMethod = async (req, res) => {
   try {
-    const { payment_method, image } = req.body;
+    const { payment_method, image, isDefault } = req.body;
     if (!payment_method || !image) {
       return res
         .status(400)
         .json({ status: false, message: "All field is required" });
+    }
+
+    if (isDefault) {
+      await PaymentMethod.updateMany({ isDefault: true }, { isDefault: false });
     }
 
     const checkpayment_method = await PaymentMethod.findOne({
@@ -22,7 +37,11 @@ exports.createNewMethod = async (req, res) => {
         .json({ status: false, message: "This method is exits" });
     }
 
-    const payment = new PaymentMethod({ payment_method, image });
+    const payment = new PaymentMethod({
+      payment_method,
+      image,
+      isDefault: !!isDefault,
+    });
     await payment.save();
 
     return res.status(200).json({ status: true, data: payment });
