@@ -46,13 +46,12 @@ exports.addAddress = async (req, res) => {
 
 exports.deleteAddress = async (req, res) => {
   try {
-    const { addressId } = req.params;
-
-    const user = req.user;
+    const addressId = req.address._id;
+    const userId = req.user._id;
 
     const deletedAddress = await Address.findOneAndDelete({
       _id: addressId,
-      userId: user._id,
+      userId: userId,
     });
 
     if (!deletedAddress) {
@@ -60,9 +59,6 @@ exports.deleteAddress = async (req, res) => {
         .status(400)
         .json({ status: false, message: "Address not found" });
     }
-
-    user.address.remove(addressId);
-    await user.save();
 
     return res
       .status(200)
@@ -170,7 +166,7 @@ exports.getDefaultAddress = async (req, res) => {
       userId: userId,
       isDefault: true,
     });
-    
+
     if (!defaultAddress) {
       return res
         .status(404)
