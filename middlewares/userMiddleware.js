@@ -149,30 +149,6 @@ exports.validateSignInWithGoogle = async (req, res, next) => {
   }
 };
 
-exports.validateUpdateProfile = async (req, res, next) => {
-  try {
-    const { name, avatar, userId } = req.body;
-    if (!userId) {
-      return res
-        .status(400)
-        .json({ status: false, message: "User ID is required!" });
-    }
-    if (!name && !avatar) {
-      return res.status(400).json({
-        status: false,
-        message: "At least one of name or avatar is required!",
-      });
-    }
-    next();
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      status: false,
-      message: "Server error.",
-    });
-  }
-};
-
 exports.checkAddressId = (req, res, next) => {
   const { addressId } = req.params;
 

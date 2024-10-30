@@ -1,10 +1,6 @@
 var express = require("express");
 var router = express.Router();
 const userController = require("../controllers/usersController");
-const {
-  validateUpdateProfile,
-  checkUser,
-} = require("../middlewares/userMiddleware");
 const { protect } = require("../middlewares/authMiddleware");
 const {
   managerMiddleware,
@@ -17,11 +13,7 @@ const {
 router.get("/user-infor", protect, userController.getUserInfo);
 
 //update user profile
-router.put(
-  "/update-user-profile",
-  validateUpdateProfile,
-  userController.updateUserProfile
-);
+router.put("/update-user-profile", protect, userController.updateUserProfile);
 
 router.put(
   "/update-role/:userId",
