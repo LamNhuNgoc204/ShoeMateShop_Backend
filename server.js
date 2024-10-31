@@ -32,6 +32,7 @@ const brandRouter = require("./routes/brandRouter");
 const filterRouter = require("./routes/filterRouter");
 const shipRouter = require("./routes/shipRouter");
 const paymentMethodRouter = require("./routes/paymentMethodRouter");
+const statsRouter = require("./routes/statsRouter");
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
@@ -69,6 +70,7 @@ app.use("/brands", brandRouter);
 app.use("/filter", filterRouter);
 app.use("/ship", shipRouter);
 app.use("/payment-method", paymentMethodRouter);
+app.use("/stats", statsRouter);
 
 (async function () {
   try {
