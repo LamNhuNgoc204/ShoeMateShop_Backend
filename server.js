@@ -31,6 +31,7 @@ const filterRouter = require("./routes/filterRouter");
 const shipRouter = require("./routes/shipRouter");
 const paymentMethodRouter = require("./routes/paymentMethodRouter");
 const walletRouter = require("./routes/walletRouter");
+const recentViewRouter = require("./routes/recentViewRouter");
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
@@ -68,6 +69,7 @@ app.use("/filter", filterRouter);
 app.use("/ship", shipRouter);
 app.use("/payment-method", paymentMethodRouter);
 app.use("/wallet", walletRouter);
+app.use("/recent-views", recentViewRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
