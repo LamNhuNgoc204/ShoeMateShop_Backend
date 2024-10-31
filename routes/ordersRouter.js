@@ -88,7 +88,7 @@ router.put(
 
 router.put(
   "/cancel-order/:orderId",
-  // protect,
+  protect,
   middle.checkOrderByID,
   control.cancelOrder
 );
