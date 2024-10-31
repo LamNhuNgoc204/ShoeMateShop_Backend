@@ -32,7 +32,11 @@ const brandRouter = require("./routes/brandRouter");
 const filterRouter = require("./routes/filterRouter");
 const shipRouter = require("./routes/shipRouter");
 const paymentMethodRouter = require("./routes/paymentMethodRouter");
+<<<<<<< Updated upstream
 const statsRouter = require("./routes/statsRouter");
+=======
+const statisticalRouter = require("./routes/statisticalRouter");
+>>>>>>> Stashed changes
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
