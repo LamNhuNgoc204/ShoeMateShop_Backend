@@ -5,6 +5,7 @@ const {
   validatePassword,
 } = require("../utils/stringUtils");
 const User = require("../models/userModel");
+const Address = require("../models/addressModel");
 
 exports.validateRegister = (req, res, next) => {
   const { email, password, name } = req.body;
@@ -149,32 +150,9 @@ exports.validateSignInWithGoogle = async (req, res, next) => {
   }
 };
 
-exports.validateUpdateProfile = async (req, res, next) => {
-  try {
-    const { name, avatar, userId } = req.body;
-    if (!userId) {
-      return res
-        .status(400)
-        .json({ status: false, message: "User ID is required!" });
-    }
-    if (!name && !avatar) {
-      return res.status(400).json({
-        status: false,
-        message: "At least one of name or avatar is required!",
-      });
-    }
-    next();
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({
-      status: false,
-      message: "Server error.",
-    });
-  }
-};
-
-exports.checkAddressId = (req, res, next) => {
+exports.checkAddressId = async (req, res, next) => {
   const { addressId } = req.params;
+  const userId = req.user._id;
 
   if (!addressId) {
     return res.status(400).json({
@@ -182,6 +160,15 @@ exports.checkAddressId = (req, res, next) => {
       message: "addressId is required!",
     });
   }
+
+  const address = await Address.findOne({ _id: addressId, userId: userId });
+  if (!address) {
+    return res
+      .status(400)
+      .json({ status: false, message: "Address not found" });
+  }
+
+  req.address = address;
   next();
 };
 

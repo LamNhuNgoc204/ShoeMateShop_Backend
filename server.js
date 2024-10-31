@@ -4,7 +4,6 @@ var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 const cors = require("cors");
-const ngrok = require("ngrok");
 
 var app = express();
 
@@ -24,7 +23,6 @@ const categoryRouter = require("./routes/categoryRouter");
 const reviewRouter = require("./routes/reviewRouter");
 const notificationsRouter = require("./routes/notificationRouter");
 const voucherRouter = require("./routes/voucherRouter");
-const advertisingRouter = require("./routes/adversitingRouter");
 const messageRouter = require("./routes/messageRouter");
 const paymentRouter = require("./routes/paymentRouter");
 const sizeRouter = require("./routes/sizeRouter");
@@ -32,11 +30,10 @@ const brandRouter = require("./routes/brandRouter");
 const filterRouter = require("./routes/filterRouter");
 const shipRouter = require("./routes/shipRouter");
 const paymentMethodRouter = require("./routes/paymentMethodRouter");
-<<<<<<< Updated upstream
 const statsRouter = require("./routes/statsRouter");
-=======
 const statisticalRouter = require("./routes/statisticalRouter");
->>>>>>> Stashed changes
+const walletRouter = require("./routes/walletRouter");
+const recentViewRouter = require("./routes/recentViewRouter");
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
@@ -66,7 +63,6 @@ app.use("/categories", categoryRouter);
 app.use("/vouchers", voucherRouter);
 app.use("/reviews", reviewRouter);
 app.use("/notifications", notificationsRouter);
-app.use("/advertising", advertisingRouter);
 app.use("/messages", messageRouter);
 app.use("/payment", paymentRouter);
 app.use("/sizes", sizeRouter);
@@ -89,6 +85,8 @@ app.use("/stats", statsRouter);
     console.error("Error starting ngrok:", error);
   }
 })();
+app.use("/wallet", walletRouter);
+app.use("/recent-views", recentViewRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

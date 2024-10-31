@@ -14,4 +14,6 @@ router.put(
   adminController.updateUserPermissions
 );
 
+router.post("/change-password", adminController.changePass);
+
 module.exports = router;

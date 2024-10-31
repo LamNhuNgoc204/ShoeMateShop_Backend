@@ -21,6 +21,41 @@ router.get(
 );
 
 router.get(
+  "/get-user-order-pending",
+  protect,
+  middle.checkUserOrder,
+  control.getPendingOrders
+);
+
+router.get(
+  "/get-user-order-processing",
+  protect,
+  middle.checkUserOrder,
+  control.getProcessingOrders
+);
+
+router.get(
+  "/get-user-order-completed",
+  protect,
+  middle.checkUserOrder,
+  control.getCompletedOrders
+);
+
+router.get(
+  "/get-user-order-cancell",
+  protect,
+  middle.checkUserOrder,
+  control.getCancelledOrders
+);
+
+router.get(
+  "/get-user-order-refunded",
+  protect,
+  middle.checkUserOrder,
+  control.getRefundedOrders
+);
+
+router.get(
   "/get-all-orders",
   protect,
   adminOrEmployee,

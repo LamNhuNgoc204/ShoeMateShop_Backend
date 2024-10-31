@@ -1,5 +1,6 @@
 const User = require("../models/userModel");
 const { hashPassword } = require("../utils/encryptionUtils");
+const { isValidPhoneNumber } = require("../utils/numberUtils");
 
 exports.getUserInfo = async (req, res) => {
   try {
@@ -29,28 +30,44 @@ exports.getUserInfo = async (req, res) => {
   }
 };
 
-exports.updateUserProfile = async (req, res, next) => {
+exports.updateUserProfile = async (req, res) => {
   try {
-    const { name, avatar, userId } = req.body;
+    const userId = req.user._id;
+    const { name, avatar, phoneNumber } = req.body;
     const user = await User.findById(userId);
     if (!user) {
+      console.log("user not found");
+
       return res
-        .status(400)
+        .status(401)
         .json({ status: false, message: "User does not exist!" });
     }
-    if (name) {
-      user.name = name;
+
+    if (phoneNumber && !isValidPhoneNumber(phoneNumber)) {
+      console.log("phone invalid");
+
+      return res
+        .status(402)
+        .json({ status: false, message: "Invalid phone number" });
     }
-    if (avatar) {
-      user.avatar = avatar;
-    }
+
+    user.name = name ? name : user.name;
+    user.avatar = avatar ? avatar : user.avatar;
+    user.phoneNumber = phoneNumber ? phoneNumber : user.phoneNumber;
+
     const updatedUser = await user.save();
-    const userData = updatedUser.toObject();
-    delete userData.password;
+    if (!updatedUser) {
+      console.log("update failed");
+
+      return res
+        .status(403)
+        .json({ status: false, message: "Update user info failed" });
+    }
+
     return res.status(200).json({
       status: true,
       message: "User profile updated successfully.",
-      data: userData,
+      data: updatedUser,
     });
   } catch (error) {
     console.log("Error: ", error);

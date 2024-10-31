@@ -9,4 +9,6 @@ router.post("/add-payment-method", control.createNewMethod);
 
 router.get("/getall-payment", control.getAllPaymentMethod);
 
+router.get('/payment-default', control.getPaymentDefault)
+
 module.exports = router;

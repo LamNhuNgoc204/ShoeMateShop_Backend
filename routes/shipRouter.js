@@ -1,22 +1,24 @@
 const express = require("express");
-const {
-  createShip,
-  getShip,
-  getOneShip,
-  updateShip,
-} = require("../controllers/shipController");
+const control = require("../controllers/shipController");
 const { protect } = require("../middlewares/authMiddleware");
 const { managerMiddleware } = require("../middlewares/adminMiddleware");
 const router = express.Router();
 
 //url: http://localhost:3000/ship
 
-router.post("/shipping-companies", protect, managerMiddleware, createShip);
+router.post(
+  "/shipping-companies",
+  protect,
+  managerMiddleware,
+  control.createShip
+);
 
-router.get("/get-shipping", protect, getShip);
+router.get("/ship-default", control.getShipDefault);
 
-router.get("/get-one-ship/:id", getOneShip);
+router.get("/get-shipping", protect, control.getShip);
 
-router.put("update-ship/:id", protect, managerMiddleware, updateShip);
+router.get("/get-one-ship/:id", control.getOneShip);
+
+router.put("update-ship/:id", protect, managerMiddleware, control.updateShip);
 
 module.exports = router;
