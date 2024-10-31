@@ -4,9 +4,68 @@ const Payment = require("../models/paymentModel");
 const Size = require("../models/sizeModel");
 const Product = require("../models/productModel");
 const Cart = require("../models/cartModels");
+const Ship = require("../models/shippingModel");
 const axios = require("axios");
 const crypto = require("crypto");
 const updatePaymentHistory = require("../service/updatePaymentHistory");
+
+exports.getOrderDetail = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { orderId } = req.params;
+
+    const order = await Order.findOne({ _id: orderId, user_id: userId })
+      .populate("shipping_id", "status")
+      .populate("payment_id.payment_method", "payment_method")
+      .populate("orderDetails", "product");
+
+    const payment = await Payment.findById(order.payment_id).populate(
+      "payment_method_id",
+      "payment_method"
+    );
+
+    const ship = await Ship.findById(order.shipping_id);
+
+    const orderDetails = {
+      orderCode: order._id,
+      products: order.orderDetails,
+      total_price: order.total_price,
+      payment_method: payment.payment_method_id.payment_method,
+      receiver: order.receiver,
+      receiverPhone: order.receiverPhone,
+      address: order.address,
+      statusShip: order.shipping_id.status,
+      shipCost: ship.cost,
+      // voucherPrice: order.voucher_id.discount_value,
+      orderStatus: order.status,
+      points: order.points,
+      timestamps: {},
+    };
+
+    if (order.timestamps.placedAt) {
+      orderDetails.timestamps.placedAt = order.timestamps.placedAt;
+    }
+    if (order.status === "shipping" && order.timestamps.shippedAt) {
+      orderDetails.timestamps.shippedAt = order.timestamps.shippedAt;
+    }
+    if (order.status === "delivered" && order.timestamps.deliveredAt) {
+      orderDetails.timestamps.deliveredAt = order.timestamps.deliveredAt;
+    }
+    if (order.status === "completed" && order.timestamps.completedAt) {
+      orderDetails.timestamps.completedAt = order.timestamps.completedAt;
+    }
+    if (order.status === "cancelled" && order.timestamps.cancelledAt) {
+      orderDetails.timestamps.cancelledAt = order.timestamps.cancelledAt;
+    }
+
+    return res.status(200).json({ status: true, data: orderDetails });
+  } catch (error) {
+    console.log("create new order error: ", error);
+    return res
+      .status(500)
+      .json({ status: false, message: "Server error", error: error.message });
+  }
+};
 
 exports.createNewOrder = async (req, res) => {
   try {
@@ -43,6 +102,14 @@ exports.createNewOrder = async (req, res) => {
       receiver,
       receiverPhone,
       address,
+      timestamps: {
+        placedAt: Date.now(),
+        paidAt: null,
+        shippedAt: null,
+        deliveredAt: null,
+        completedAt: null,
+        cancelledAt: null,
+      },
     });
 
     const savedOrder = await newOrder.save();

@@ -13,6 +13,8 @@ router.post(
   control.createNewOrder
 );
 
+router.get("/get-order-detail/:orderId", protect, control.getOrderDetail);
+
 router.get(
   "/get-user-order",
   protect,
@@ -64,7 +66,7 @@ router.get(
 
 router.put(
   "/update-order-address/:orderId",
-  // protect,
+  protect,
   middle.checkOrderUpdate,
   control.updateOrderAddress
 );
