@@ -371,7 +371,7 @@ exports.getRefundedOrders = async (req, res) => {
   }
 };
 
-exports.getAllOrdersForAdmin = async (req, res) => {
+exports.getAllOrdersForAdmin = async (_, res) => {
   try {
     const orders = await Order.find({})
       .populate("user_id", "username email")
@@ -514,6 +514,7 @@ exports.handleReturnRq = async (req, res) => {
 
 exports.cancelOrder = async (req, res) => {
   try {
+    const user = req.user;
     const order = req.order;
 
     if (order.status !== "pending") {
@@ -525,6 +526,8 @@ exports.cancelOrder = async (req, res) => {
 
     order.status = "cancelled";
     order.shipping_id.status = "cancelled";
+    order.canceller = user.name;
+    order.timestamps.cancelledAt = Date.now();
 
     // Cộng lại sản phẩm vào kho
     const orderDetails = await OrderDetail.find({ order_id: order._id });
@@ -642,6 +645,51 @@ async function refundZaloPay(order, refundAmount) {
     throw error;
   }
 }
+
+exports.confirmOrder = async (req, res) => {
+  try {
+    const order = req.order;
+    const orderId = req.order._id;
+    const { status } = req.body;
+
+    const validStatuses = ["processing", "cancelled"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: "Invalid status provided." });
+    }
+
+    const updateFields = { status };
+    if (status === "processing") {
+      updateFields["timestamps.shippedAt"] = Date.now();
+    } else if (status === "cancelled") {
+      updateFields["timestamps.cancelledAt"] = Date.now();
+      updateFields["canceller"] = "Shop";
+    }
+
+    const updateOrder = await Order.findByIdAndUpdate(
+      { _id: orderId },
+      updateFields,
+      {
+        new: true,
+      }
+    );
+
+    if (!order) {
+      return res.status(404).json({ error: "Order not found." });
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: "Order status updated successfully.",
+      data: updateOrder,
+    });
+  } catch (error) {
+    console.error("Error confirming order:", error);
+    return res.status(500).json({
+      status: false,
+      error: "An error occurred while confirming the order.",
+    });
+  }
+};
 
 // // API Create a new order
 // exports.createNewOrder = async (req, res) => {

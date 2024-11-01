@@ -93,6 +93,15 @@ router.put(
   control.cancelOrder
 );
 
+//Xac nhan hoac huy don hang (admin || staff)
+router.put(
+  "/confirm-order/:orderId",
+  protect,
+  adminOrEmployee,
+  middle.checkOrderByID,
+  control.confirmOrder
+);
+
 module.exports = router;
 
 // //Create a new order

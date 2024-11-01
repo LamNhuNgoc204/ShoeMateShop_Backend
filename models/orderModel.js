@@ -22,6 +22,7 @@ const orderSchema = new mongoose.Schema({
     },
   ],
   total_price: { type: Number, required: true },
+  canceller: { type: String },
   //Comfimed order
   status: {
     type: String,
@@ -48,6 +49,8 @@ const orderSchema = new mongoose.Schema({
     deliveredAt: { type: Date }, // Thời gian nhận hàng
     completedAt: { type: Date }, // Thời gian hoàn tất đơn hàng
     cancelledAt: { type: Date }, // Thời gian hủy đơn hàng
+    refundedAt: { type: Date }, //Thoi gian hoan don
+    completedRefundedAt: { type: Date }, //Thoi gian hoan tat hoan don
   },
   points: { type: Number, default: 0 }, //Xu được sử dụng
 });
