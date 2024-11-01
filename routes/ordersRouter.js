@@ -13,6 +13,8 @@ router.post(
   control.createNewOrder
 );
 
+router.get("/get-order-detail/:orderId", protect, control.getOrderDetail);
+
 router.get(
   "/get-user-order",
   protect,
@@ -64,7 +66,7 @@ router.get(
 
 router.put(
   "/update-order-address/:orderId",
-  // protect,
+  protect,
   middle.checkOrderUpdate,
   control.updateOrderAddress
 );
@@ -86,9 +88,18 @@ router.put(
 
 router.put(
   "/cancel-order/:orderId",
-  // protect,
+  protect,
   middle.checkOrderByID,
   control.cancelOrder
+);
+
+//Xac nhan hoac huy don hang (admin || staff)
+router.put(
+  "/confirm-order/:orderId",
+  protect,
+  adminOrEmployee,
+  middle.checkOrderByID,
+  control.confirmOrder
 );
 
 module.exports = router;

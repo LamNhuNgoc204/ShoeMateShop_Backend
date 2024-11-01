@@ -22,6 +22,7 @@ const orderSchema = new mongoose.Schema({
     },
   ],
   total_price: { type: Number, required: true },
+  canceller: { type: String },
   //Comfimed order
   status: {
     type: String,
@@ -41,8 +42,17 @@ const orderSchema = new mongoose.Schema({
   receiver: { type: String, required: true },
   receiverPhone: { type: String, required: true },
   address: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
+  timestamps: {
+    placedAt: { type: Date, default: Date.now }, // Thời gian đặt hàng
+    paidAt: { type: Date }, // Thời gian thanh toán
+    shippedAt: { type: Date }, // Thời gian giao hàng
+    deliveredAt: { type: Date }, // Thời gian nhận hàng
+    completedAt: { type: Date }, // Thời gian hoàn tất đơn hàng
+    cancelledAt: { type: Date }, // Thời gian hủy đơn hàng
+    refundedAt: { type: Date }, //Thoi gian hoan don
+    completedRefundedAt: { type: Date }, //Thoi gian hoan tat hoan don
+  },
+  points: { type: Number, default: 0 }, //Xu được sử dụng
 });
 
 module.exports = mongoose.models.orders || mongoose.model("order", orderSchema);
