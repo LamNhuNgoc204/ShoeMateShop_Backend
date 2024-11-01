@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 // Import mô-đun Order
 const Order = require("../models/orderModel");
 const OrderDetail = require("../models/orderDetailModel");
@@ -52,36 +51,6 @@ exports.getStats = async (req, res) => {
     const { start, end } = getDateRange(period, parseInt(offset, 10));
     const stats = await Order.aggregate([
       { $match: { createdAt: { $gte: start, $lte: end }, status: status } },
-=======
-// controllers/statsController.js
-const Order = require("../models/orderModel");
-
-// Helper to get date ranges
-const getStartOfPeriod = (period) => {
-  const now = new Date();
-  switch (period) {
-    case "day":
-      return new Date(now.setHours(0, 0, 0, 0));
-    case "week":
-      const startOfWeek = new Date();
-      startOfWeek.setDate(now.getDate() - now.getDay());
-      return new Date(startOfWeek.setHours(0, 0, 0, 0));
-    case "month":
-      return new Date(now.getFullYear(), now.getMonth(), 1);
-    case "year":
-      return new Date(now.getFullYear(), 0, 1);
-    default:
-      return null;
-  }
-};
-
-// Daily sales statistics
-exports.getDailyStats = async (req, res) => {
-  try {
-    const startOfDay = getStartOfPeriod("day");
-    const stats = await Order.aggregate([
-      { $match: { createdAt: { $gte: startOfDay }, status: "completed" } },
->>>>>>> Stashed changes
       { $unwind: "$orderDetails" },
       {
         $lookup: {
@@ -102,7 +71,6 @@ exports.getDailyStats = async (req, res) => {
         },
       },
     ]);
-<<<<<<< Updated upstream
     res.json({
         status: stats.length > 0,
         totalSales: stats[0]?.totalSales || 0,
@@ -110,116 +78,12 @@ exports.getDailyStats = async (req, res) => {
       });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch stats" });
-=======
-    res.json(stats[0] || { totalSales: 0, totalRevenue: 0 });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch daily stats" });
-  }
-};
-
-// Weekly sales statistics
-exports.getWeeklyStats = async (req, res) => {
-  try {
-    const startOfWeek = getStartOfPeriod("week");
-    const stats = await Order.aggregate([
-      { $match: { createdAt: { $gte: startOfWeek }, status: "completed" } },
-      { $unwind: "$orderDetails" },
-      {
-        $lookup: {
-          from: "orderdetails",
-          localField: "orderDetails",
-          foreignField: "_id",
-          as: "orderDetail",
-        },
-      },
-      { $unwind: "$orderDetail" },
-      {
-        $group: {
-          _id: null,
-          totalSales: { $sum: "$orderDetail.product.pd_quantity" },
-          totalRevenue: {
-            $sum: { $multiply: ["$orderDetail.product.price", "$orderDetail.product.pd_quantity"] },
-          },
-        },
-      },
-    ]);
-    res.json(stats[0] || { totalSales: 0, totalRevenue: 0 });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch weekly stats" });
-  }
-};
-
-// Monthly sales statistics
-exports.getMonthlyStats = async (req, res) => {
-  try {
-    const startOfMonth = getStartOfPeriod("month");
-    const stats = await Order.aggregate([
-      { $match: { createdAt: { $gte: startOfMonth }, status: "completed" } },
-      { $unwind: "$orderDetails" },
-      {
-        $lookup: {
-          from: "orderdetails",
-          localField: "orderDetails",
-          foreignField: "_id",
-          as: "orderDetail",
-        },
-      },
-      { $unwind: "$orderDetail" },
-      {
-        $group: {
-          _id: null,
-          totalSales: { $sum: "$orderDetail.product.pd_quantity" },
-          totalRevenue: {
-            $sum: { $multiply: ["$orderDetail.product.price", "$orderDetail.product.pd_quantity"] },
-          },
-        },
-      },
-    ]);
-    res.json(stats[0] || { totalSales: 0, totalRevenue: 0 });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch monthly stats" });
-  }
-};
-
-// Yearly sales statistics
-exports.getYearlyStats = async (req, res) => {
-  try {
-    const startOfYear = getStartOfPeriod("year");
-    const stats = await Order.aggregate([
-      { $match: { createdAt: { $gte: startOfYear }, status: "completed" } },
-      { $unwind: "$orderDetails" },
-      {
-        $lookup: {
-          from: "orderdetails",
-          localField: "orderDetails",
-          foreignField: "_id",
-          as: "orderDetail",
-        },
-      },
-      { $unwind: "$orderDetail" },
-      {
-        $group: {
-          _id: null,
-          totalSales: { $sum: "$orderDetail.product.pd_quantity" },
-          totalRevenue: {
-            $sum: { $multiply: ["$orderDetail.product.price", "$orderDetail.product.pd_quantity"] },
-          },
-        },
-      },
-    ]);
-    res.json(stats[0] || { totalSales: 0, totalRevenue: 0 });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch yearly stats" });
->>>>>>> Stashed changes
   }
 };
 
 // Best-selling products
 exports.getBestSellingProducts = async (req, res) => {
-<<<<<<< Updated upstream
   const { sort = "desc" } = req.query;
-=======
->>>>>>> Stashed changes
   try {
     const bestSelling = await Order.aggregate([
       { $match: { status: "completed" } },
@@ -240,7 +104,6 @@ exports.getBestSellingProducts = async (req, res) => {
           totalSold: { $sum: "$orderDetail.product.pd_quantity" },
         },
       },
-<<<<<<< Updated upstream
       { $sort: { totalSold: sort === "asc" ? 1 : -1 } },
       { $limit: 10 },
     ]);
@@ -336,13 +199,3 @@ exports.getRevenueByProduct = async (req, res) => {
     res.status(500).json({ status: false, error: "Failed to fetch revenue by product" });
   }
 };
-=======
-      { $sort: { totalSold: -1 } },
-      { $limit: 10 },
-    ]);
-    res.json(bestSelling);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch best-selling products" });
-  }
-};
->>>>>>> Stashed changes
