@@ -5,6 +5,7 @@ const orderDetailSchema = new mongoose.Schema({
     ref: "order",
     required: true,
   },
+  isReviewed: { type: Boolean, default: false },
   product: {
     id: { type: String, required: true },
     pd_image: [{ type: String, default: [] }],
