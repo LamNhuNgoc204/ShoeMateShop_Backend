@@ -14,6 +14,15 @@ const { adminMiddleware } = require("../middlewares/adminMiddleware");
 
 // url: http://localhost:3000/reviews
 
+router.get(
+  "/product-unreview",
+  protect,
+  reviewController.getUnreviewedProductsInOrder
+);
+
+//Review nhieu sp trong 1 don hang
+router.post("/", protect, reviewController.createMultipleReviews);
+
 // Create Review
 router.post(
   "/create-review",

@@ -1,6 +1,89 @@
 const Review = require("../models/reviewModel");
 const OrderDetail = require("../models/orderDetailModel");
 const Product = require("../models/productModel");
+const Order = require("../models/orderModel");
+
+exports.getUnreviewedProductsInOrder = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const unreviewedProducts = await OrderDetail.find({
+      isReviewed: false,
+      order_id: {
+        $in: await Order.find({ user_id: userId }).distinct("_id"),
+      },
+    });
+
+    if (unreviewedProducts.length === 0) {
+      return res.status(200).json({
+        status: true,
+        message: "All products in the order have been reviewed.",
+        data: [],
+      });
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: "Retrieved unreviewed products successfully.",
+      data: unreviewedProducts,
+    });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
+//Review nhieu don hang
+exports.createMultipleReviews = async (req, res) => {
+  try {
+    // Danh sách các sản phẩm cần review
+    const { reviews } = req.body;
+
+    const reviewer_id = req.user._id;
+
+    const reviewPromises = reviews.map(async (reviewData) => {
+      const { orderDetail_id, product_id, rating, comment, images, video } =
+        reviewData;
+
+      const orderDetail = await OrderDetail.findById(orderDetail_id);
+      if (!orderDetail) throw new Error("Order detail not found");
+
+      const newReview = new Review({
+        orderDetail_id,
+        product_id,
+        reviewer_id,
+        rating,
+        comment,
+        images,
+        video,
+      });
+      await newReview.save();
+
+      await OrderDetail.findByIdAndUpdate(orderDetail_id, { isReviewed: true });
+
+      return newReview;
+    });
+
+    const newReviews = await Promise.all(reviewPromises);
+
+    const order_id = reviews[0].orderDetail_id;
+
+    const allOrderDetails = await OrderDetail.find({ order_id });
+    const isAllReviewed = allOrderDetails.every((detail) => detail.isReviewed);
+
+    if (isAllReviewed) {
+      await Order.findByIdAndUpdate(order_id, { isReviewed: true });
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: "Reviews created successfully for multiple products.",
+      data: newReviews,
+    });
+  } catch (error) {
+    console.error("Error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
 
 exports.createReview = async (req, res) => {
   try {
