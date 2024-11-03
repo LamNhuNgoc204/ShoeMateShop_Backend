@@ -53,6 +53,7 @@ const orderSchema = new mongoose.Schema({
     completedRefundedAt: { type: Date }, //Thoi gian hoan tat hoan don
   },
   points: { type: Number, default: 0 }, //Xu được sử dụng
+  isReviewed: { type: Boolean, default: false },
 });
 
 module.exports = mongoose.models.orders || mongoose.model("order", orderSchema);
