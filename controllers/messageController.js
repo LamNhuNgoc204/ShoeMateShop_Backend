@@ -3,20 +3,21 @@ const Order = require('../models/orderModel');
 const Message = require('../models/messageModel');
 const { getIo } = require('../socket');
 const Conversation = require('../models/conversationModel');
+const orderDetailModel = require('../models/orderDetailModel');
 
 const getLastMesssage = async (conversationId) => {
-    const message = await Message.find({conversationId}).sort({createdAt: -1}).limit(1);
-    if(!message.length) return null;
+    const message = await Message.find({ conversationId }).sort({ createdAt: -1 }).limit(1);
+    if (!message.length) return null;
     return message[0];
 }
 
 const sortConversation = (conversations) => {
     const sortedConversations = conversations.sort((a, b) => {
-        if(a.lastMessage && b.lastMessage) {
+        if (a.lastMessage && b.lastMessage) {
             const aDate = new Date(a.lastMessage.createdAt);
             const bDate = new Date(b.lastMessage.createdAt);
             return bDate.getTime() - aDate.getTime();
-        } 
+        }
     })
     return sortedConversations;
 }
@@ -25,8 +26,9 @@ const sortConversation = (conversations) => {
 
 exports.sendMessage = async (req, res) => {
     try {
-        var {conversationId, senderId, text, orderId} = req.body;
+        var { conversationId, senderId, text, orderId } = req.body;
         const conversation = await Conversation.findById(conversationId);
+        console.log('orderId: ', orderId)
         if (!conversation) {
             return res.status(404).json({ status: false, message: "Conversation not found" });
         }
@@ -34,13 +36,13 @@ exports.sendMessage = async (req, res) => {
         if (!sender) {
             return res.status(404).json({ status: false, message: "User not found" });
         }
-        if(orderId) {
+        if (orderId) {
             const order = await Order.findById(orderId);
             if (!order) {
                 return res.status(404).json({ status: false, message: "Order not found" });
             }
         }
-        type = orderId? 'order' : 'text'
+        var type = orderId ? 'order' : 'text'
         const message = await Message.create({
             conversationId: conversationId,
             type: type,
@@ -48,16 +50,39 @@ exports.sendMessage = async (req, res) => {
             text: text,
             orderId: orderId
         })
-        getIo().emit('sendMessage', {
-            message: {
-                ...message._doc,
-                senderId: {
-                    name: sender.name,
-                    avatar: sender.avatar
-                }
-            }
 
-        })
+        if (orderId) {
+            const order = await Order.findById(orderId);
+            const orderDetails = await orderDetailModel.find({ order_id: order._id })
+            getIo().emit('sendMessage', {
+                message: {
+                    ...message._doc,
+                    senderId: {
+                        _id: senderId,
+                        name: sender.name,
+                        avatar: sender.avatar,
+                    },
+                    order: {
+                        order, orderDetails
+                    }
+                }
+
+            })
+        } else {
+            getIo().emit('sendMessage', {
+                message: {
+                    ...message._doc,
+                    senderId: {
+                        _id: senderId,
+                        name: sender.name,
+                        avatar: sender.avatar
+                    }
+                }
+
+            })
+
+        }
+
 
         return res.status(200).json({ status: true, message: "Message sent successfully", data: message });
     } catch (error) {
@@ -68,7 +93,7 @@ exports.sendMessage = async (req, res) => {
 
 exports.joinConversation = async (req, res) => {
     try {
-        const {conversationId, staffId} = req.body;
+        const { conversationId, staffId } = req.body;
         const staff = await req.staff;
         const conversation = await Conversation.findById(conversationId);
         conversation.staffId = staffId;
@@ -101,7 +126,7 @@ exports.joinConversation = async (req, res) => {
 
 exports.leaveConversation = async (req, res) => {
     try {
-        const {conversationId, staffId} = req.body;
+        const { conversationId, staffId } = req.body;
         const staff = await req.staff;
         const conversation = await Conversation.findById(conversationId);
         conversation.staffId = null;
@@ -153,10 +178,12 @@ exports.createConversation = async (req, res) => {
 exports.getConversations = async (req, res) => {
     try {
         const user = req.user;
-        const conversations = await Conversation.find({$or: [
-            {staffId: user._id},
-            {userId: user._id}
-        ]});
+        const conversations = await Conversation.find({
+            $or: [
+                { staffId: user._id },
+                { userId: user._id }
+            ]
+        });
         return res.status(200).json({ status: true, message: "Get conversations successfully", data: conversations });
     } catch (error) {
         console.error("Error: ", error);
@@ -166,9 +193,26 @@ exports.getConversations = async (req, res) => {
 
 exports.getMessages = async (req, res) => {
     try {
-        const conversationId= req.params.conversationId;
-        const messages = await Message.find({conversationId: conversationId}).populate('senderId', 'name avatar');
-        return res.status(200).json({ status: true, message: "Get messages successfully", data: messages });
+        const conversationId = req.params.conversationId;
+        const messages = await Message.find({ conversationId: conversationId }).sort({ createdAt: -1 }).populate('senderId', 'name avatar');
+        const messagePromises = messages.map(async message => {
+            if(message.orderId) {
+                const order = await Order.findById(message.orderId);
+                const orderDetails = await orderDetailModel.find({ order_id: order._id});
+                return {
+                    ...message._doc,
+                    order: {
+                        order,
+                        orderDetails
+                    }
+                }
+            } else {
+                return message._doc
+            }
+        })
+
+        const returnedMessages = await Promise.all(messagePromises);
+        return res.status(200).json({ status: true, message: "Get messages successfully", data: returnedMessages });
     } catch (error) {
         console.error("Error: ", error);
         return res.status(500).json({ status: false, message: "Server error" });
@@ -195,14 +239,14 @@ exports.getAllConversations = async (req, res) => {
 
         return res.status(200).json({ status: true, message: "Get all conversations successfully", data: sortedConverations });
     } catch (error) {
-        
+
     }
 }
 
 
 exports.getConversation = async (req, res) => {
     try {
-        const {conversationId} = req.params;
+        const { conversationId } = req.params;
         const conversation = await Conversation.findById(conversationId).populate('userId', 'name avatar');
         if (!conversation) {
             return res.status(404).json({ status: false, message: "Conversation not found" });

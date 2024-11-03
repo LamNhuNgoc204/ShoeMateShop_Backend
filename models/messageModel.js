@@ -23,7 +23,6 @@ const messageSchema = new Schema({
   },
   type: {
     type: String,
-    enum: [ 'notify', 'text', 'order'],
     default: 'text'
   },
   createdAt: {

@@ -105,4 +105,8 @@ router.put(
   control.confirmOrder
 );
 
+
+//lay order theo kieu khac
+router.get('/get-orders-for-message', protect, control.getOrdersForBottomSheet)
+
 module.exports = router;
