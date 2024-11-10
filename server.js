@@ -32,6 +32,9 @@ const shipRouter = require("./routes/shipRouter");
 const paymentMethodRouter = require("./routes/paymentMethodRouter");
 const walletRouter = require("./routes/walletRouter");
 const recentViewRouter = require("./routes/recentViewRouter");
+const { sendNotification } = require("./firebase");
+
+
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
