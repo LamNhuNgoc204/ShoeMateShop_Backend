@@ -23,14 +23,6 @@ router.get(
 //Review nhieu sp trong 1 don hang
 router.post("/", protect, reviewController.createMultipleReviews);
 
-// Create Review
-router.post(
-  "/create-review",
-  protect,
-  createReview,
-  reviewController.createReview
-);
-
 // Manage reviews
 router.put(
   "/update-review-status/:reviewId",
