@@ -4,6 +4,7 @@ const Message = require('../models/messageModel');
 const { getIo } = require('../socket');
 const Conversation = require('../models/conversationModel');
 const orderDetailModel = require('../models/orderDetailModel');
+const Product = require('../models/productModel');
 
 const getLastMesssage = async (conversationId) => {
     const message = await Message.find({ conversationId }).sort({ createdAt: -1 }).limit(1);
@@ -26,9 +27,8 @@ const sortConversation = (conversations) => {
 
 exports.sendMessage = async (req, res) => {
     try {
-        var { conversationId, senderId, text, orderId } = req.body;
+        var { conversationId, senderId, text, orderId, productId } = req.body;
         const conversation = await Conversation.findById(conversationId);
-        console.log('orderId: ', orderId)
         if (!conversation) {
             return res.status(404).json({ status: false, message: "Conversation not found" });
         }
@@ -42,13 +42,23 @@ exports.sendMessage = async (req, res) => {
                 return res.status(404).json({ status: false, message: "Order not found" });
             }
         }
-        var type = orderId ? 'order' : 'text'
+        var type;
+        if (orderId) {
+            type = 'order'
+        }
+        else if (productId) {
+            type = 'product'
+        }
+        else {
+            type = 'text'
+        }
         const message = await Message.create({
             conversationId: conversationId,
             type: type,
             senderId: senderId,
             text: text,
-            orderId: orderId
+            orderId: orderId,
+            productId: productId
         })
 
         if (orderId) {
@@ -68,7 +78,22 @@ exports.sendMessage = async (req, res) => {
                 }
 
             })
-        } else {
+        } 
+        else if(productId) {
+        const product = await Product.findById(productId);
+            getIo().emit('sendMessage', {
+                message: {
+                    ...message._doc,
+                    senderId: {
+                        _id: senderId,
+                        name: sender.name,
+                        avatar: sender.avatar
+                    },
+                    product: product
+                }
+            })
+        } 
+        else {
             getIo().emit('sendMessage', {
                 message: {
                     ...message._doc,
@@ -196,9 +221,9 @@ exports.getMessages = async (req, res) => {
         const conversationId = req.params.conversationId;
         const messages = await Message.find({ conversationId: conversationId }).sort({ createdAt: -1 }).populate('senderId', 'name avatar');
         const messagePromises = messages.map(async message => {
-            if(message.orderId) {
+            if (message.orderId) {
                 const order = await Order.findById(message.orderId);
-                const orderDetails = await orderDetailModel.find({ order_id: order._id});
+                const orderDetails = await orderDetailModel.find({ order_id: order._id });
                 return {
                     ...message._doc,
                     order: {
@@ -206,7 +231,15 @@ exports.getMessages = async (req, res) => {
                         orderDetails
                     }
                 }
-            } else {
+            } 
+            else if(message.productId) {
+                const product =await Product.findById(message.productId);
+                return {
+                   ...message._doc,
+                    product: product
+                }
+            }
+            else {
                 return message._doc
             }
         })
