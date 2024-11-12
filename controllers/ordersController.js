@@ -691,26 +691,30 @@ exports.confirmOrder = async (req, res) => {
   }
 };
 
-
 exports.getOrdersForBottomSheet = async (req, res) => {
   try {
     const user = req.user;
 
-    const orders = await Order.find({user_id: user._id});
+    const orders = await Order.find({ user_id: user._id });
 
-    const promiseOrders = orders.map(async(order) => {
-      const orderDetails = await OrderDetail.find({order_id: order._id});
+    const promiseOrders = orders.map(async (order) => {
+      const orderDetails = await OrderDetail.find({ order_id: order._id });
       return {
         order,
-        orderDetails
-      }
-    })
-    const returnedOrder = await Promise.all(promiseOrders)
+        orderDetails,
+      };
+    });
+    const returnedOrder = await Promise.all(promiseOrders);
 
-    return res.status(200).json({status: true , message: 'get ordeers successfully!', data: returnedOrder});
+    return res
+      .status(200)
+      .json({
+        status: true,
+        message: "get ordeers successfully!",
+        data: returnedOrder,
+      });
   } catch (error) {
-    console.log('error: ', error)
-    return res.status(500).json({status: false, message: 'Server error'});
+    console.log("error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
   }
-
-}
+};

@@ -17,19 +17,11 @@ const { adminMiddleware } = require("../middlewares/adminMiddleware");
 router.get(
   "/product-unreview",
   protect,
-  reviewController.getUnreviewedProductsInOrder
+  reviewController.getUnreviewedOrdersWithProducts
 );
 
 //Review nhieu sp trong 1 don hang
 router.post("/", protect, reviewController.createMultipleReviews);
-
-// Create Review
-router.post(
-  "/create-review",
-  protect,
-  createReview,
-  reviewController.createReview
-);
 
 // Manage reviews
 router.put(

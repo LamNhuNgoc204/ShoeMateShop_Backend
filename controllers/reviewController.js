@@ -32,6 +32,60 @@ exports.getUnreviewedProductsInOrder = async (req, res) => {
   }
 };
 
+exports.getUnreviewedOrdersWithProducts = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const unreviewedOrders = await Order.find({
+      user_id: userId,
+      status: "completed",
+      isReviewed: false,
+    }).lean();
+
+    const ordersWithUnreviewedProducts = await Promise.all(
+      unreviewedOrders.map(async (order) => {
+        const unreviewedProducts = await OrderDetail.find({
+          order_id: order._id,
+          isReviewed: false,
+        })
+          .select("product")
+          .lean();
+
+        // const formattedUnreviewedProducts = unreviewedProducts.map((item) => ({
+        //   id: item.product.id,
+        //   pd_image: item.product.pd_image,
+        //   name: item.product.name,
+        //   size_name: item.product.size_name,
+        //   price: item.product.price,
+        //   pd_quantity: item.product.pd_quantity,
+        //   size_id: item.product.size_id,
+        // }));
+
+        return {
+          ...order,
+          product: unreviewedProducts,
+        };
+      })
+    );
+
+    if (ordersWithUnreviewedProducts.length === 0) {
+      return res.status(200).json({
+        status: true,
+        message: "All orders and products have been reviewed.",
+        data: [],
+      });
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: "Retrieved unreviewed orders with products successfully.",
+      data: ordersWithUnreviewedProducts,
+    });
+  } catch (error) {
+    console.error("Error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
 //Review nhieu don hang
 exports.createMultipleReviews = async (req, res) => {
   try {
@@ -81,49 +135,6 @@ exports.createMultipleReviews = async (req, res) => {
     });
   } catch (error) {
     console.error("Error: ", error);
-    return res.status(500).json({ status: false, message: "Server error" });
-  }
-};
-
-exports.createReview = async (req, res) => {
-  try {
-    const { orderDetail_id, product_id, rating, comment, images, video } =
-      req.body;
-
-    const reviewer_id = req.user._id;
-
-    const orderdetail = await OrderDetail.findById(orderDetail_id);
-    if (!orderdetail) {
-      return res
-        .status(400)
-        .json({ status: false, message: "Order detail not found" });
-    }
-
-    const product = await Product.findById(product_id);
-    if (!product) {
-      return res
-        .status(400)
-        .json({ status: false, message: "Product detail not found" });
-    }
-
-    const newReview = new Review({
-      orderDetail_id,
-      product_id,
-      reviewer_id,
-      rating,
-      comment,
-      images,
-      video,
-    });
-    await newReview.save();
-
-    return res.status(200).json({
-      status: true,
-      message: "Review created successfully.",
-      data: newReview,
-    });
-  } catch (error) {
-    console.log("Error: ", error);
     return res.status(500).json({ status: false, message: "Server error" });
   }
 };

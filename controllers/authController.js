@@ -8,6 +8,7 @@ const {
   sendRandomPassword,
 } = require("../utils/emailUtils");
 const { randomPassword } = require("../utils/stringUtils");
+const { sendNotification } = require("../firebase");
 
 exports.resetPassword = async (req, res) => {
   try {
