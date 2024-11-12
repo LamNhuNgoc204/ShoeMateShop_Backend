@@ -37,6 +37,7 @@ exports.getUnreviewedOrdersWithProducts = async (req, res) => {
     const userId = req.user._id;
     const unreviewedOrders = await Order.find({
       user_id: userId,
+      status: "completed",
       isReviewed: false,
     }).lean();
 
