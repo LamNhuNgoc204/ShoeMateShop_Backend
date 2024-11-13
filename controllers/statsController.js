@@ -113,46 +113,6 @@ exports.getBestSellingProducts = async (req, res) => {
   }
 };
 
-// exports.getRevenueByProduct = async (req, res) => {
-//   const { sort = "desc" } = req.query; // "asc" để sắp xếp tăng dần, "desc" để sắp xếp giảm dần
-
-//   try {
-//     const revenueData = await Order.aggregate([
-//       { $match: { status: "completed" } }, // Lọc theo trạng thái đơn hàng hoàn thành
-//       { $unwind: "$orderDetails" },
-//       {
-//         $lookup: {
-//           from: "orderdetails",
-//           localField: "orderDetails",
-//           foreignField: "_id",
-//           as: "orderDetail",
-//         },
-//       },
-//       { $unwind: "$orderDetail" },
-//       {
-//         $group: {
-//           _id: "$orderDetail.product.id", // Sử dụng 'product.id' thay vì '_id'
-//           productName: { $first: "$orderDetail.product.name" }, // Lưu tên sản phẩm
-//           totalRevenue: {
-//             $sum: { $multiply: ["$orderDetail.product.price", "$orderDetail.product.pd_quantity"] },
-//           },
-//           totalSales: { $sum: "$orderDetail.product.pd_quantity" },
-//         },
-//       },
-//       {
-//         $sort: { totalRevenue: sort === "asc" ? 1 : -1 }, // Sắp xếp theo tổng doanh thu
-//       },
-//     ]);
-
-//     res.json({
-//       status: true,
-//       data: revenueData.length > 0 ? revenueData : [],
-//     });
-//   } catch (error) {
-//     console.error("Error fetching revenue by product:", error);
-//     res.status(500).json({ status: false, error: "Failed to fetch revenue by product" });
-//   }
-// };
 
 exports.getRevenueByProduct = async (req, res) => {
   const { period = "week", offset = 0, status = "completed", sort = "desc" } = req.query;
@@ -199,3 +159,92 @@ exports.getRevenueByProduct = async (req, res) => {
     res.status(500).json({ status: false, error: "Failed to fetch revenue by product" });
   }
 };
+
+
+// Revenue statistics by day, week, or month for line chart
+exports.getRevenueStats = async (req, res) => {
+  const { period = "week", offset = 0, status = "completed" } = req.query;
+  const { start, end } = getDateRange(period, parseInt(offset, 10));
+
+  try {
+    // Determine the grouping format for MongoDB based on period
+    let dateFormat;
+    let dateRange;
+    
+    switch (period) {
+      case "week":
+        dateFormat = { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } };
+        dateRange = Array.from({ length: 7 }, (_, i) => {
+          const date = new Date(start);
+          date.setDate(date.getDate() + i);
+          return date.toISOString().split("T")[0];
+        });
+        break;
+        
+      case "month":
+        dateFormat = { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } };
+        dateRange = Array.from({ length: 30 }, (_, i) => {
+          const date = new Date(start);
+          date.setDate(date.getDate() + i);
+          return date.toISOString().split("T")[0];
+        });
+        break;
+        
+      case "year":
+        dateFormat = { $dateToString: { format: "%Y-%m", date: "$createdAt" } };
+        dateRange = Array.from({ length: 12 }, (_, i) => {
+          const date = new Date(start);
+          date.setMonth(date.getMonth() + i);
+          return date.toISOString().substring(0, 7);
+        });
+        break;
+        
+      default:
+        return res.status(400).json({ status: false, error: "Invalid period" });
+    }
+
+    const stats = await Order.aggregate([
+      { $match: { status, createdAt: { $gte: start, $lte: end } } },
+      { $unwind: "$orderDetails" },
+      {
+        $lookup: {
+          from: "orderdetails",
+          localField: "orderDetails",
+          foreignField: "_id",
+          as: "orderDetail",
+        },
+      },
+      { $unwind: "$orderDetail" },
+      {
+        $group: {
+          _id: dateFormat,
+          dailyRevenue: {
+            $sum: { $multiply: ["$orderDetail.product.price", "$orderDetail.product.pd_quantity"] },
+          },
+          dailySales: { $sum: "$orderDetail.product.pd_quantity" },
+        },
+      },
+      { $sort: { _id: 1 } }, // Sort by date ascending
+    ]);
+
+    // Fill missing dates in the range with zero values
+    const filledStats = dateRange.map((date) => {
+      const stat = stats.find((s) => s._id === date);
+      return {
+        _id: date,
+        dailyRevenue: stat ? stat.dailyRevenue : 0,
+        dailySales: stat ? stat.dailySales : 0,
+      };
+    });
+
+    res.json({
+      status: true,
+      data: filledStats,
+      period: period,
+    });
+  } catch (error) {
+    console.error("Error fetching revenue stats:", error);
+    res.status(500).json({ status: false, error: "Failed to fetch revenue stats" });
+  }
+};
+
