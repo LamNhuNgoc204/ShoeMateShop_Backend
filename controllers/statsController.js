@@ -45,12 +45,13 @@ const getDateRange = (period, offset = 0) => {
 
 // API thống kê với tham số động cho khoảng thời gian
 exports.getStats = async (req, res) => {
-  const { period = "month", offset = 0,status="completed" } = req.query;
+  const { period = "month", offset = 0 } = req.query;
 
   try {
     const { start, end } = getDateRange(period, parseInt(offset, 10));
+
     const stats = await Order.aggregate([
-      { $match: { createdAt: { $gte: start, $lte: end }, status: status } },
+      { $match: { createdAt: { $gte: start, $lte: end } } },
       { $unwind: "$orderDetails" },
       {
         $lookup: {
@@ -63,23 +64,47 @@ exports.getStats = async (req, res) => {
       { $unwind: "$orderDetail" },
       {
         $group: {
-          _id: null,
+          _id: "$status", // Group by order status
           totalSales: { $sum: "$orderDetail.product.pd_quantity" },
           totalRevenue: {
             $sum: { $multiply: ["$orderDetail.product.price", "$orderDetail.product.pd_quantity"] },
           },
+          orderCount: { $sum: 1 } // Count the number of orders per status
         },
       },
     ]);
+
+    // Định dạng kết quả trả về với các trạng thái "pending", "processing", "completed", "cancelled", "refunded"
+    const formattedStats = {
+      pending: { totalSales: 0, totalRevenue: 0, orderCount: 0 },
+      processing: { totalSales: 0, totalRevenue: 0, orderCount: 0 },
+      completed: { totalSales: 0, totalRevenue: 0, orderCount: 0 },
+      cancelled: { totalSales: 0, totalRevenue: 0, orderCount: 0 },
+      refunded: { totalSales: 0, totalRevenue: 0, orderCount: 0 },
+    };
+
+    // Điền dữ liệu vào `formattedStats`
+    stats.forEach(stat => {
+      if (formattedStats[stat._id] !== undefined) {
+        formattedStats[stat._id] = {
+          totalSales: stat.totalSales,
+          totalRevenue: stat.totalRevenue,
+          orderCount: stat.orderCount
+        };
+      }
+    });
+
     res.json({
-        status: stats.length > 0,
-        totalSales: stats[0]?.totalSales || 0,
-        totalRevenue: stats[0]?.totalRevenue || 0
-      });
+      status: true,
+      data: formattedStats,
+      period: period,
+    });
   } catch (error) {
+    console.error("Error fetching stats:", error);
     res.status(500).json({ error: "Failed to fetch stats" });
   }
 };
+
 
 // Best-selling products
 exports.getBestSellingProducts = async (req, res) => {
