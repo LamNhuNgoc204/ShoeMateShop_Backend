@@ -3,7 +3,8 @@ const User = require('../models/userModel')
 const Notification = require('../models/notificationModel');
 const { create } = require('hbs');
 const OrderDetail = require('../models/orderDetailModel')
-const {getIo} = require('../socket')
+const {getIo} = require('../socket');
+const { sendNotification } = require('../firebase');
 
 exports.createNotification = async (orderId, content) => {
     try {
@@ -22,6 +23,7 @@ exports.createNotification = async (orderId, content) => {
         })
 
         const orderDetails = await OrderDetail.find({order_id: order._id})
+        const user = await User.findById(order.user_id);
 
         getIo().emit('createdNotification', {
             notification: {
@@ -32,6 +34,8 @@ exports.createNotification = async (orderId, content) => {
                 }
             }
         })
+
+        sendNotification(user.FCMToken, 'Đơn hàng của bạn đã được tạo và đang chờ người bán xác nhận')
         
         return true;
     } catch (error) {

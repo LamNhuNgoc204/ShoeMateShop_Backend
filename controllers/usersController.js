@@ -152,3 +152,20 @@ exports.adddNewUser = async (req, res) => {
     return res.status(500).json({ status: false, message: "Server error" });
   }
 };
+
+
+exports.refreshFcmToken = async(req, res) => {
+  try {
+    const user = req.user;
+    const { token } = req.body;
+    user.FCMToken = token;
+    await user.save();
+    return res.status(200).json({
+      status: true,
+      message: "Token added successfully",
+    });
+  } catch (error) {
+    console.log("Error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+}

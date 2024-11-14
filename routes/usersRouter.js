@@ -36,4 +36,7 @@ router.post(
   userController.adddNewUser
 );
 
+
+router.post('/refresh-fcm', protect, userController.refreshFcmToken)
+
 module.exports = router;
