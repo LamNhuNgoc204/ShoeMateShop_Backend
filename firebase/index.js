@@ -6,11 +6,11 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-exports.sendNotification = async (fcmToken, message) => {
+exports.sendNotification = async (fcmToken,title, message) => {
 
   const messageSend = {
     notification: {
-      title : "Mateshoe 😁",
+      title : title,
       body: message,
     },
     token: fcmToken,

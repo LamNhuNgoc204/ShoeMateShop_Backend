@@ -35,7 +35,7 @@ exports.createNotification = async (orderId, content) => {
             }
         })
 
-        sendNotification(user.FCMToken, 'Đơn hàng của bạn đã được tạo và đang chờ người bán xác nhận')
+        await sendNotification(user.FCMToken,`Đơn hàn #${order._id}` , 'Đơn hàng của bạn đã được tạo và đang chờ người bán xác nhận')
         
         return true;
     } catch (error) {

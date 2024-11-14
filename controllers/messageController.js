@@ -5,6 +5,7 @@ const { getIo } = require('../socket');
 const Conversation = require('../models/conversationModel');
 const orderDetailModel = require('../models/orderDetailModel');
 const Product = require('../models/productModel');
+const { sendNotification } = require('../firebase');
 
 const getLastMesssage = async (conversationId) => {
     const message = await Message.find({ conversationId }).sort({ createdAt: -1 }).limit(1);
@@ -29,6 +30,7 @@ exports.sendMessage = async (req, res) => {
     try {
         var { conversationId, senderId, text, orderId, productId } = req.body;
         const conversation = await Conversation.findById(conversationId);
+        const user = await User.findById(conversation.userId);
         if (!conversation) {
             return res.status(404).json({ status: false, message: "Conversation not found" });
         }
@@ -107,6 +109,11 @@ exports.sendMessage = async (req, res) => {
             })
 
         }
+
+        if(senderId !== user._id) {
+            await sendNotification(user.FCMToken, 'MateShoe Staff 📝', text)
+        }
+
 
 
         return res.status(200).json({ status: true, message: "Message sent successfully", data: message });
