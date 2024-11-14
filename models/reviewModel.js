@@ -23,10 +23,11 @@ const reviewSchema = new mongoose.Schema({
   comment: { type: String },
   response: {
     content: { type: String },
-    createdAt: { type: Date, default: Date.now },
+    createdAt: { type: Date },
   },
   images: [{ type: String }],
   video: { type: String },
+  size: { type: Number },
   status: {
     type: String,
     enum: ["pending", "approved", "rejected"],
