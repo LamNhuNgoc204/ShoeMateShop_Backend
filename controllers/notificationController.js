@@ -99,7 +99,7 @@ exports.getNotificationByUser = async (req, res) => {
         const user = req.user;
         const notifications = await Notification.find({ user_id: user._id })
         const notificationsPromise = notifications.map(async (noti) => {
-            const order = await Order.findById(noti._id);
+            const order = await Order.findById(noti.order_id);
             const orderDetails = await OrderDetail.find({order_id: order._id});
             return {
                 ...noti._doc,

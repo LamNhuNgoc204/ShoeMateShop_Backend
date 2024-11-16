@@ -172,7 +172,7 @@ exports.createNewOrder = async (req, res) => {
         );
       }
     }
-    createNotification(savedOrder._id, `đơn hàng ${savedOrder._id} đã được tạo và đang chờ người bán xác nhận`)
+    createNotification(savedOrder._id, `đơn hàng của bạn đã được tạo và đang chờ người bán xác nhận`)
 
     return res.status(201).json({
       status: true,
@@ -682,7 +682,7 @@ exports.confirmOrder = async (req, res) => {
     if (!order) {
       return res.status(404).json({ error: "Order not found." });
     }
-    createNotification(order._id, `Đơn hàng ${order._id} đã được xác nhận và đang trên đường vận chuyển đến bạn`)
+    createNotification(order._id, `Đơn hàng của bạn đã được xác nhận và đang trên đường vận chuyển đến bạn`)
 
     return res.status(200).json({
       status: true,
