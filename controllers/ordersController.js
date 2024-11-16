@@ -265,7 +265,7 @@ exports.getPendingOrders = async (req, res) => {
 exports.getProcessingOrders = async (req, res) => {
   try {
     const orders = await Order.find({
-      status: "processing",
+      status: { $in: ["processing", "delivered"] },
       user_id: req.user._id,
     });
     const orderIds = orders.map((order) => order._id);
@@ -654,7 +654,7 @@ exports.confirmOrder = async (req, res) => {
     const orderId = req.order._id;
     const { status } = req.body;
 
-    const validStatuses = ["processing", "cancelled"];
+    const validStatuses = ["processing", "delivered", "completed", "cancelled"];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: "Invalid status provided." });
     }
@@ -662,6 +662,10 @@ exports.confirmOrder = async (req, res) => {
     const updateFields = { status };
     if (status === "processing") {
       updateFields["timestamps.shippedAt"] = Date.now();
+    } else if (status === "delivered") {
+      updateFields["timestamps.deliveredAt"] = Date.now();
+    } else if (status === "completed") {
+      updateFields["timestamps.completedAt"] = Date.now();
     } else if (status === "cancelled") {
       updateFields["timestamps.cancelledAt"] = Date.now();
       updateFields["canceller"] = "Shop";
@@ -709,13 +713,11 @@ exports.getOrdersForBottomSheet = async (req, res) => {
     });
     const returnedOrder = await Promise.all(promiseOrders);
 
-    return res
-      .status(200)
-      .json({
-        status: true,
-        message: "get ordeers successfully!",
-        data: returnedOrder,
-      });
+    return res.status(200).json({
+      status: true,
+      message: "get ordeers successfully!",
+      data: returnedOrder,
+    });
   } catch (error) {
     console.log("error: ", error);
     return res.status(500).json({ status: false, message: "Server error" });

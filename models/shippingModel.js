@@ -20,22 +20,6 @@ const shippingSchema = new mongoose.Schema({
       ref: "order",
     },
   ],
-  trackingAvailable: {
-    type: Boolean,
-    default: false,
-  },
-  status: {
-    type: String,
-    enum: [
-      "pending",
-      "shipped",
-      "in transit",
-      "delivered",
-      "failed",
-      "cancelled",
-    ],
-    default: "pending",
-  },
   isDefault: { type: Boolean, default: false },
   createdAt: {
     type: Date,
