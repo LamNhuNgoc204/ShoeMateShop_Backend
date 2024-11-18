@@ -2,9 +2,10 @@ const Address = require("../models/addressModel");
 
 exports.addAddress = async (req, res) => {
   try {
-    const { address, recieverPhoneNumber, recieverName, isDefault } = req.body;
+    const { address, recieverPhoneNumber, recieverName } = req.body;
     const user = req.user;
 
+    // Kiểm tra xem địa chỉ đã tồn tại chưa
     const existingAddress = await Address.findOne({
       userId: user._id,
       address: address,
@@ -15,22 +16,20 @@ exports.addAddress = async (req, res) => {
         .json({ message: "This address already exists for this user" });
     }
 
-    //If this address true, set orther address false
-    if (isDefault) {
-      await Address.updateMany(
-        { userId: user._id, isDefault: true },
-        { isDefault: false }
-      );
-    }
+    // Kiểm tra nếu người dùng đã có địa chỉ nào chưa
+    const userHasAddresses = await Address.exists({ userId: user._id });
 
-    // Create new user address
+    // Chưa có địa chỉ, lấy cái đầu tiên làm mặc định
+    const newIsDefault = userHasAddresses ? false : true;
+
     const newAddress = new Address({
       userId: user._id,
       address: address,
       recieverPhoneNumber: recieverPhoneNumber,
       recieverName: recieverName,
-      isDefault: isDefault || false,
+      isDefault: newIsDefault,
     });
+
     await newAddress.save();
 
     return res.status(200).json({

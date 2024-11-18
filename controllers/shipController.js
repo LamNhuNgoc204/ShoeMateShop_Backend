@@ -1,4 +1,6 @@
 const Ship = require("../models/shippingModel");
+const Order = require("../models/orderModel");
+const OrderDetail = require("../models/orderDetailModel");
 
 exports.getShipDefault = async (_, res) => {
   try {
@@ -72,11 +74,36 @@ exports.deleteShip = async (req, res) => {
   try {
     const deletedCompany = await Ship.findByIdAndDelete(req.params.id);
     if (!deletedCompany)
-      return res.status(404).json({ message: "Company not found" });
+      return res
+        .status(404)
+        .json({ status: true, message: "Company not found" });
     res.status(204).send();
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ status: false, message: error.message });
   }
 };
 
+exports.getOrderForShip = async (req, res) => {
+  try {
+    const orders = await Order.find({
+      status: { $in: ["processing", "delivered"] },
+    }).populate('shipping_id','name');
 
+    const orderIds = orders.map((order) => order._id);
+    const orderDetails = await OrderDetail.find({
+      order_id: { $in: orderIds },
+    }).populate("product.id")
+    ;
+
+    const ordersWithDetails = orders.map((order) => {
+      const details = orderDetails.filter((detail) =>
+        detail.order_id.equals(order._id)
+      );
+      return { ...order.toObject(), orderDetails: details };
+    });
+
+    return res.status(200).json({ status: true, data: ordersWithDetails });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: error.message });
+  }
+};

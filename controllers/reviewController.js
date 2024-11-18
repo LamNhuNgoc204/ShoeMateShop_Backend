@@ -3,6 +3,7 @@ const OrderDetail = require("../models/orderDetailModel");
 const Product = require("../models/productModel");
 const Order = require("../models/orderModel");
 
+//Lay tung sp chua review trong don hang da hoan thanh
 exports.getUnreviewedProductsInOrder = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -32,6 +33,7 @@ exports.getUnreviewedProductsInOrder = async (req, res) => {
   }
 };
 
+//Lay don hang co sp chua dc review
 exports.getUnreviewedOrdersWithProducts = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -49,16 +51,6 @@ exports.getUnreviewedOrdersWithProducts = async (req, res) => {
         })
           .select("product")
           .lean();
-
-        // const formattedUnreviewedProducts = unreviewedProducts.map((item) => ({
-        //   id: item.product.id,
-        //   pd_image: item.product.pd_image,
-        //   name: item.product.name,
-        //   size_name: item.product.size_name,
-        //   price: item.product.price,
-        //   pd_quantity: item.product.pd_quantity,
-        //   size_id: item.product.size_id,
-        // }));
 
         return {
           ...order,
@@ -89,14 +81,23 @@ exports.getUnreviewedOrdersWithProducts = async (req, res) => {
 //Review nhieu don hang
 exports.createMultipleReviews = async (req, res) => {
   try {
-    // Danh sách các sản phẩm cần review
+    // Nhan mang reviews tu body
     const { reviews } = req.body;
+
+    console.log("Danh sách sp cần review", reviews);
 
     const reviewer_id = req.user._id;
 
     const reviewPromises = reviews.map(async (reviewData) => {
-      const { orderDetail_id, product_id, rating, comment, images, video } =
-        reviewData;
+      const {
+        orderDetail_id,
+        product_id,
+        rating,
+        comment,
+        images,
+        video,
+        size,
+      } = reviewData;
 
       const orderDetail = await OrderDetail.findById(orderDetail_id);
       if (!orderDetail) throw new Error("Order detail not found");
@@ -109,6 +110,7 @@ exports.createMultipleReviews = async (req, res) => {
         comment,
         images,
         video,
+        size,
       });
       await newReview.save();
 
@@ -266,14 +268,25 @@ exports.updateProductReview = async (req, res) => {
 // Get user product reviews
 exports.getUserProductReview = async (req, res) => {
   try {
-    const reviews = req.reviews;
+    const userReviews = req.reviews;
+
+    if (userReviews.length === 0) {
+      return res.status(200).json({
+        status: true,
+        message: "No reviews found for this user.",
+        data: [],
+      });
+    }
+
+    console.log("userReviews", userReviews);
 
     return res.status(200).json({
       status: true,
-      message: "Get list user's reviews successfully",
-      data: reviews,
+      message: "Retrieved user's reviews by product successfully.",
+      data: userReviews,
     });
   } catch (error) {
+    console.error("Error fetching user reviews by product:", error);
     return res.status(500).json({ status: false, message: "Server error" });
   }
 };

@@ -26,7 +26,14 @@ const orderSchema = new mongoose.Schema({
   //Comfimed order
   status: {
     type: String,
-    enum: ["pending", "processing", "completed", "cancelled", "refunded"],
+    enum: [
+      "pending",
+      "processing",
+      "delivered",
+      "completed",
+      "cancelled",
+      "refunded",
+    ],
     default: "pending",
   },
   //Refund order
@@ -43,7 +50,7 @@ const orderSchema = new mongoose.Schema({
   receiverPhone: { type: String, required: true },
   address: { type: String, required: true },
   timestamps: {
-    placedAt: { type: Date, default: Date.now }, // Thời gian đặt hàng
+    placedAt: { type: Date }, // Thời gian đặt hàng
     paidAt: { type: Date }, // Thời gian thanh toán
     shippedAt: { type: Date }, // Thời gian giao hàng
     deliveredAt: { type: Date }, // Thời gian nhận hàng

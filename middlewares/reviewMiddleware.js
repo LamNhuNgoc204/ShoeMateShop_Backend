@@ -144,8 +144,9 @@ exports.checkUserProductReview = async (req, res, next) => {
     });
   }
 
-  const reviews = await Review.find({ userId })
-    .populate("product_id", "name price")
+  const reviews = await Review.find({ reviewer_id: userId })
+    .lean()
+    .populate("product_id", "name price assets")
     .populate("reviewer_id", "name email avatar")
     .sort({ createdAt: -1 });
 

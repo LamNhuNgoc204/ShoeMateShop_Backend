@@ -21,4 +21,11 @@ router.get("/get-one-ship/:id", control.getOneShip);
 
 router.put("update-ship/:id", protect, managerMiddleware, control.updateShip);
 
+router.get(
+  "/get-order-forship",
+  protect,
+  managerMiddleware,
+  control.getOrderForShip
+);
+
 module.exports = router;

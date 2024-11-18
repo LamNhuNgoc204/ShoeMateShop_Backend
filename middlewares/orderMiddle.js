@@ -129,15 +129,9 @@ const checkOrderByID = async (req, res, next) => {
       .json({ status: false, message: "Invalid order ID!" });
   }
 
-  const order = await Order.findById(orderId).populate("shipping_id", "status");
+  const order = await Order.findById(orderId);
   if (!order) {
     return res.status(404).json({ status: false, mesage: "Order not found!" });
-  }
-
-  if (!order.shipping_id) {
-    return res
-      .status(400)
-      .json({ status: false, message: "Shipping information not available!" });
   }
 
   req.order = order;

@@ -96,17 +96,15 @@ router.put(
   control.cancelOrder
 );
 
-//Xac nhan hoac huy don hang (admin || staff)
+//Cập nhật trạng thái đơn hàng
 router.put(
   "/confirm-order/:orderId",
   protect,
-  adminOrEmployee,
   middle.checkOrderByID,
   control.confirmOrder
 );
 
-
 //lay order theo kieu khac
-router.get('/get-orders-for-message', protect, control.getOrdersForBottomSheet)
+router.get("/get-orders-for-message", protect, control.getOrdersForBottomSheet);
 
 module.exports = router;

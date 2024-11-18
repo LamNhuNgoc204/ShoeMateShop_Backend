@@ -163,6 +163,7 @@ exports.Zalopayment = async (req, res) => {
     amount: amount,
     description: `ShoeMate - Payment for the order #${transID}`,
     bank_code: "",
+    callback_url: "shoeMate://callback",
   };
 
   // appid|app_trans_id|appuser|amount|apptime|embeddata|item
