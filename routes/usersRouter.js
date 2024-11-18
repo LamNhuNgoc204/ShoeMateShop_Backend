@@ -36,4 +36,6 @@ router.post(
   userController.adddNewUser
 );
 
+router.put("/lock-accound/:userId", protect, userController.LockAccount);
+
 module.exports = router;
