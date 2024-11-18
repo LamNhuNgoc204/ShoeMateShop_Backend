@@ -4,4 +4,6 @@ const controller =  require('../controllers/notificationController')
 
 route.get('/notifications-user', protect, controller.getNotificationByUser);
 
+route.put('/read-notification/:id', controller.readNotification)
+
 module.exports =route;
