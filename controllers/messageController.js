@@ -110,7 +110,7 @@ exports.sendMessage = async (req, res) => {
 
         }
 
-        if(senderId !== user._id) {
+        if(senderId != user._id) {
             await sendNotification(user.FCMToken, 'MateShoe Staff 📝', text)
         }
 
