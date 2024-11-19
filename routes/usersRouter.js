@@ -38,5 +38,6 @@ router.post(
 
 
 router.post('/refresh-fcm', protect, userController.refreshFcmToken)
+router.put("/lock-accound/:userId", protect, userController.LockAccount);
 
 module.exports = router;

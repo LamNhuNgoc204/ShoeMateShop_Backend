@@ -16,7 +16,6 @@ router.post("/momo", control.paymnetMomo);
 
 router.post("/momo/order-status", control.momoOrderStatus);
 
-// THANH TOÁn ONLINE DO SHOP TỰ ĐI THU :)
 // //Confirm successful payment
 // router.post("/confirm-payment", PaymentController.confirmPayment);
 

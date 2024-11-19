@@ -89,8 +89,15 @@ exports.createMultipleReviews = async (req, res) => {
     const reviewer_id = req.user._id;
 
     const reviewPromises = reviews.map(async (reviewData) => {
-      const { orderDetail_id, product_id, rating, comment, images, video } =
-        reviewData;
+      const {
+        orderDetail_id,
+        product_id,
+        rating,
+        comment,
+        images,
+        video,
+        size,
+      } = reviewData;
 
       const orderDetail = await OrderDetail.findById(orderDetail_id);
       if (!orderDetail) throw new Error("Order detail not found");
