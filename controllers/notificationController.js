@@ -35,7 +35,7 @@ exports.createNotification = async (orderId, content) => {
             }
         })
 
-        await sendNotification(user.FCMToken,`Đơn hàn #${order._id}` , content)
+        await sendNotification(user.FCMToken,`Đơn hàng #${order._id}` , content)
         
         return true;
     } catch (error) {

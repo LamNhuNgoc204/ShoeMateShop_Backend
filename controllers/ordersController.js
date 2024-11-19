@@ -660,12 +660,16 @@ exports.confirmOrder = async (req, res) => {
 
     const updateFields = { status };
     if (status === "processing") {
+      await createNotification(orderId, `Đơn hàng của bạn đã được xác nhận và đang trên đường vận chuyển đến bạn`)
       updateFields["timestamps.shippedAt"] = Date.now();
     } else if (status === "delivered") {
+      await createNotification(orderId, `Đơn hàng của bạn đã được giao thành công`)
       updateFields["timestamps.deliveredAt"] = Date.now();
     } else if (status === "completed") {
+      await createNotification(orderId, `Đơn hàng được xác nhận thành công`)
       updateFields["timestamps.completedAt"] = Date.now();
     } else if (status === "cancelled") {
+      await createNotification(orderId, `Đơn hàng của bạn đã được huỷ`)
       updateFields["timestamps.cancelledAt"] = Date.now();
       updateFields["canceller"] = "Shop";
     }
@@ -681,7 +685,6 @@ exports.confirmOrder = async (req, res) => {
     if (!order) {
       return res.status(404).json({ error: "Order not found." });
     }
-    createNotification(order._id, `Đơn hàng của bạn đã được xác nhận và đang trên đường vận chuyển đến bạn`)
 
     return res.status(200).json({
       status: true,
