@@ -30,6 +30,7 @@ const brandRouter = require("./routes/brandRouter");
 const filterRouter = require("./routes/filterRouter");
 const shipRouter = require("./routes/shipRouter");
 const paymentMethodRouter = require("./routes/paymentMethodRouter");
+const statsRouter = require("./routes/statsRouter");
 const walletRouter = require("./routes/walletRouter");
 const recentViewRouter = require("./routes/recentViewRouter");
 const { sendNotification } = require("./firebase");
@@ -69,6 +70,21 @@ app.use("/brands", brandRouter);
 app.use("/filter", filterRouter);
 app.use("/ship", shipRouter);
 app.use("/payment-method", paymentMethodRouter);
+app.use("/stats", statsRouter);
+
+(async function () {
+  try {
+    const authToken = "2np5lhGS7PPW5guLFQFPp7n3496_2uycZ4LzSVFT2SL33CSTK";
+    await ngrok.authtoken(authToken);
+
+    const port = 3000;
+    const url = await ngrok.connect(port);
+
+    console.log(`Ngrok tunnel created at: ${url}`);
+  } catch (error) {
+    console.error("Error starting ngrok:", error);
+  }
+})();
 app.use("/wallet", walletRouter);
 app.use("/recent-views", recentViewRouter);
 
