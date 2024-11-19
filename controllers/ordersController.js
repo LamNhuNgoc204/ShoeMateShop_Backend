@@ -527,7 +527,6 @@ exports.cancelOrder = async (req, res) => {
     }
 
     order.status = "cancelled";
-    order.shipping_id.status = "cancelled";
     order.canceller = user.name;
     order.timestamps.cancelledAt = Date.now();
 
@@ -553,34 +552,34 @@ exports.cancelOrder = async (req, res) => {
     );
 
     // Xử lý hoàn tiền nếu đơn hàng đã thanh toán
-    if (order.payment_id && order.payment_id.status === "completed") {
-      // Refund using ZaloPay
-      if (
-        detailOrder.payment_id.payment_method_id.payment_method === "Zalo Pay"
-      ) {
-        const refundResponse = await refundZaloPay(order, order.total_price);
-        if (refundResponse.return_code !== 1) {
-          return res.status(500).json({
-            message: "Refund failed",
-            error: refundResponse.return_message,
-          });
-        }
+    // if (order.payment_id && order.payment_id.status === "completed") {
+    //   // Refund using ZaloPay
+    //   if (
+    //     detailOrder.payment_id.payment_method_id.payment_method === "Zalo Pay"
+    //   ) {
+    //     const refundResponse = await refundZaloPay(order, order.total_price);
+    //     if (refundResponse.return_code !== 1) {
+    //       return res.status(500).json({
+    //         message: "Refund failed",
+    //         error: refundResponse.return_message,
+    //       });
+    //     }
 
-        // Cập nhật trạng thái hoàn tiền
-        order.payment_id.status = "refunded";
-        await order.payment_id.save();
+    //     // Cập nhật trạng thái hoàn tiền
+    //     order.payment_id.status = "refunded";
+    //     await order.payment_id.save();
 
-        // Cập nhật lịch sử hoàn tiền
-        await updatePaymentHistory(
-          order.user_id,
-          "Refund for order",
-          order.total_price
-        );
-      } else if (order.payment_id.method === "Thanh toán khi nhận hàng") {
-        order.payment_id.status = "completed";
-        await order.payment_id.save();
-      }
-    }
+    //     // Cập nhật lịch sử hoàn tiền
+    //     await updatePaymentHistory(
+    //       order.user_id,
+    //       "Refund for order",
+    //       order.total_price
+    //     );
+    //   } else if (order.payment_id.method === "Thanh toán khi nhận hàng") {
+    //     order.payment_id.status = "completed";
+    //     await order.payment_id.save();
+    //   }
+    // }
 
     return res.status(200).json({
       status: true,
