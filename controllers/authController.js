@@ -1,8 +1,7 @@
 const User = require("../models/userModel");
 const { checkPassword, hashPassword } = require("../utils/encryptionUtils");
-const { sendEmail } = require("../utils/emailUtils");
 const { generateOTP } = require("../utils/generateUtils");
-const { createToken } = require("../utils/token");
+const { createToken, verifyToken } = require("../utils/token");
 const {
   sendVerificationEmail,
   sendRandomPassword,
@@ -283,6 +282,36 @@ exports.login = async (req, res) => {
     });
   } catch (error) {
     console.log("Login error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
+exports.refreshToken = async (req, res) => {
+  try {
+    const { token, userId } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ status: false, message: "User not found!" });
+    }
+
+    if (!token)
+      return res.status(403).json({ message: "Refresh token is required" });
+
+    let newToken = "";
+    const checkToken = verifyToken(token);
+    if (!checkToken.valid) {
+      newToken = createToken(userId);
+    }
+
+    return res.status(200).json({
+      status: true,
+      data: newToken,
+    });
+  } catch (error) {
+    console.log("refreshToken error: ", error);
     return res.status(500).json({ status: false, message: "Server error" });
   }
 };
