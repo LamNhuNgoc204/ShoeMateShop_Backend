@@ -2,28 +2,44 @@ const Order = require('../models/orderModel')
 const User = require('../models/userModel')
 const Notification = require('../models/notificationModel');
 const { create } = require('hbs');
+const OrderDetail = require('../models/orderDetailModel')
+const {getIo} = require('../socket');
+const { sendNotification } = require('../firebase');
 
-exports.createNotification = async (req, res) => {
+exports.createNotification = async (orderId, content) => {
     try {
-        const { userId, orderId, content } = req.body;
-
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({ status: false, message: "User not found" });
+        if(!orderId) {
+            throw new Error('You must specify a order')
+        }
+        if(!content) {
+            throw new Error('You must specify a content')
         }
         const order = await Order.findById(orderId);
-        if (!order) {
-            return res.status(404).json({ status: false, message: "Order not found" });
-        }
-        const savedNotification = await Notification.create({
-            order_id: userId,
-            user_id: orderId,
-            content
+        const notification = await Notification.create({
+            order_id: order._id,
+            user_id: order.user_id,
+            content,
+            isRead: false
         })
-        return res.status(201).json({ status: true, message: "Notification created successfully", data: savedNotification });
+
+        const orderDetails = await OrderDetail.find({order_id: order._id})
+        const user = await User.findById(order.user_id);
+
+        getIo().emit('createdNotification', {
+            notification: {
+                ...notification,
+                order: {
+                    order,
+                    orderDetails
+                }
+            }
+        })
+
+        await sendNotification(user.FCMToken,`Đơn hàng #${order._id}` , content)
+        
+        return true;
     } catch (error) {
         console.error("Error: ", error);
-        return res.status(500).json({ status: false, message: "Server error" });
     }
 }
 
@@ -67,19 +83,9 @@ exports.deleteNotification = async (req, res) => {
 
 exports.getNotifications = async (req, res) => {
     try {
-        let { page, limit } = req.query;
-
-        page = parseInt(page) || 1;
-        limit = parseInt(limit) || 10;
-
-        const startIndex = (page - 1) * limit;
-        const totalNotifications = await Notification.countDocuments()
-        const totalPage = Math.ceil(totalNotifications / limit);
         const notifications = await Notification.find()
             .sort({ createdAt: -1 })
-            .skip(startIndex)
-            .limit(limit)
-        return res.status(200).json({ status: true, message: "Notifications retrieved successfully", data: notifications, pagination: { totalPage, currentPage: page, itemPerPage: limit, totalItem: totalNotifications } });
+        return res.status(200).json({ status: true, message: "Notifications retrieved successfully", data: notifications});
 
     } catch (error) {
         console.error("Error: ", error);
@@ -90,22 +96,22 @@ exports.getNotifications = async (req, res) => {
 
 exports.getNotificationByUser = async (req, res) => {
     try {
-        const { userId } = req.params
-        var { page, limit } = req.query
-        page = parseInt(page) || 1;
-        limit = parseInt(limit) || 10;
-        console.log('userId: ', userId);
-        if (!userId) {
-            return res.status(400).json({ status: false, message: "User ID is required!" });
-        }
-        const startIndex = (page - 1) * limit;
-        const totalNotifications = await Notification.countDocuments({ user_id: userId })
-        const totalPage = Math.ceil(totalNotifications / limit);
-        const notifications = await Notification.find({ user_id: userId })
-            .sort({ createAt: -1 })
-            .skip(startIndex)
-            .limit(limit)
-        return res.status(200).json({ status: true, message: "Notifications retrieved successfully", data: notifications, pagination: { totalPage, currentPage: page, itemPerPage: limit, totalItem: totalNotifications } });
+        const user = req.user;
+        const notifications = await Notification.find({ user_id: user._id })
+        const notificationsPromise = notifications.map(async (noti) => {
+            const order = await Order.findById(noti.order_id);
+            const orderDetails = await OrderDetail.find({order_id: order._id});
+            return {
+                ...noti._doc,
+                order: {
+                    order,
+                    orderDetails,
+                }
+            }
+        })
+
+        const returnedNotifications = await Promise.all(notificationsPromise);
+        return res.status(200).json({ status: true, message: "Notifications retrieved successfully", data: returnedNotifications});
     } catch (error) {
         console.error("Error: ", error);
         return res.status(500).json({ status: false, message: "Server error" });

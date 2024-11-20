@@ -6,14 +6,14 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-exports.sendNotification = async (message) => {
+exports.sendNotification = async (fcmToken,title, message) => {
 
   const messageSend = {
     notification: {
-      title : "Mateshoe Notification",
+      title : title,
       body: message,
     },
-    token: 'fFoQRExrQDqrSaWARVFv8q:APA91bHR0byAD5AEEKIue-IGRHcDgi9XJS9JzmiMYmLfUpTuWngMT-XDs3fpaAVbLXanTfLRPSbTUOpk__K0OpBIKBS92fyGjCOx37Z-ajbWGwMk2qFYqmo',
+    token: fcmToken,
     android: {
       priority: 'high',
     },

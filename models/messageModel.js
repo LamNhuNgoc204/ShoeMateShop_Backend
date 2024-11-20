@@ -17,6 +17,11 @@ const messageSchema = new Schema({
     ref: 'order',
     default: null
   },
+  productId: {
+    type: Schema.Types.ObjectId,
+    ref: 'product',
+    default: null
+  },
   text: {
     type: String,
     required: true
