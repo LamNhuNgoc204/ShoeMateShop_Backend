@@ -288,9 +288,8 @@ exports.login = async (req, res) => {
 
 exports.refreshToken = async (req, res) => {
   try {
-    const { token, userId } = req.body;
-
-    const user = await User.findById(userId);
+    const { token } = req.body;
+    const user = req?.user;
     if (!user) {
       return res
         .status(404)
