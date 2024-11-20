@@ -61,4 +61,6 @@ router.post(
   AuthController.signInWithGG
 );
 
+router.post("/refresh-token", AuthController.refreshToken);
+
 module.exports = router;
