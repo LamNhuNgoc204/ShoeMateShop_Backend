@@ -288,7 +288,6 @@ exports.login = async (req, res) => {
 
 exports.refreshToken = async (req, res) => {
   try {
-    const { token } = req.body;
     const user = req?.user;
     if (!user) {
       return res
@@ -296,18 +295,11 @@ exports.refreshToken = async (req, res) => {
         .json({ status: false, message: "User not found!" });
     }
 
-    if (!token)
-      return res.status(403).json({ message: "Refresh token is required" });
-
-    let newToken = "";
-    const checkToken = verifyToken(token);
-    if (!checkToken.valid) {
-      newToken = createToken(user._id);
-    }
+    const token = createToken(user._id);
 
     return res.status(200).json({
       status: true,
-      data: newToken,
+      data: token,
     });
   } catch (error) {
     console.log("refreshToken error: ", error);
