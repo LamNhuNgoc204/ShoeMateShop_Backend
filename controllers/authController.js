@@ -302,7 +302,7 @@ exports.refreshToken = async (req, res) => {
     let newToken = "";
     const checkToken = verifyToken(token);
     if (!checkToken.valid) {
-      newToken = createToken(userId);
+      newToken = createToken(user._id);
     }
 
     return res.status(200).json({
