@@ -72,19 +72,6 @@ app.use("/ship", shipRouter);
 app.use("/payment-method", paymentMethodRouter);
 app.use("/stats", statsRouter);
 
-(async function () {
-  try {
-    const authToken = "2np5lhGS7PPW5guLFQFPp7n3496_2uycZ4LzSVFT2SL33CSTK";
-    await ngrok.authtoken(authToken);
-
-    const port = 3000;
-    const url = await ngrok.connect(port);
-
-    console.log(`Ngrok tunnel created at: ${url}`);
-  } catch (error) {
-    console.error("Error starting ngrok:", error);
-  }
-})();
 app.use("/wallet", walletRouter);
 app.use("/recent-views", recentViewRouter);
 
