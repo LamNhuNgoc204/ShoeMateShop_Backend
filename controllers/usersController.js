@@ -158,7 +158,8 @@ exports.refreshFcmToken = async(req, res) => {
   try {
     const user = req.user;
     const { token } = req.body;
-    user.FCMToken = token;
+    const userTemp = await User.findById(user._id);
+    userTemp.FCMToken = token;
     await user.save();
     return res.status(200).json({
       status: true,
