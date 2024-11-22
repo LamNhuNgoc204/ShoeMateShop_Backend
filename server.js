@@ -30,11 +30,10 @@ const brandRouter = require("./routes/brandRouter");
 const filterRouter = require("./routes/filterRouter");
 const shipRouter = require("./routes/shipRouter");
 const paymentMethodRouter = require("./routes/paymentMethodRouter");
+const statsRouter = require("./routes/statsRouter");
 const walletRouter = require("./routes/walletRouter");
 const recentViewRouter = require("./routes/recentViewRouter");
 const { sendNotification } = require("./firebase");
-
-
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
@@ -71,8 +70,15 @@ app.use("/brands", brandRouter);
 app.use("/filter", filterRouter);
 app.use("/ship", shipRouter);
 app.use("/payment-method", paymentMethodRouter);
+app.use("/stats", statsRouter);
+
 app.use("/wallet", walletRouter);
 app.use("/recent-views", recentViewRouter);
+
+app.use("/", (req, res) => {
+  res.status(200).json({ msg: "on" });
+  console.log("server on...");
+});
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
