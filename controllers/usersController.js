@@ -191,3 +191,47 @@ exports.LockAccount = async (req, res) => {
     return res.status(500).json({ status: false, message: "Server error" });
   }
 };
+
+
+exports.addSearch = async(req, res) => {
+  try {
+     let user = req.user;
+     if(!req.body.search) {
+       return res.status(400).json({ status: false, message: "Search field is required" });
+     }
+     user.searchHistory = [...user.searchHistory, req.body.search];
+     const updatedUser = await user.save();
+     return res.status(200).json({ status:true, data:updatedUser, message: 'Update successful' });
+  } catch (error) {
+    console.log("Error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });  
+  }
+}
+
+exports.removeSearch = async (req, res) => {
+  try {
+    const user = req.user;
+    if(!req.body.search) {
+      return res.status(400).json({ status: false, message: "Search field is required" });
+    }
+    const userTemp = await User.findById(user._id);
+    let userSearch = userTemp.searchHistory.filter(search => search == req.body.search)
+    const updatedUser = await userSearch.save();
+    return res.status(200).json({ status:true, data:updatedUser, message: 'remove search success' });
+  } catch (error) {
+    console.log("Error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+    
+  }
+}
+
+exports.getSearchHistories = async (req,res) => {
+  try {
+    const user = req.user;
+    const userTemp = await User.findById(user._id);
+    return res.status(200).json({ status:true, data: userTemp.searchHistory, message: 'Get search histories success' });
+  } catch (error) {
+    console.log("Error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+}
