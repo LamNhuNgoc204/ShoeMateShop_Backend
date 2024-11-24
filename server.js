@@ -96,4 +96,8 @@ app.use(function (err, req, res, next) {
   res.render("error");
 });
 
+app.listen(() => {
+  console.log(`Server is running on http://localhost:3000`);
+});
+
 module.exports = app;
