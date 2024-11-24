@@ -41,6 +41,6 @@ router.post('/refresh-fcm', protect, userController.refreshFcmToken)
 router.put("/lock-accound/:userId", protect, userController.LockAccount);
 router.put("/add-search", protect, userController.addSearch)
 router.put('/remove-search', protect, userController.removeSearch)
-router.put('/get-searchs', protect, userController.getSearchHistories)
+router.get('/get-searchs', protect, userController.getSearchHistories)
 
 module.exports = router;

@@ -199,6 +199,9 @@ exports.addSearch = async(req, res) => {
      if(!req.body.search) {
        return res.status(400).json({ status: false, message: "Search field is required" });
      }
+     if(user.searchHistory.includes(req.query.search)) {
+      user.searchHistory = user.searchHistory.filter(search => search != req.body.search);
+     }
      user.searchHistory = [...user.searchHistory, req.body.search];
      const updatedUser = await user.save();
      return res.status(200).json({ status:true, data:updatedUser, message: 'Update successful' });
@@ -215,8 +218,9 @@ exports.removeSearch = async (req, res) => {
       return res.status(400).json({ status: false, message: "Search field is required" });
     }
     const userTemp = await User.findById(user._id);
-    let userSearch = userTemp.searchHistory.filter(search => search == req.body.search)
-    const updatedUser = await userSearch.save();
+    const searchs = userTemp.searchHistory;
+    const updatedSearchs = searchs.filter(search => search != req.body.search)
+    const updatedUser = await User.findByIdAndUpdate(user._id,{searchHistory: updatedSearchs})
     return res.status(200).json({ status:true, data:updatedUser, message: 'remove search success' });
   } catch (error) {
     console.log("Error: ", error);
@@ -229,6 +233,7 @@ exports.getSearchHistories = async (req,res) => {
   try {
     const user = req.user;
     const userTemp = await User.findById(user._id);
+    console.log("searchs: ", userTemp.searchHistory)
     return res.status(200).json({ status:true, data: userTemp.searchHistory, message: 'Get search histories success' });
   } catch (error) {
     console.log("Error: ", error);
