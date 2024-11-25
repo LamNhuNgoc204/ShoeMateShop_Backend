@@ -22,7 +22,7 @@ router.get(
 //Review nhieu sp trong 1 don hang
 router.post("/", protect, reviewController.createMultipleReviews);
 
-// Manage reviews
+// Duyệt đánh giá
 router.put(
   "/update-review-status/:reviewId",
   protect,
@@ -31,6 +31,7 @@ router.put(
   reviewController.updateReviewStatus
 );
 
+//Lấy đánh gia cho web
 router.get(
   "/get-all-reviews",
   protect,
@@ -68,11 +69,19 @@ router.put(
 );
 
 // Get user product reviews
-router.get(
-  "/get-user-reviews",
+// router.get(
+//   "/get-user-reviews",
+//   protect,
+//   checkUserProductReview,
+//   reviewController.getUserProductReview
+// );
+
+// Phản hồi đánh giá người
+router.put(
+  "/respondtoreview/:reviewId",
   protect,
-  checkUserProductReview,
-  reviewController.getUserProductReview
+  adminMiddleware,
+  reviewController.respondToReview
 );
 
 module.exports = router;

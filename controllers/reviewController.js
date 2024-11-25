@@ -205,23 +205,16 @@ exports.updateReviewStatus = async (req, res) => {
     const { reviewId } = req.params;
     const { status } = req.body;
 
-    let review;
+    // Xác thực status
+    if (!["approved", "rejected"].includes(status)) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Invalid review status" });
+    }
 
-    if (status === "rejected") {
-      review = await Review.findByIdAndDelete(reviewId);
-
-      if (!review) {
-        return res
-          .status(400)
-          .json({ status: false, message: "Review not found" });
-      }
-
-      return res.status(200).json({
-        status: true,
-        message: "Review rejected and deleted successfully",
-      });
-    } else {
-      review = await Review.findByIdAndUpdate(
+    // Xử lý khi status là "rejected"
+    if (status) {
+      const review = await Review.findByIdAndUpdate(
         reviewId,
         { status },
         { new: true }
@@ -229,16 +222,35 @@ exports.updateReviewStatus = async (req, res) => {
 
       if (!review) {
         return res
-          .status(400)
+          .status(404)
           .json({ status: false, message: "Review not found" });
       }
 
       return res.status(200).json({
         status: true,
-        message: "Review approved successfully",
+        message: "Review rejected and deleted successfully",
         data: review,
       });
     }
+
+    // Xử lý khi status là "approved"
+    // const review = await Review.findByIdAndUpdate(
+    //   reviewId,
+    //   { status },
+    //   { new: true }
+    // );
+
+    // if (!review) {
+    //   return res
+    //     .status(404)
+    //     .json({ status: false, message: "Review not found" });
+    // }
+
+    // return res.status(200).json({
+    //   status: true,
+    //   message: "Review status updated successfully",
+    //   data: review,
+    // });
   } catch (error) {
     console.error("Error updating review status:", error);
     res.status(500).json({ status: false, message: "Server error" });
@@ -327,27 +339,68 @@ exports.updateProductReview = async (req, res) => {
 };
 
 // Get user product reviews
-exports.getUserProductReview = async (req, res) => {
-  try {
-    const userReviews = req.reviews;
+// exports.getUserProductReview = async (req, res) => {
+//   try {
+//     const userReviews = req.reviews;
 
-    if (userReviews.length === 0) {
-      return res.status(200).json({
-        status: true,
-        message: "No reviews found for this user.",
-        data: [],
+//     if (userReviews?.length === 0) {
+//       return res.status(200).json({
+//         status: true,
+//         message: "No reviews found for this user.",
+//         data: [],
+//       });
+//     }
+
+//     console.log("userReviews", userReviews);
+
+//     return res.status(200).json({
+//       status: true,
+//       message: "Retrieved user's reviews by product successfully.",
+//       data: userReviews,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching user reviews by product:", error);
+//     return res.status(500).json({ status: false, message: "Server error" });
+//   }
+// };
+
+//Phản hồi đánh giá người dùng
+exports.respondToReview = async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+    const { content } = req.body;
+
+    if (!content) {
+      return res.status(400).json({
+        status: false,
+        message: "Content is required",
       });
     }
 
-    console.log("userReviews", userReviews);
+    // Tìm và cập nhật phản hồi cho review
+    const review = await Review.findByIdAndUpdate(
+      reviewId,
+      {
+        responder_id: req.user._id,
+        response: { content, createdAt: new Date() },
+      },
+      { new: true }
+    );
+
+    // Kiểm tra nếu review không tồn tại
+    if (!review) {
+      return res
+        .status(404)
+        .json({ status: false, message: "Review not found" });
+    }
 
     return res.status(200).json({
       status: true,
-      message: "Retrieved user's reviews by product successfully.",
-      data: userReviews,
+      data: review,
+      message: "Response added successfully",
     });
   } catch (error) {
-    console.error("Error fetching user reviews by product:", error);
-    return res.status(500).json({ status: false, message: "Server error" });
+    console.error("Error responding to review:", error);
+    res.status(500).json({ status: false, message: "Server error" });
   }
 };
