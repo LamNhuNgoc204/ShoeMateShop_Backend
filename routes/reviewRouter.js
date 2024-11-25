@@ -3,10 +3,8 @@ const router = express.Router();
 const reviewController = require("../controllers/reviewController");
 const {
   checkUpdateReview,
-  checkReviewById,
   checkProductById,
   checkUserUpdateReview,
-  checkUserProductReview,
 } = require("../middlewares/reviewMiddleware");
 const { protect } = require("../middlewares/authMiddleware");
 const { adminMiddleware } = require("../middlewares/adminMiddleware");
@@ -31,26 +29,12 @@ router.put(
   reviewController.updateReviewStatus
 );
 
-//Lấy đánh gia cho web
+//Lấy đánh giá cho web
 router.get(
   "/get-all-reviews",
   protect,
   adminMiddleware,
   reviewController.getAllReviews
-);
-
-router.get(
-  "/get-pending-reviews",
-  protect,
-  adminMiddleware,
-  reviewController.getPendingReviews
-);
-
-// Get review detail
-router.get(
-  "/get-review-detail/:reviewId",
-  checkReviewById,
-  reviewController.getReviewById
 );
 
 // Get list product's reviews
@@ -67,14 +51,6 @@ router.put(
   checkUserUpdateReview,
   reviewController.updateProductReview
 );
-
-// Get user product reviews
-// router.get(
-//   "/get-user-reviews",
-//   protect,
-//   checkUserProductReview,
-//   reviewController.getUserProductReview
-// );
 
 // Phản hồi đánh giá người
 router.put(
