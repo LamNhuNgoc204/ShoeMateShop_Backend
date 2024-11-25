@@ -28,7 +28,7 @@ const sortConversation = (conversations) => {
 
 exports.sendMessage = async (req, res) => {
     try {
-        var { conversationId, senderId, text, orderId, productId } = req.body;
+        var { conversationId, senderId, text, orderId, productId, imageUrls } = req.body;
         const conversation = await Conversation.findById(conversationId);
         const user = await User.findById(conversation.userId);
         if (!conversation) {
@@ -51,6 +51,9 @@ exports.sendMessage = async (req, res) => {
         else if (productId) {
             type = 'product'
         }
+        else if (imageUrls) {
+            type = 'image'
+        }
         else {
             type = 'text'
         }
@@ -60,7 +63,8 @@ exports.sendMessage = async (req, res) => {
             senderId: senderId,
             text: text,
             orderId: orderId,
-            productId: productId
+            productId: productId,
+            fileUrls: imageUrls
         })
 
         if (orderId) {

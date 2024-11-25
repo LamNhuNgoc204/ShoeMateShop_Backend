@@ -26,6 +26,10 @@ const messageSchema = new Schema({
     type: String,
     required: true
   },
+  fileUrls: {
+    type: [String],
+    default: []
+  },
   type: {
     type: String,
     default: 'text'

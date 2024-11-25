@@ -34,6 +34,7 @@ const statsRouter = require("./routes/statsRouter");
 const walletRouter = require("./routes/walletRouter");
 const recentViewRouter = require("./routes/recentViewRouter");
 const { sendNotification } = require("./firebase");
+const uploadRouter = require('./routes/uploadRouter')
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
@@ -50,6 +51,8 @@ mongoose
   .connect(mongooseURL)
   .then(() => console.log("Connect to mongodb success.."))
   .catch((error) => console.error("Error connecting to database...", error));
+
+app.use('/file', express.static(path.join(__dirname, 'public', 'uploads')));
 
 app.use("/admins", adminRouter);
 app.use("/users", usersRouter);
@@ -74,6 +77,7 @@ app.use("/stats", statsRouter);
 
 app.use("/wallet", walletRouter);
 app.use("/recent-views", recentViewRouter);
+app.use('/upload', uploadRouter)
 
 app.use("/", (req, res) => {
   res.status(200).json({ msg: "on" });
