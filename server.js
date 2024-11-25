@@ -75,11 +75,6 @@ app.use("/stats", statsRouter);
 app.use("/wallet", walletRouter);
 app.use("/recent-views", recentViewRouter);
 
-app.use("/", (req, res) => {
-  res.status(200).json({ msg: "on" });
-  console.log("server on...");
-});
-
 app.get("/.well-known/assetlinks.json", (req, res) => {
   res.json([
     {
@@ -93,6 +88,11 @@ app.get("/.well-known/assetlinks.json", (req, res) => {
       },
     },
   ]);
+});
+
+app.use("/", (req, res) => {
+  res.status(200).json({ msg: "on" });
+  console.log("server on...");
 });
 
 // catch 404 and forward to error handler
