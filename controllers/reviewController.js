@@ -334,11 +334,20 @@ exports.respondToReview = async (req, res) => {
 };
 
 //Lấy ds review cho từng sp
-exports.getReviewByProductId = async () => {
+const mongoose = require("mongoose");
+exports.getReviewByProductId = async (req, res) => {
   try {
     const { productId } = req.params;
-    const result = await Review.find({ product_id: productId });
-    if (!result) {
+    const result = await Review.find({
+      product_id: new mongoose.Types.ObjectId(productId),
+    })
+      .populate("reviewer_id", "name email")
+      .populate("responder_id", "name email")
+      .exec();
+
+    console.log("result", result);
+
+    if (!result || result.length === 0) {
       return res.status(200).json({ status: true, data: [] });
     }
 

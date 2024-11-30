@@ -163,7 +163,7 @@ exports.Zalopayment = async (req, res) => {
     amount: amount,
     description: `ShoeMate - Payment for the order #${transID}`,
     bank_code: "",
-    callback_url: "shoeMate://callback",
+    callback_url: "shoemate://callback",
   };
 
   // appid|app_trans_id|appuser|amount|apptime|embeddata|item
@@ -241,21 +241,21 @@ async function updatePaymentAndOrderStatus(
       throw new Error("Order not found");
     }
 
-    // Lưu lịch sử thanh toán
-    const user = await userModel.findOne({
-      _id: new mongoose.Types.ObjectId(userid),
-    });
-    if (user) {
-      await savePaymentHistory(userid, amount);
-    } else {
-      console.log("check user before save : ", user);
-    }
+    // // Lưu lịch sử thanh toán
+    // const user = await userModel.findOne({
+    //   _id: new mongoose.Types.ObjectId(userid),
+    // });
+    // if (user) {
+    //   await savePaymentHistory(userid, amount);
+    // } else {
+    //   console.log("check user before save : ", user);
+    // }
 
-    console.log(
-      "Payment and order successfully updated:",
-      paymentUpdate,
-      orderUpdate
-    );
+    // console.log(
+    //   "Payment and order successfully updated:",
+    //   paymentUpdate,
+    //   orderUpdate
+    // );
   } catch (error) {
     console.log("Error updating payment or order:", error.message);
     throw error;
@@ -263,30 +263,30 @@ async function updatePaymentAndOrderStatus(
 }
 
 // Lưu lịch sử thanh toán
-async function savePaymentHistory(userid, amount) {
-  try {
-    const userIdObj = new mongoose.Types.ObjectId(userid); // Đảm bảo userid là ObjectId
-    const user = await userModel.findOne({ _id: userIdObj });
-    console.log("Searching for user with ID:", userIdObj);
-    // const user = await userModel.findOne({ _id: userid });
-    // console.log("Searching for user with ID:", userid);
-    if (!user) {
-      throw new Error("User not found");
-    }
+// async function savePaymentHistory(userid, amount) {
+//   try {
+//     const userIdObj = new mongoose.Types.ObjectId(userid); // Đảm bảo userid là ObjectId
+//     const user = await userModel.findOne({ _id: userIdObj });
+//     console.log("Searching for user with ID:", userIdObj);
+//     // const user = await userModel.findOne({ _id: userid });
+//     // console.log("Searching for user with ID:", userid);
+//     if (!user) {
+//       throw new Error("User not found");
+//     }
 
-    const history = new PaidHistory({
-      user_id: user._id,
-      title: `Payment for order by zalo pay`,
-      money: amount,
-      point: calculatePoints(amount),
-    });
+//     const history = new PaidHistory({
+//       user_id: user._id,
+//       title: `Payment for order by zalo pay`,
+//       money: amount,
+//       point: calculatePoints(amount),
+//     });
 
-    await history.save();
-    console.log("Payment history saved:", history);
-  } catch (err) {
-    console.log("Error saving payment history:", err.message);
-  }
-}
+//     await history.save();
+//     console.log("Payment history saved:", history);
+//   } catch (err) {
+//     console.log("Error saving payment history:", err.message);
+//   }
+// }
 
 // Tính điểm
 function calculatePoints(amount) {

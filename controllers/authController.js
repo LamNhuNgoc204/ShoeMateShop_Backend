@@ -244,7 +244,7 @@ exports.login = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         status: false,
-        message: "Please provide both email and password.",
+        message: "Vui lòng cung cấp cả email và mật khẩu.",
       });
     }
 
@@ -253,11 +253,11 @@ exports.login = async (req, res) => {
     if (!user) {
       return res
         .status(400)
-        .json({ status: false, message: "User does not exist." });
+        .json({ status: false, message: "Người dùng không tồn tại!!!" });
     }
 
     if (!user.isActive) {
-      return res.status(403).json({ message: "Account is inactive" });
+      return res.status(403).json({ message: "Tài khoản không hoạt động!" });
     }
 
     // Check if password is correct
@@ -265,7 +265,7 @@ exports.login = async (req, res) => {
     if (!isPasswordCorrect) {
       return res
         .status(401)
-        .json({ status: false, message: "Invalid password." });
+        .json({ status: false, message: "Mật khẩu không hợp lệ." });
     }
 
     // Generate JWT token

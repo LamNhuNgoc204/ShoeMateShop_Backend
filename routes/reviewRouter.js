@@ -41,7 +41,7 @@ router.get(
 router.get(
   "/get-list-product-reviews/:productId",
   checkProductById,
-  reviewController.getProductReviews
+  reviewController.getReviewByProductId
 );
 
 // Update product review
