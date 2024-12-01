@@ -132,6 +132,7 @@ const config = {
   key1: "sdngKKJmqEMzvh5QQcdD2A9XBSKUNaYn",
   key2: "trMrHtvjo6myautxDUiAcYsVtaeQ8nhf",
   endpoint: "https://sb-openapi.zalopay.vn/v2/create",
+  //https://sb-openapi.zalopay.vn/v2/create
 };
 
 exports.Zalopayment = async (req, res) => {
@@ -139,7 +140,9 @@ exports.Zalopayment = async (req, res) => {
   // const userid = req.user._id;
   console.log("userid zalo pay", userid);
 
-  const embed_data = "{}";
+  const embed_data = JSON.stringify({
+    redirecturl: "https://luxury-bunny-3e3183.netlify.app/",
+  });
   const items = "[{}]";
 
   const orderCheck = await Order.findById(orderId).populate(
@@ -163,7 +166,7 @@ exports.Zalopayment = async (req, res) => {
     amount: amount,
     description: `ShoeMate - Payment for the order #${transID}`,
     bank_code: "",
-    callback_url: "shoemate://callback",
+    callback_url: "<https://google.com>",
   };
 
   // appid|app_trans_id|appuser|amount|apptime|embeddata|item
@@ -182,10 +185,11 @@ exports.Zalopayment = async (req, res) => {
     "|" +
     order.item;
   order.mac = CryptoJS.HmacSHA256(data, config.key1).toString();
+  // console.log("order===>", order);
 
   try {
     const response = await axios.post(config.endpoint, null, { params: order });
-    console.log(response.data);
+    console.log("KẾT QUẢ TRẢ VỀ===>", response.data);
 
     try {
       await updatePaymentAndOrderStatus(
@@ -199,6 +203,7 @@ exports.Zalopayment = async (req, res) => {
       return res.status(500).json({
         status: false,
         message: "Failed to update payment and order status.",
+        error: error,
       });
     }
 

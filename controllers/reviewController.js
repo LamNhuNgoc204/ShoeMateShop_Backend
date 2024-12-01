@@ -96,9 +96,9 @@ exports.getUnreviewedOrdersWithProducts = async (req, res) => {
         const unreviewedProducts = await OrderDetail.find({
           order_id: order._id,
           isReviewed: false,
-        })
-          .select("product")
-          .lean();
+        });
+        // .populate("product")
+        // .lean();
 
         // const formattedUnreviewedProducts = unreviewedProducts.map((item) => ({
         //   id: item.product.id,
