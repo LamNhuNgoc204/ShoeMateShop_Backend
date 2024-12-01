@@ -360,3 +360,28 @@ exports.getReviewByProductId = async (req, res) => {
     res.status(500).json({ status: false, message: "Server error" });
   }
 };
+
+exports.getUserProductReview = async (req, res) => {
+  try {
+    const userReviews = req.reviews;
+
+    if (userReviews?.length === 0) {
+      return res.status(200).json({
+        status: true,
+        message: "No reviews found for this user.",
+        data: [],
+      });
+    }
+
+    console.log("userReviews", userReviews);
+
+    return res.status(200).json({
+      status: true,
+      message: "Retrieved user's reviews by product successfully.",
+      data: userReviews,
+    });
+  } catch (error) {
+    console.error("Error fetching user reviews by product:", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
