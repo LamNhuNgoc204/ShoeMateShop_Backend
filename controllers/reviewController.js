@@ -345,7 +345,7 @@ exports.getReviewByProductId = async (req, res) => {
       .populate("responder_id", "name email")
       .exec();
 
-    console.log("result", result);
+    // console.log("result", result);
 
     if (!result || result.length === 0) {
       return res.status(200).json({ status: true, data: [] });

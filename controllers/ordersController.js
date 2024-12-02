@@ -8,7 +8,7 @@ const Ship = require("../models/shippingModel");
 const axios = require("axios");
 const crypto = require("crypto");
 const updatePaymentHistory = require("../service/updatePaymentHistory");
-const {createNotification} = require('../controllers/notificationController')
+const { createNotification } = require("../controllers/notificationController");
 
 exports.getOrderDetail = async (req, res) => {
   try {
@@ -172,7 +172,10 @@ exports.createNewOrder = async (req, res) => {
         );
       }
     }
-    createNotification(savedOrder._id, `đơn hàng của bạn đã được tạo và đang chờ người bán xác nhận`)
+    createNotification(
+      savedOrder._id,
+      `đơn hàng của bạn đã được tạo và đang chờ người bán xác nhận`
+    );
 
     return res.status(201).json({
       status: true,
@@ -660,16 +663,22 @@ exports.confirmOrder = async (req, res) => {
 
     const updateFields = { status };
     if (status === "processing") {
-      await createNotification(orderId, `Đơn hàng của bạn đã được xác nhận và đang trên đường vận chuyển đến bạn`)
+      await createNotification(
+        orderId,
+        `Đơn hàng của bạn đã được xác nhận và đang trên đường vận chuyển đến bạn`
+      );
       updateFields["timestamps.shippedAt"] = Date.now();
     } else if (status === "delivered") {
-      await createNotification(orderId, `Đơn hàng của bạn đã được giao thành công`)
+      await createNotification(
+        orderId,
+        `Đơn hàng của bạn đã được giao thành công`
+      );
       updateFields["timestamps.deliveredAt"] = Date.now();
     } else if (status === "completed") {
-      await createNotification(orderId, `Đơn hàng được xác nhận thành công`)
+      await createNotification(orderId, `Đơn hàng được xác nhận thành công`);
       updateFields["timestamps.completedAt"] = Date.now();
     } else if (status === "cancelled") {
-      await createNotification(orderId, `Đơn hàng của bạn đã được huỷ`)
+      await createNotification(orderId, `Đơn hàng của bạn đã được huỷ`);
       updateFields["timestamps.cancelledAt"] = Date.now();
       updateFields["canceller"] = "Shop";
     }
