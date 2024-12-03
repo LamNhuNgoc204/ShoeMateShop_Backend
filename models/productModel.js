@@ -25,8 +25,8 @@ const productSchema = new mongoose.Schema({
   ],
   status: {
     type: String,
-    enum: ["Còn hàng", "Hết hàng", "Ngừng bán"],
-    default: "Còn hàng",
+    enum: ["Đang kinh doanh", "Ngừng bán"],
+    default: "Đang kinh doanh",
   },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

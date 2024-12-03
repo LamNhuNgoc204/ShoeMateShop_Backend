@@ -73,6 +73,7 @@ exports.updateProduct = async (req, res) => {
         category,
         size,
         assets,
+        updatedAt: Date.now(),
       },
       { new: true, runValidators: true }
     )
@@ -89,23 +90,6 @@ exports.updateProduct = async (req, res) => {
     return res
       .status(500)
       .json({ status: false, message: "Error updating product", error });
-  }
-};
-
-// Xóa sản phẩm theo ID (Chỉ admin hoặc nhân viên)
-exports.deleteProduct = async (req, res) => {
-  try {
-    const deletedProduct = await Product.findByIdAndDelete(req.params.id);
-
-    if (!deletedProduct) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    res
-      .status(200)
-      .json({ status: true, message: "Product deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Error deleting product", error });
   }
 };
 
@@ -387,6 +371,43 @@ exports.removeFromWishlist = async (req, res) => {
     return res.status(500).json({
       status: false,
       message: "Error removing product from wishlist.",
+      error: error.message,
+    });
+  }
+};
+
+exports.stopSelling = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID sản phẩm không hợp lệ" });
+    }
+    if (!["Đang kinh doanh", "Ngừng bán"].includes(status)) {
+      return res.status(400).json({ message: "Trạng thái không hợp lệ" });
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Sản phẩm không tìm thấy" });
+    }
+
+    product.status = status;
+    product.updatedAt = Date.now();
+
+    await product.save();
+
+    return res.status(200).json({
+      status: true,
+      message: "Sản phẩm đã được tạm ngừng bán",
+      data: product,
+    });
+  } catch (error) {
+    console.error("Lỗi khi cập nhật sản phẩm:", error);
+    return res.status(500).json({
+      status: false,
+      message: "Server error",
       error: error.message,
     });
   }
