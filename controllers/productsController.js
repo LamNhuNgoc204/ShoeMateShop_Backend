@@ -38,9 +38,11 @@ exports.createProduct = async (req, res) => {
     });
 
     const savedProduct = await newProduct.save();
-    res.status(201).json(savedProduct);
+    res.status(201).json({ status: true, data: savedProduct });
   } catch (error) {
-    res.status(500).json({ message: "Error creating product", error });
+    res
+      .status(500)
+      .json({ status: false, message: "Error creating product", error });
   }
 };
 
@@ -73,15 +75,20 @@ exports.updateProduct = async (req, res) => {
         assets,
       },
       { new: true, runValidators: true }
-    );
+    )
+      .populate("brand")
+      .populate("category")
+      .populate("size.sizeId");
 
     if (!updatedProduct) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    res.status(200).json(updatedProduct);
+    return res.status(200).json({ status: true, data: updatedProduct });
   } catch (error) {
-    res.status(500).json({ message: "Error updating product", error });
+    return res
+      .status(500)
+      .json({ status: false, message: "Error updating product", error });
   }
 };
 
