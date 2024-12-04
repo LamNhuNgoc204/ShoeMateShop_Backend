@@ -38,9 +38,17 @@ exports.createProduct = async (req, res) => {
     });
 
     const savedProduct = await newProduct.save();
-    res.status(201).json({ status: true, data: savedProduct });
+
+    const populatedProduct = await Product.findById(savedProduct._id)
+      .populate("brand")
+      .populate("category")
+      .populate("size.sizeId");
+
+    return res.status(201).json({ status: true, data: populatedProduct });
   } catch (error) {
-    res
+    console.log("errorr==>", error);
+
+    return res
       .status(500)
       .json({ status: false, message: "Error creating product", error });
   }
@@ -144,9 +152,11 @@ exports.getAllProducts = async (req, res) => {
       }
     }
 
-    res.status(200).json(products);
+    res.status(200).json({ data: products, status: true });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching products", error });
+    res
+      .status(500)
+      .json({ status: false, message: "Error fetching products", error });
   }
 };
 
@@ -161,8 +171,20 @@ exports.getAllBrands = async (_, res) => {
 
 exports.getAllCate = async (_, res) => {
   try {
-    const cate = await Categories.find();
-    return res.status(200).json(cate);
+    const categories = await Categories.find();
+    const products = await Product.find();
+
+    const categoriesWithProducts = categories.map((category) => {
+      const productsInCategory = products.filter(
+        (product) => product.category.toString() === category._id.toString()
+      );
+
+      return {
+        ...category.toObject(),
+        products: productsInCategory,
+      };
+    });
+    return res.status(200).json(categoriesWithProducts);
   } catch (error) {
     return res.status(500).json({ message: "Error fetching products", error });
   }

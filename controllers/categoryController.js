@@ -33,6 +33,15 @@ exports.createCategory = async (req, res) => {
 exports.deleteCategory = async (req, res) => {
   try {
     const categoryId = req.categories._id;
+
+    const productsInCategory = await Product.find({ category: categoryId });
+    if (productsInCategory.length > 0) {
+      return res.status(400).json({
+        status: false,
+        message: "Không thể xóa danh mục vì vẫn còn sản phẩm liên quan!",
+      });
+    }
+    
     await Category.findByIdAndDelete(categoryId);
     return res
       .status(200)
