@@ -162,8 +162,20 @@ exports.getAllProducts = async (req, res) => {
 
 exports.getAllBrands = async (_, res) => {
   try {
-    const brand = await Brand.find();
-    return res.status(200).json(brand);
+    const brands = await Brand.find();
+    const products = await Product.find();
+
+    const brandWithProducts = brands.map((brand) => {
+      const productsInBrand = products.filter(
+        (product) => product.brand.toString() === brand._id.toString()
+      );
+
+      return {
+        ...brand.toObject(),
+        products: productsInBrand,
+      };
+    });
+    return res.status(200).json(brandWithProducts);
   } catch (error) {
     return res.status(500).json({ message: "Error fetching products", error });
   }

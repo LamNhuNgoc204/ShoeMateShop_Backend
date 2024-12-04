@@ -73,7 +73,6 @@ exports.updateBrand = async (req, res) => {
   }
 };
 
-
 exports.getAllBrand = async (req, res) => {
   try {
     const brand = await Brands.find({});
@@ -85,6 +84,34 @@ exports.getAllBrand = async (req, res) => {
   } catch (error) {
     console.error("Error: ", error);
     return res.status(500).json({ status: false, message: "Server error" });
-    
   }
-}
+};
+
+exports.deleteBrand = async (req, res) => {
+  try {
+    const { brandId } = req.params;
+    const products = await Product.find({ brand: brandId });
+
+    if (products.length > 0) {
+      return res.status(400).json({
+        status: false,
+        message: "Không thể xóa danh mục vì vẫn còn sản phẩm liên quan!",
+      });
+    }
+
+    const deletedBrand = await Brands.findByIdAndDelete(brandId);
+
+    if (!deletedBrand) {
+      return res.status(404).json({ message: "Brand not found." });
+    }
+
+    return res
+      .status(200)
+      .json({ status: true, message: "Brand deleted successfully." });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ status: false, message: "Server error", error });
+  }
+};
