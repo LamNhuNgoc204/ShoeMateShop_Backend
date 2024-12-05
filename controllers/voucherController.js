@@ -35,7 +35,7 @@ const processExpiredVouchers = async () => {
 };
 
 // Cron job chạy lúc 23:59 => 59 23 * * *
-cron.schedule("* * * * *", processExpiredVouchers);
+cron.schedule("59 23 * * *", processExpiredVouchers);
 
 exports.createVoucher = async (req, res) => {
   try {
@@ -112,9 +112,11 @@ exports.updateVoucher = async (req, res) => {
       return res.status(404).json({ message: "Voucher not found" });
     }
 
-    res.status(200).json(updatedVoucher);
+    res.status(200).json({ status: true, data: updatedVoucher });
   } catch (error) {
-    res.status(500).json({ message: "Error updating voucher", error });
+    res
+      .status(500)
+      .json({ status: false, message: "Error updating voucher", error });
   }
 };
 
