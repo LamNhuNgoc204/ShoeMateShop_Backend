@@ -205,8 +205,29 @@ exports.getAllCate = async (_, res) => {
 exports.getAllSize = async (_, res) => {
   try {
     const sizes = await Size.find();
-    return res.status(200).json(sizes);
+    const products = await Product.find();
+
+    const sizesWithProducts = sizes.map((size) => {
+      const productsInSize = products.filter((product) => {
+        try {
+          return product?.size?.some(
+            (item) => item?.sizeId?.toString() === size._id.toString()
+          );
+        } catch (err) {
+          console.error("Error with product:", product, err);
+          return false;
+        }
+      });
+
+      return {
+        ...size.toObject(),
+        products: productsInSize,
+      };
+    });
+
+    return res.status(200).json(sizesWithProducts);
   } catch (error) {
+    // console.log("error=======>", error);
     return res.status(500).json({ message: "Error fetching products", error });
   }
 };

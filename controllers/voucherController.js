@@ -12,7 +12,6 @@ exports.createVoucher = async (req, res) => {
       start_date,
       usage_conditions,
       usage_scope,
-      isInMiniGame,
       min_order_value,
       max_discount_value,
     } = req.body;
@@ -46,7 +45,6 @@ exports.createVoucher = async (req, res) => {
       start_date,
       usage_conditions,
       usage_scope,
-      isInMiniGame,
       min_order_value,
       max_discount_value,
     });
