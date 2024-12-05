@@ -1,4 +1,41 @@
 const Voucher = require("../models/voucherModel");
+// Thư viện chạy tự động, dành cho việc chuyển đổi trạng thái voucher khi hết hạn
+const cron = require("node-cron");
+
+const BATCH_SIZE = 1000;
+
+const processExpiredVouchers = async () => {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  let updatedCount = 0;
+
+  while (true) {
+    const vouchers = await Voucher.find({
+      expiry_date: { $lt: today },
+      status: "active",
+    })
+      .limit(BATCH_SIZE)
+      .select("_id");
+
+    if (vouchers.length === 0) break; // Không còn voucher để xử lý
+
+    // Cập nhật trạng thái
+    const ids = vouchers.map((v) => v._id);
+    const result = await Voucher.updateMany(
+      { _id: { $in: ids } },
+      { $set: { status: "inactive" } }
+    );
+
+    updatedCount += result.modifiedCount;
+    console.log(`Processed ${result.modifiedCount} vouchers in this batch.`);
+  }
+
+  console.log(`Total updated vouchers: ${updatedCount}`);
+};
+
+// Cron job chạy lúc 23:59 => 59 23 * * *
+cron.schedule("* * * * *", processExpiredVouchers);
 
 exports.createVoucher = async (req, res) => {
   try {

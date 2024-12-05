@@ -1,13 +1,11 @@
 const Order = require("../models/orderModel");
 const OrderDetail = require("../models/orderDetailModel");
 const Payment = require("../models/paymentModel");
-const Size = require("../models/sizeModel");
 const Product = require("../models/productModel");
 const Cart = require("../models/cartModels");
 const Ship = require("../models/shippingModel");
 const axios = require("axios");
 const crypto = require("crypto");
-const updatePaymentHistory = require("../service/updatePaymentHistory");
 const { createNotification } = require("../controllers/notificationController");
 
 exports.getOrderDetail = async (req, res) => {
@@ -380,7 +378,13 @@ exports.getAllOrdersForAdmin = async (_, res) => {
   try {
     const orders = await Order.find({})
       .populate("user_id", "username email")
-      .populate("payment_id.payment_method_id", "payment_method")
+      .populate({
+        path: "payment_id",
+        populate: {
+          path: "payment_method_id",
+          model: "paymentMethod",
+        },
+      })
       .populate(
         "voucher_id",
         "discount_value voucher_name min_order_value max_discount_value"
@@ -391,6 +395,7 @@ exports.getAllOrdersForAdmin = async (_, res) => {
         select:
           "product.id product.name product.size_name product.price product.pd_image product.pd_quantity",
       });
+
     return res.status(200).json({ status: true, data: orders });
   } catch (error) {
     console.log("create new order error: ", error);
