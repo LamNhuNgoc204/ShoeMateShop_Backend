@@ -341,11 +341,17 @@ exports.getReviewByProductId = async (req, res) => {
     const result = await Review.find({
       product_id: new mongoose.Types.ObjectId(productId),
     })
-      .populate("reviewer_id", "name email")
-      .populate("responder_id", "name email")
+      .populate({
+        path: "product_id",
+        select: "size",
+        populate: {
+          path: "size.sizeId",
+          select: "name",
+        },
+      })
+      .populate("reviewer_id", "name email avatar")
+      .populate("responder_id", "name email avatar")
       .exec();
-
-    // console.log("result", result);
 
     if (!result || result.length === 0) {
       return res.status(200).json({ status: true, data: [] });

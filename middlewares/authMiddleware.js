@@ -28,11 +28,12 @@ exports.protect = async (req, res, next) => {
     }
 
     req.user = user;
+    next();
   } catch (error) {
     console.log({ status: false, message: "Not authorized, token failed" });
+    req.user = null;
+    next();
   }
-
-  next();
 };
 
 // Middleware kiểm tra quyền admin hoặc nhân viên

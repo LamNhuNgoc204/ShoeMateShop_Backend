@@ -104,7 +104,9 @@ exports.updateProduct = async (req, res) => {
 // Lấy danh sách tất cả sản phẩm
 exports.getAllProducts = async (req, res) => {
   try {
-    let userId = req.user ? req.user._id : null;
+    let userId = req.user !== null ? req.user._id : null;
+
+    // console.log("userId", userId);
 
     const products = await Product.find()
       .populate({

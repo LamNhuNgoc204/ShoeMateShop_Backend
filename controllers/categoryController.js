@@ -1,5 +1,7 @@
 const Category = require("../models/categoryModel");
 const Product = require("../models/productModel");
+const Review = require("../models/reviewModel");
+const Wishlist = require("../models/wishlistModel");
 
 exports.createCategory = async (req, res) => {
   try {
@@ -41,7 +43,7 @@ exports.deleteCategory = async (req, res) => {
         message: "Không thể xóa danh mục vì vẫn còn sản phẩm liên quan!",
       });
     }
-    
+
     await Category.findByIdAndDelete(categoryId);
     return res
       .status(200)
@@ -128,11 +130,43 @@ exports.getCategory = async (req, res) => {
 
 exports.getProductOfCate = async (req, res) => {
   try {
+    let userId = req.user !== null ? req.user._id : null;
     const categoryId = req.categories._id;
 
     const productOfCate = await Product.find({ category: categoryId })
       .populate("brand", "name")
       .populate("size.sizeId", "name");
+
+    for (let product of productOfCate) {
+      const reviews = await Review.find({ product_id: product._id }).select(
+        "rating"
+      );
+
+      // Tính tổng rating và số lượng đánh giá
+      const totalRating = reviews.reduce(
+        (acc, review) => acc + review.rating,
+        0
+      );
+      const numOfReviews = reviews.length;
+      const avgRating = numOfReviews
+        ? (totalRating / numOfReviews).toFixed(1)
+        : 0;
+
+      // Gán rating trung bình và số lượt đánh giá vào sản phẩm
+      product._doc.avgRating = avgRating;
+      product._doc.numOfReviews = numOfReviews;
+
+      // Kiểm tra sp có thuộc trong danh sách yêu thích của user không
+      if (userId) {
+        const isFavorite = await Wishlist.exists({
+          user_id: userId,
+          product_id: product._id,
+        });
+        product._doc.isFavorite = !!isFavorite;
+      } else {
+        product._doc.isFavorite = false;
+      }
+    }
 
     return res.status(200).json({
       status: true,

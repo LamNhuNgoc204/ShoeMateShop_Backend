@@ -82,8 +82,8 @@ exports.checkProductById = async (req, res, next) => {
     });
   }
 
-  const reviews = await Review.find({ productId })
-    .populate("userId", "name email avatar")
+  const reviews = await Review.find({ product_id: productId })
+    .populate("reviewer_id", "name email avatar")
     .sort({ createdAt: -1 });
 
   req.review = reviews;
