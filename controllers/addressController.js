@@ -4,13 +4,15 @@ exports.addAddress = async (req, res) => {
   try {
     const { address, recieverPhoneNumber, recieverName } = req.body;
     const user = req.user;
-
+    console.log(user);
+    console.log(req.body);
     // Kiểm tra xem địa chỉ đã tồn tại chưa
     const existingAddress = await Address.findOne({
       userId: user._id,
       address: address,
     });
     if (existingAddress) {
+      console.log("Address already exists");
       return res
         .status(400)
         .json({ message: "This address already exists for this user" });

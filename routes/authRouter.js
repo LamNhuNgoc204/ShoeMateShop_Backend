@@ -61,6 +61,27 @@ router.post(
   AuthController.signInWithGG
 );
 
+// Forgot password
+router.post("/forgot-password", checkUser, AuthController.forgotPassword);
+
+// Verify OTP for forgot password
+router.post(
+  "/verify-password-otp-forgot-password",
+  checkUser,
+  AuthController.verifyForgotPasswordOTP
+);
+// Reset password after OTP verification
+router.put(
+  "/reset-password-forgot-password",
+  AuthController.resetPassword
+);
+// Resend OTP for forgot password
+router.post(
+  "/resend-forgot-password-otp",
+  checkUser, // Middleware kiểm tra email hợp lệ
+  AuthController.resendForgotPasswordOTP
+);
+
 router.post("/refresh-token", AuthController.refreshToken);
 
 module.exports = router;

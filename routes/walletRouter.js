@@ -1,14 +1,29 @@
 const express = require("express");
 const router = express.Router();
-const { protect } = require("../middlewares/authMiddleware");
 const control = require("../controllers/walletController");
+const { protect, adminOrEmployee } = require("../middlewares/authMiddleware");
+ // http://localhost:3000/wallet
+// API Kích hoạt ví
+router.post("/activate",protect, control.activateWallet);
 
-// http://localhost:3000/wallet
+router.post("/deposit",protect, control.depositWithZaloPay); // API nạp tiền
+router.post("/callback", control.handleZaloPayCallback); 
 
-router.post("/register-wallet", protect, control.registerWallet);
+router.post("/update-balance",protect, control.updateBalance);
 
-router.post("/authenticate-wallet", protect, control.authenticateWallet);
+// API Chuyển tiền
+router.post("/transfer",protect, control.transferMoney);
 
-router.post("/deposit", protect, control.deposit);
+// API Thanh toán
+router.post("/payment",protect, control.makePayment);
+
+// API Lấy số dư
+router.get("/balance",protect, control.getBalance);
+
+// API Lấy lịch sử giao dịch
+router.get("/transactions",protect, control.getTransactions);
+
+ //API lấy tên người dùng theo email
+router.get("/user-name/:email", control.getUserNameByEmail);
 
 module.exports = router;

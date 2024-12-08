@@ -13,39 +13,39 @@ exports.validateRegister = (req, res, next) => {
   if (!name) {
     return res
       .status(400)
-      .json({ status: false, message: "Name is required!" });
+      .json({ status: false, message: "Vui lòng điền tên" });
   }
 
   if (!email) {
     return res
       .status(400)
-      .json({ status: false, message: "Email is required!" });
+      .json({ status: false, message: "Vui bạn điện email" });
   }
 
   if (!email || !password || !name) {
     return res.status(400).json({
       status: false,
-      message: "Please provide all required fields.",
+      message: "Vui lòng điền đầy đủ thông tin",
     });
   }
 
   if (!validateEmail(email)) {
     return res
       .status(400)
-      .json({ status: false, message: "Invalid email format!" });
+      .json({ status: false, message: "Email không đúng định dạng" });
   }
 
   if (!password) {
     return res.status(400).json({
       status: false,
-      message: "Password are required!",
+      message: "Vuiばu điện mật khẩu",
     });
   }
 
   if (!validatePassword(password)) {
     return res
       .status(400)
-      .json({ status: false, message: "Invalid password!" });
+      .json({ status: false, message: "Khẩu phải trên 6 ký tự và có ký tự đặc biệt" });
   }
 
   next();
@@ -123,17 +123,17 @@ exports.validateSignInWithGoogle = async (req, res, next) => {
     if (!email) {
       return res
         .status(400)
-        .json({ status: false, message: "Email is required!" });
+        .json({ status: false, message: "Vui lòng điền email" });
     }
     if (!emailRegex.test(email)) {
       return res
         .status(400)
-        .json({ status: false, message: "Invalid email format!" });
+        .json({ status: false, message: "Email phải đúng định dạng" });
     }
     if (!name) {
       return res
         .status(400)
-        .json({ status: false, message: "Name is required!" });
+        .json({ status: false, message: "Vui lòng điền tên" });
     }
     if (!avatar) {
       return res
@@ -176,30 +176,35 @@ exports.checkFieldsAddress = (req, res, next) => {
   const data = req.body;
 
   if (!data.address) {
+    console.log('adđré ');
     return res
       .status(400)
       .json({ status: false, message: "Address is required!" });
   }
 
   if (!data.recieverPhoneNumber) {
+    console.log('sđt ');
     return res
       .status(400)
       .json({ status: false, message: "Receiver phone number is required!" });
   }
 
   if (!isValidPhoneNumber(data.recieverPhoneNumber)) {
+    console.log('sđt ', data.recieverPhoneNumber);
     return res
       .status(400)
-      .json({ status: false, message: "Invalid phone number format!" });
+      .json({ status: false, message: "Số điện thoại không đúng địnn dạng" });
   }
 
   if (!data.recieverName) {
+    console.log('tên ');
     return res
       .status(400)
       .json({ status: false, message: "Receiver name is required!" });
   }
 
   if (data.isDefault !== undefined && typeof data.isDefault !== "boolean") {
+    console.log('default ');
     return res
       .status(400)
       .json({ status: false, message: "isDefault must be a boolean!" });

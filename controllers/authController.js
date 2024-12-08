@@ -9,78 +9,148 @@ const {
 const { randomPassword } = require("../utils/stringUtils");
 const { sendNotification } = require("../firebase");
 
-exports.resetPassword = async (req, res) => {
+// Quên mật khẩu
+exports.forgotPassword = async (req, res) => {
   try {
-    const { userId, oldPassword, newPassword } = req.body;
+    const { email } = req.body;
 
-    // Validate user input
-    if (!userId || !oldPassword || !newPassword) {
+    if (!email) {
       return res.status(400).json({
         status: false,
-        message: "Please provide all required fields.",
+        message: "Vui lòng cung cấp địa chỉ email.",
       });
     }
 
-    // Check if user exists
-    const user = await User.findById(userId);
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ status: false, message: "Người dùng không tồn tại." });
+    }
+    if (!user.isVerified) {
+      return res.status(400).json({
+        status: false,
+        message: "Người dùng chưa xác thực email. Vui lòng xác thực trước.",
+      });
+    }
+    const newOtpCode = generateOTP();
+    user.otpCode = newOtpCode;
+    user.otpExpires = Date.now() + 10 * 60 * 1000; 
+    await user.save();
+    await sendVerificationEmail(email, newOtpCode);
+    return res.status(200).json({
+      status: true,
+      message: "OTP đã được gửi tới email của bạn!",
+    });
+  } catch (error) {
+    console.log("Forgot Password error: ", error);
+    return res.status(500).json({ status: false, message: "Lỗi server" });
+  }
+};
+
+// Xác thực OTP Forgot Password
+exports.verifyForgotPasswordOTP = async (req, res) => {
+  try {
+    const { email, otpCode } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ status: false, message: "Người dùng không tồn tại." });
+    }
+
+    if (user.otpCode !== otpCode || Date.now() > user.otpExpires) {
+      return res
+        .status(400)
+        .json({ status: false, message: "OTP không hợp lệ hoặc đã hết hạn." });
+    }
+
+    user.otpCode = undefined;
+    user.otpExpires = undefined;
+    await user.save();
+
+    return res.status(200).json({
+      status: true,
+      message: "OTP xác thực thành công! Bạn có thể đặt lại mật khẩu.",
+    });
+  } catch (error) {
+    console.log("Verify Forgot Password OTP error: ", error);
+    return res.status(500).json({ status: false, message: "Lỗi server" });
+  }
+};
+
+// Đổi password sau khi xác thức OTP
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    if (!email || !newPassword) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Email và mật khẩu mới là bắt buộc." });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ status: false, message: "Người dùng không tồn tại." });
+    }
+
+    const hashedPassword = await hashPassword(newPassword);
+
+    user.password = hashedPassword;
+    await user.save();
+
+    return res.status(200).json({
+      status: true,
+      message: "Mật khẩu đã được đặt lại thành công.",
+    });
+  } catch (error) {
+    console.log("Reset Password error: ", error);
+    return res.status(500).json({ status: false, message: "Lỗi server." });
+  }
+};
+
+// Resend OTP Forgot Password
+exports.resendForgotPasswordOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        status: false,
+        message: "Please provide an email address.",
+      });
+    }
+
+    const user = await User.findOne({ email });
     if (!user) {
       return res
         .status(404)
         .json({ status: false, message: "User not found." });
     }
 
-    // Check if old password is correct
-    const isPasswordCorrect = await checkPassword(oldPassword, user.password);
-    if (!isPasswordCorrect) {
-      return res
-        .status(401)
-        .json({ status: false, message: "Old password is incorrect." });
-    }
 
-    // Hash new password
-    const hashedPassword = await hashPassword(newPassword);
-    user.password = hashedPassword;
+    // Generate a new OTP code and expiry
+    const newOtpCode = generateOTP();
+    user.otpCode = newOtpCode;
+    user.otpExpires = Date.now() + 10 * 60 * 1000; // OTP expires in 10 minutes
     await user.save();
 
-    const newUser = user.toObject();
-    delete newUser.password;
+    // Send OTP to user's email
+    await sendVerificationEmail(email, newOtpCode);
 
     return res.status(200).json({
       status: true,
-      message: "New password had been changed successfully!",
-      data: newUser,
+      message: "OTP for password reset has been resent successfully!",
     });
   } catch (error) {
-    console.log("reset password err: ", error);
-    return res.status(500).json({ status: false, message: "server error" });
-  }
-};
-
-exports.forgotPassword = async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    // get user in middleware
-    const user = req.user;
-
-    const otp = generateOTP();
-
-    //Save to db
-    user.passwordOTP = otp;
-    user.passwordOTPExpire = Date.now() + 120 * 1000;
-    await user.save();
-
-    await sendVerificationEmail(email, otp);
-
-    return res.status(200).json({
-      status: true,
-      message: "An email has been sent to reset your password.",
-    });
-  } catch (error) {
-    console.log("Error: ", error);
+    console.log("Resend Forgot Password OTP error: ", error);
     return res.status(500).json({ status: false, message: "Server error" });
   }
 };
+
 
 exports.verifyPasswordOTP = async (req, res) => {
   try {
@@ -126,7 +196,7 @@ exports.signup = async (req, res) => {
     if (existingUser) {
       return res
         .status(400)
-        .json({ status: false, message: "Email already in use." });
+        .json({ status: false, message: "Email đã tồn tại" });
     }
     const hashedPassword = await hashPassword(password);
     const otpCode = generateOTP();
@@ -159,7 +229,6 @@ exports.signup = async (req, res) => {
   }
 };
 
-//resend otp
 // Resend OTP
 exports.resendOTP = async (req, res) => {
   try {
