@@ -341,7 +341,10 @@ exports.getProtectedData = async (req, res) => {
   try {
     const user = req.user;
 
+    console.log("usser ===>", user);
+
     return res.status(200).json({
+      status: true,
       message: "Verify success",
       user: user,
     });

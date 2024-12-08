@@ -48,7 +48,7 @@ exports.adminOrEmployee = (req, res, next) => {
 
 exports.verifyToken = async (req, res, next) => {
   try {
-    const token = req.header("Authorization");
+    const { token } = req.body;
 
     if (!token) {
       return res
@@ -56,16 +56,21 @@ exports.verifyToken = async (req, res, next) => {
         .json({ message: "Access Denied. No token provided." });
     }
 
+    console.log("Token: ", token);
+
     // Loại bỏ chuỗi "Bearer "
-    const actualToken = token.startsWith("Bearer ") ? token.slice(7) : token;
+    // const actualToken = token.startsWith("Bearer ") ? token.slice(7) : token;
 
     // Xác minh token
-    const verified = jwt.verify(actualToken, process.env.JWT_SECRET);
+    const verified = jwt.verify(token, process.env.JWT_SECRET);
+    console.log("verified ===> ", verified);
 
     req.user = verified;
 
     next();
   } catch (error) {
+    console.log("Invalid token: ", error);
+
     return res.status(400).json({ message: "Invalid token." });
   }
 };

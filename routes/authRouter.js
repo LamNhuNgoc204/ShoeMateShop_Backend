@@ -16,7 +16,7 @@ const { verifyToken, protect } = require("../middlewares/authMiddleware");
 //http:  http://localhost:3000/auth
 
 //Verify token
-router.get("/protected", verifyToken, AuthController.getProtectedData);
+router.post("/protected", verifyToken, AuthController.getProtectedData);
 
 // Verify email
 router.post("/verify-email", AuthController.verifyOTP);
