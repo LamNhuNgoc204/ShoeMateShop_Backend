@@ -158,12 +158,16 @@ exports.refreshFcmToken = async(req, res) => {
   try {
     const user = req.user;
     const { token } = req.body;
-    const userTemp = await User.findById(user._id);
-    userTemp.FCMToken = token;
-    await user.save();
-    return res.status(200).json({
-      status: true,
-      message: "Token added successfully",
+    const updatedUser = await User.findByIdAndUpdate(user._id,{FCMToken: token});
+    if(updatedUser) {
+      return res.status(200).json({
+        status: true,
+        message: "Token added successfully",
+      });
+    } 
+    return res.status(400).json({
+      status: false,
+      message: "Token not found",
     });
   } catch (error) {
     console.log("Error: ", error);
