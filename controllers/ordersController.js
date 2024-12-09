@@ -702,8 +702,6 @@ exports.confirmOrder = async (req, res) => {
       return res.status(404).json({ error: "Order not found." });
     }
 
-    console.log("updateOrder=====>", updateOrder);
-
     return res.status(200).json({
       status: true,
       message: "Order status updated successfully.",
