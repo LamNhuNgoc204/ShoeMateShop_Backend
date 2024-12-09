@@ -44,18 +44,20 @@ exports.getOrderDetail = async (req, res) => {
     if (order.timestamps.placedAt) {
       orderDetails.timestamps.placedAt = order.timestamps.placedAt;
     }
-    if (order.status === "shipping" && order.timestamps.shippedAt) {
+    if (order.timestamps.shippedAt) {
       orderDetails.timestamps.shippedAt = order.timestamps.shippedAt;
     }
-    if (order.status === "delivered" && order.timestamps.deliveredAt) {
+    if (order.timestamps.deliveredAt) {
       orderDetails.timestamps.deliveredAt = order.timestamps.deliveredAt;
     }
-    if (order.status === "completed" && order.timestamps.completedAt) {
+    if (order.timestamps.completedAt) {
       orderDetails.timestamps.completedAt = order.timestamps.completedAt;
     }
-    if (order.status === "cancelled" && order.timestamps.cancelledAt) {
+    if (order.timestamps.cancelledAt) {
       orderDetails.timestamps.cancelledAt = order.timestamps.cancelledAt;
     }
+
+    console.log("orderDetails========> ", orderDetails);
 
     return res.status(200).json({ status: true, data: orderDetails });
   } catch (error) {
@@ -699,6 +701,8 @@ exports.confirmOrder = async (req, res) => {
     if (!order) {
       return res.status(404).json({ error: "Order not found." });
     }
+
+    console.log("updateOrder=====>", updateOrder);
 
     return res.status(200).json({
       status: true,
