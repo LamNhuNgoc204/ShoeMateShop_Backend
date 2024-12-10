@@ -23,7 +23,6 @@ exports.updateUserPermissions = async (req, res) => {
       phone: user.phoneNumber,
       name: user.name,
       role: user.role,
-      device_info: user.device_info,
     };
 
     return res.status(200).json({
