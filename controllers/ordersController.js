@@ -33,7 +33,7 @@ exports.getOrderDetail = async (req, res) => {
       receiver: order.receiver,
       receiverPhone: order.receiverPhone,
       address: order.address,
-      statusShip: order.shipping_id.status,
+      statusShip: order.status,
       shipCost: ship.cost,
       // voucherPrice: order.voucher_id.discount_value,
       orderStatus: order.status,
