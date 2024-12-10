@@ -19,6 +19,14 @@ router.put(
 // API lấy tất cả sản phẩm
 router.get("/list-products", protect, productController.getAllProducts);
 
+//Danh sách sp cho admin
+router.get(
+  "/lst-products",
+  protect,
+  adminOrEmployee,
+  productController.getProductsForWeb
+);
+
 // API lấy sản phẩm theo ID
 router.get("/detail/:id", protect, productController.getProductById);
 

@@ -376,9 +376,41 @@ exports.getRefundedOrders = async (req, res) => {
   }
 };
 
-exports.getAllOrdersForAdmin = async (_, res) => {
+exports.getAllOrdersForAdmin = async (req, res) => {
   try {
-    const orders = await Order.find({})
+    const { page = 1, limit = 10, filterStatus = "all" } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    let statusCondition = {};
+    if (filterStatus === "all") {
+      statusCondition = {};
+    } else {
+      statusCondition = { status: filterStatus };
+    }
+
+    const totalOrders = await Order.countDocuments(statusCondition);
+
+    const pendingOrders = await Order.find({
+      status: "pending",
+    });
+
+    const processingOrder = await Order.find({
+      status: "processing",
+    }).countDocuments();
+
+    const completedOrder = await Order.find({
+      status: "completed",
+    }).countDocuments();
+
+    const ordersCancel = await Order.find({
+      status: "cancelled",
+    });
+
+    const refundedOrder = await Order.find({
+      "returnRequest.status": "pending",
+    });
+
+    const orders = await Order.find(statusCondition)
       .populate("user_id", "username email")
       .populate({
         path: "payment_id",
@@ -396,9 +428,25 @@ exports.getAllOrdersForAdmin = async (_, res) => {
         path: "orderDetails",
         select:
           "product.id product.name product.size_name product.price product.pd_image product.pd_quantity",
-      });
+      })
+      .sort({ "timestamps.placedAt": -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
 
-    return res.status(200).json({ status: true, data: orders });
+    const totalPages = Math.ceil(totalOrders / limit);
+
+    return res.status(200).json({
+      status: true,
+      data: orders,
+      totalPages,
+      currentPage: parseInt(page),
+      limit: parseInt(limit),
+      processingOrder,
+      completedOrder,
+      refundedOrder,
+      pendingOrders,
+      ordersCancel,
+    });
   } catch (error) {
     console.log("create new order error: ", error);
     return res
@@ -663,6 +711,10 @@ exports.confirmOrder = async (req, res) => {
     const orderId = req.order._id;
     const { status } = req.body;
 
+    if (!order) {
+      return res.status(404).json({ error: "Order not found." });
+    }
+
     const validStatuses = ["processing", "delivered", "completed", "cancelled"];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: "Invalid status provided." });
@@ -688,6 +740,24 @@ exports.confirmOrder = async (req, res) => {
       await createNotification(orderId, `Đơn hàng của bạn đã được huỷ`);
       updateFields["timestamps.cancelledAt"] = Date.now();
       updateFields["canceller"] = "Shop";
+
+      // Cập nhật lại số lượng sản phẩm vào kho
+      const orderDetails = await OrderDetail.find({
+        order_id: orderId,
+      }).populate("product.id");
+      for (const detail of orderDetails) {
+        const product = await Product.findById(detail.product.id);
+        if (product) {
+          // Tìm size sản phẩm và cập nhật số lượng
+          const size = product.size.find(
+            (s) => s.sizeId.toString() === detail.product.size_id.toString()
+          );
+          if (size) {
+            size.quantity += detail.product.pd_quantity;
+          }
+          await product.save();
+        }
+      }
     }
 
     const updateOrder = await Order.findByIdAndUpdate(
@@ -697,10 +767,6 @@ exports.confirmOrder = async (req, res) => {
         new: true,
       }
     );
-
-    if (!order) {
-      return res.status(404).json({ error: "Order not found." });
-    }
 
     return res.status(200).json({
       status: true,

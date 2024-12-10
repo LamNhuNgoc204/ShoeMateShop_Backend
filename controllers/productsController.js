@@ -162,6 +162,88 @@ exports.getAllProducts = async (req, res) => {
   }
 };
 
+exports.getProductsForWeb = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      minPrice,
+      maxPrice,
+      category,
+      brand,
+      quantityStatus,
+    } = req.query;
+    const skip = (page - 1) * limit;
+
+    const filterConditions = {};
+    // minPrice
+    if (minPrice) filterConditions.price = { $gte: minPrice };
+    // maxPrice
+    if (maxPrice)
+      filterConditions.price = { ...filterConditions.price, $lte: maxPrice };
+
+    // Theo cate & brand
+    if (category) filterConditions["category"] = category;
+    if (brand) filterConditions["brand"] = brand;
+
+    // Nếu quantityStatus = "in-stock" => sp có size quantity > 0
+    // Nếu quantityStatus = "out-of-stock" => sp size quantity = 0
+    const quantityFilter = (product) => {
+      // Kiểm tra xem có size nào còn hàng
+      const hasStock = product.size.some((size) => size.quantity > 0);
+      // Kiểm tra tất cả các size đều hết hàng
+      const allOutOfStock = product.size.every((size) => size.quantity === 0);
+
+      if (quantityStatus === "in-stock" && hasStock) {
+        return true;
+      }
+
+      if (quantityStatus === "out-of-stock" && allOutOfStock) {
+        return true;
+      }
+
+      // Nếu không có quantityStatus, trả tất cả sản phẩm
+      return !quantityStatus;
+    };
+
+    const products = await Product.find(filterConditions)
+      .populate({
+        path: "brand",
+        select: "name",
+      })
+      .populate({
+        path: "category",
+        select: "name",
+      })
+      .populate({
+        path: "size.sizeId",
+        select: "name",
+      })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const filteredProducts = products.filter(quantityFilter);
+
+    // Lấy sl sp thỏa mãn đk
+    const totalProducts = await Product.countDocuments(filterConditions);
+    const totalPages = Math.ceil(totalProducts / limit);
+
+    res.status(200).json({
+      data: filteredProducts,
+      totalProducts,
+      totalPages,
+      currentPage: parseInt(page),
+      limit: parseInt(limit),
+      status: true,
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ status: false, message: "Error fetching products", error });
+  }
+};
+
 exports.getAllBrands = async (_, res) => {
   try {
     const brands = await Brand.find();

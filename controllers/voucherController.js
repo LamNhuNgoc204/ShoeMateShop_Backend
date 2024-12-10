@@ -149,6 +149,50 @@ exports.getAllVouchers = async (req, res) => {
   }
 };
 
+exports.getAllVouchersForWeb = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, statusFilter = "all" } = req.query;
+    const skip = (page - 1) * limit;
+
+    // Lọc theo trạng thái
+    let statusCondition = {};
+    if (statusFilter === "active") {
+      statusCondition = { status: "active" }; // 'active'
+    } else if (statusFilter === "inactive") {
+      statusCondition = { status: "inactive" }; // 'inactive'
+    }
+
+    const totalVouchers = await Voucher.countDocuments(statusCondition);
+    const activeVC = await Voucher.find({ status: "active" });
+    const inactiveVC = await Voucher.find({ status: "inactive" });
+
+    // Lấy voucher theo điều kiện
+    const vouchers = await Voucher.find(statusCondition)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const totalPages = Math.ceil(totalVouchers / limit);
+
+    res.status(200).json({
+      status: true,
+      data: vouchers,
+      totalVouchers,
+      totalPages,
+      currentPage: parseInt(page),
+      limit: parseInt(limit),
+      activeVC,
+      inactiveVC,
+    });
+  } catch (error) {
+    console.log("error===", error);
+
+    res
+      .status(500)
+      .json({ status: false, message: "Error fetching vouchers", error });
+  }
+};
+
 // Lấy chi tiết voucher theo ID
 exports.getVoucherById = async (req, res) => {
   try {
