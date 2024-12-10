@@ -159,19 +159,26 @@ exports.createNewOrder = async (req, res) => {
       product_id: { $in: products.map((product) => product._id) },
     });
 
-    // Cập nhật số lượng sản phẩm trong kho
+    // Cập nhật số lượng sản phẩm theo size trong kho
     for (const product of products) {
       const updatedProduct = await Product.updateOne(
-        { _id: product._id, "size.sizeId": product.size_id },
-        { $inc: { "size.$.quantity": -product.quantity } }
+        {
+          _id: product._id, // Kiểm tra ID sản phẩm
+          "size.sizeId": product.size_id, // Kiểm tra sizeId trong sản phẩm
+        },
+        {
+          $inc: { "size.$.quantity": -product.quantity }, // trừ số lượng size tương tương ứng id
+        }
       );
 
+      // Khôgn tìm thấy
       if (updatedProduct.matchedCount === 0) {
         console.warn(
           `Không tìm thấy sản phẩm với _id: ${product._id} và sizeId: ${product.size_id}`
         );
       }
     }
+
     createNotification(
       savedOrder._id,
       `đơn hàng của bạn đã được tạo và đang chờ người bán xác nhận`
