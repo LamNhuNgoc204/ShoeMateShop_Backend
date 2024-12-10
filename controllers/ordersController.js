@@ -743,6 +743,19 @@ exports.confirmOrder = async (req, res) => {
     } else if (status === "completed") {
       await createNotification(orderId, `Đơn hàng được xác nhận thành công`);
       updateFields["timestamps.completedAt"] = Date.now();
+
+      // Cập nhật số lượng bán ra
+      const orderDetails = await OrderDetail.find({
+        order_id: orderId,
+      }).populate("product.id");
+
+      for (const detail of orderDetails) {
+        const product = await Product.findById(detail.product.id);
+        if (product) {
+          product.sold += detail.product.pd_quantity;
+          await product.save();
+        }
+      }
     } else if (status === "cancelled") {
       await createNotification(orderId, `Đơn hàng của bạn đã được huỷ`);
       updateFields["timestamps.cancelledAt"] = Date.now();

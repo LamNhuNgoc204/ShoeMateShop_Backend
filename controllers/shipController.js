@@ -15,7 +15,7 @@ exports.getShipDefault = async (_, res) => {
 };
 
 exports.createShip = async (req, res) => {
-  const { name, deliveryTime, cost, trackingAvailable, isDefault } = req.body;
+  const { name, deliveryTime, cost, isDefault = true } = req.body;
 
   try {
     if (isDefault) {
@@ -26,7 +26,6 @@ exports.createShip = async (req, res) => {
       name,
       deliveryTime,
       cost,
-      trackingAvailable,
       isDefault: !!isDefault,
     });
 
@@ -64,22 +63,28 @@ exports.updateShip = async (req, res) => {
     );
     if (!updatedCompany)
       return res.status(404).json({ message: "Company not found" });
-    res.status(200).json(updatedCompany);
+    res.status(200).json({ status: true, data: updatedCompany });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ status: false, message: error.message });
   }
 };
 
-exports.deleteShip = async (req, res) => {
+exports.updateStarus = async (req, res) => {
   try {
-    const deletedCompany = await Ship.findByIdAndDelete(req.params.id);
-    if (!deletedCompany)
+    const updatedCompany = await Ship.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+    
+    if (!updatedCompany)
       return res
         .status(404)
-        .json({ status: true, message: "Company not found" });
-    res.status(204).send();
+        .json({ status: false, message: "Company not found" });
+
+    res.status(200).json({ status: true, data: updatedCompany });
   } catch (error) {
-    res.status(500).json({ status: false, message: error.message });
+    res.status(400).json({ status: false, message: error.message });
   }
 };
 
@@ -87,14 +92,12 @@ exports.getOrderForShip = async (req, res) => {
   try {
     const orders = await Order.find({
       status: { $in: ["processing", "delivered"] },
-    }).populate('shipping_id','name');
+    }).populate("shipping_id", "name");
 
     const orderIds = orders.map((order) => order._id);
     const orderDetails = await OrderDetail.find({
       order_id: { $in: orderIds },
-    }).populate("product.id")
-    ;
-
+    }).populate("product.id");
     const ordersWithDetails = orders.map((order) => {
       const details = orderDetails.filter((detail) =>
         detail.order_id.equals(order._id)
