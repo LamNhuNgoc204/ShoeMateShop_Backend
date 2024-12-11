@@ -37,7 +37,17 @@ exports.createShip = async (req, res) => {
 
 exports.getShip = async (req, res) => {
   try {
+    const companies = await Ship.find({ isActive: true });
+    res.status(200).json({ status: true, data: companies });
+  } catch (error) {
+    res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+exports.getShipForWeb = async (req, res) => {
+  try {
     const companies = await Ship.find();
+
     res.status(200).json({ status: true, data: companies });
   } catch (error) {
     res.status(500).json({ status: false, message: error.message });
@@ -76,7 +86,7 @@ exports.updateStarus = async (req, res) => {
       req.body,
       { new: true }
     );
-    
+
     if (!updatedCompany)
       return res
         .status(404)

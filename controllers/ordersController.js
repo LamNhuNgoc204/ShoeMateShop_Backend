@@ -740,9 +740,6 @@ exports.confirmOrder = async (req, res) => {
         `Đơn hàng của bạn đã được giao thành công`
       );
       updateFields["timestamps.deliveredAt"] = Date.now();
-    } else if (status === "completed") {
-      await createNotification(orderId, `Đơn hàng được xác nhận thành công`);
-      updateFields["timestamps.completedAt"] = Date.now();
 
       // Cập nhật số lượng bán ra
       const orderDetails = await OrderDetail.find({
@@ -756,6 +753,9 @@ exports.confirmOrder = async (req, res) => {
           await product.save();
         }
       }
+    } else if (status === "completed") {
+      await createNotification(orderId, `Đơn hàng được xác nhận thành công`);
+      updateFields["timestamps.completedAt"] = Date.now();
     } else if (status === "cancelled") {
       await createNotification(orderId, `Đơn hàng của bạn đã được huỷ`);
       updateFields["timestamps.cancelledAt"] = Date.now();
