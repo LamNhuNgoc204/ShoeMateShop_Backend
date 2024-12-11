@@ -4,6 +4,7 @@ const Payment = require("../models/paymentModel");
 const Product = require("../models/productModel");
 const Cart = require("../models/cartModels");
 const Ship = require("../models/shippingModel");
+const Voucher = require("../models/voucherModel");
 const axios = require("axios");
 const crypto = require("crypto");
 const { createNotification } = require("../controllers/notificationController");
@@ -80,7 +81,17 @@ exports.createNewOrder = async (req, res) => {
       receiver,
       receiverPhone,
       address,
+      voucher_code
     } = req.body;
+   
+    const voucher = await Voucher.findOne({ voucher_code });
+    if (voucher) {
+      voucher.quantity -= 1;
+      voucher.usedBy.push(userId);
+      await voucher.save();
+    }
+
+
 
     const newPayment = new Payment({
       payment_method_id: method_id,

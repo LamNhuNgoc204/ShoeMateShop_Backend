@@ -263,16 +263,13 @@ exports.applyVoucher = async (req, res) => {
     }
     const discountedPrice = totalOrderValue - discountAmount;
 
-    voucher.quantity -= 1;
-    voucher.usedBy.push(userId);
-    await voucher.save();
-
     res.status(200).json({
       status: true,
       message: "Voucher applied successfully",
       originalPrice: totalOrderValue,
       discountedPrice,
       discountAmount,
+      voucher_code: voucher.voucher_code,
     });
   } catch (error) {
     res.status(500).json({ message: "Error applying voucher", error });
