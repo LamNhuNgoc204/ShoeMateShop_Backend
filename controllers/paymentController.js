@@ -17,7 +17,7 @@ exports.getPaymentDefault = async (_, res) => {
 // THEM PHUONG THUC THANH TOAN: name, image
 exports.createNewMethod = async (req, res) => {
   try {
-    const { payment_method, image, isDefault } = req.body;
+    const { payment_method, image, isDefault, isActive } = req.body;
     if (!payment_method || !image) {
       return res
         .status(400)
@@ -41,6 +41,7 @@ exports.createNewMethod = async (req, res) => {
       payment_method,
       image,
       isDefault: !!isDefault,
+      isActive: isActive,
     });
     await payment.save();
 
@@ -50,7 +51,90 @@ exports.createNewMethod = async (req, res) => {
   }
 };
 
+exports.updatePaymentMethod = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { payment_method, image, isDefault, isActive } = req.body;
+
+    if (!payment_method || !image) {
+      return res.status(400).json({
+        status: false,
+        message: "Tên phương thức và hình ảnh là bắt buộc.",
+      });
+    }
+
+    const updatedMethod = await PaymentMethod.findByIdAndUpdate(
+      id,
+      { payment_method, image, isDefault, isActive },
+      { new: true }
+    );
+
+    if (!updatedMethod) {
+      return res.status(404).json({
+        status: false,
+        message: "Không tìm thấy phương thức thanh toán.",
+      });
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: "Cập nhật phương thức thanh toán thành công.",
+      data: updatedMethod,
+    });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
+exports.updatePaymentStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isActive } = req.body;
+
+    if (typeof isActive !== "boolean") {
+      return res.status(400).json({
+        status: false,
+        message: "Trạng thái isActive phải là kiểu boolean.",
+      });
+    }
+
+    const updatedMethod = await PaymentMethod.findByIdAndUpdate(
+      id,
+      { isActive },
+      { new: true }
+    );
+
+    if (!updatedMethod) {
+      return res.status(404).json({
+        status: false,
+        message: "Không tìm thấy phương thức thanh toán.",
+      });
+    }
+
+    console.log("updatedMethod========>", updatedMethod);
+
+    return res.status(200).json({
+      status: true,
+      message: "Cập nhật phương thức thanh toán thành công.",
+      data: updatedMethod,
+    });
+  } catch (error) {
+    console.log("error==>", error);
+
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
 exports.getAllPaymentMethod = async (req, res) => {
+  try {
+    const payments = await PaymentMethod.find({ isActive: true });
+    return res.status(200).json({ status: true, data: payments });
+  } catch (error) {
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
+exports.getPaymentMethodForWeb = async (req, res) => {
   try {
     const payments = await PaymentMethod.find();
     return res.status(200).json({ status: true, data: payments });

@@ -389,9 +389,19 @@ exports.getAllOrdersForAdmin = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     let statusCondition = {};
+    let returnRequestCondition = {};
     if (filterStatus === "all") {
       statusCondition = {};
+    } else if (filterStatus === "return-pending") {
+      returnRequestCondition = { "returnRequest.status": "pending" }; // Lọc status hoàn trả đang chờ
+    } else if (filterStatus === "return-accepted") {
+      returnRequestCondition = { "returnRequest.status": "accepted" }; // Lọc status hoàn trả đã chấp nhận
+    } else if (filterStatus === "return-rejected") {
+      returnRequestCondition = { "returnRequest.status": "rejected" }; // Lọc status hoàn trả bị từ chối
+    } else if (filterStatus === "return-refunded") {
+      returnRequestCondition = { "returnRequest.status": "refunded" }; // Lọc status hoàn trả đã hoàn tiền
     } else {
+      // Lọc trạng thái đơn hàng
       statusCondition = { status: filterStatus };
     }
 
@@ -417,7 +427,10 @@ exports.getAllOrdersForAdmin = async (req, res) => {
       "returnRequest.status": "pending",
     });
 
-    const orders = await Order.find(statusCondition)
+    const orders = await Order.find({
+      ...statusCondition,
+      ...returnRequestCondition,
+    })
       .populate("user_id", "username email")
       .populate({
         path: "payment_id",
@@ -503,16 +516,14 @@ exports.requestReturnOrder = async (req, res) => {
         .json({ status: false, message: "Reason is required!" });
     }
 
-    if (
-      order.status !== "completed" &&
-      order.shipping_id.status !== "delivered"
-    ) {
+    if (order.status !== "completed" && order.status !== "delivered") {
       return res.status(400).json({
         status: false,
-        message: "Only completed or delivered orders can be returned!",
+        message: "Only completed orders can be returned!",
       });
     }
 
+    order.status = "processing";
     order.returnRequest = {
       reason,
       requestDate: Date.now(),
@@ -526,7 +537,7 @@ exports.requestReturnOrder = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    console.log("create new order error: ", error);
+    console.log("Return error: ", error);
     return res
       .status(500)
       .json({ status: false, message: "Server error", error: error.message });
@@ -556,7 +567,22 @@ exports.handleReturnRq = async (req, res) => {
     order.returnRequest.responseDate = Date.now();
 
     if (returnStatus === "accepted") {
+      console.log("Yêu cầu hoàn hàng của bạn đã được chấp nhận :)");
+
+      await createNotification(
+        order._id,
+        `Yêu cầu hoàn hàng của bạn đã được chấp nhận :)`
+      );
       order.status = "refunded";
+    } else {
+      console.log(
+        `Tiếc quá. Yêu cầu hoàn hàng của bạn đã bị từ chối vì lý do không hợp lý :)`
+      );
+
+      await createNotification(
+        order._id,
+        `Tiếc quá. Yêu cầu hoàn hàng của bạn đã bị từ chối vì lý do không hợp lý :)`
+      );
     }
 
     const result = await order.save();
@@ -740,9 +766,6 @@ exports.confirmOrder = async (req, res) => {
         `Đơn hàng của bạn đã được giao thành công`
       );
       updateFields["timestamps.deliveredAt"] = Date.now();
-    } else if (status === "completed") {
-      await createNotification(orderId, `Đơn hàng được xác nhận thành công`);
-      updateFields["timestamps.completedAt"] = Date.now();
 
       // Cập nhật số lượng bán ra
       const orderDetails = await OrderDetail.find({
@@ -756,6 +779,9 @@ exports.confirmOrder = async (req, res) => {
           await product.save();
         }
       }
+    } else if (status === "completed") {
+      await createNotification(orderId, `Đơn hàng được xác nhận thành công`);
+      updateFields["timestamps.completedAt"] = Date.now();
     } else if (status === "cancelled") {
       await createNotification(orderId, `Đơn hàng của bạn đã được huỷ`);
       updateFields["timestamps.cancelledAt"] = Date.now();

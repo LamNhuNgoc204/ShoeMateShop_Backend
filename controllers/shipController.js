@@ -37,7 +37,17 @@ exports.createShip = async (req, res) => {
 
 exports.getShip = async (req, res) => {
   try {
+    const companies = await Ship.find({ isActive: true });
+    res.status(200).json({ status: true, data: companies });
+  } catch (error) {
+    res.status(500).json({ status: false, message: error.message });
+  }
+};
+
+exports.getShipForWeb = async (req, res) => {
+  try {
     const companies = await Ship.find();
+
     res.status(200).json({ status: true, data: companies });
   } catch (error) {
     res.status(500).json({ status: false, message: error.message });
@@ -76,7 +86,7 @@ exports.updateStarus = async (req, res) => {
       req.body,
       { new: true }
     );
-    
+
     if (!updatedCompany)
       return res
         .status(404)
@@ -98,15 +108,25 @@ exports.getOrderForShip = async (req, res) => {
     const orderDetails = await OrderDetail.find({
       order_id: { $in: orderIds },
     }).populate("product.id");
+
+    console.log(orders.map((order) => order.returnRequest));
+
     const ordersWithDetails = orders.map((order) => {
       const details = orderDetails.filter((detail) =>
         detail.order_id.equals(order._id)
       );
-      return { ...order.toObject(), orderDetails: details };
+      return {
+        ...order.toObject(),
+        orderDetails: details,
+      };
     });
 
-    return res.status(200).json({ status: true, data: ordersWithDetails });
+    return res.status(200).json({
+      status: true,
+      data: ordersWithDetails,
+    });
   } catch (error) {
+    console.log("errror: ", error);
     return res.status(500).json({ status: false, message: error.message });
   }
 };

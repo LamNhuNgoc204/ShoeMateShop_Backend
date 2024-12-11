@@ -16,6 +16,7 @@ router.post(
 router.get("/ship-default", control.getShipDefault);
 
 router.get("/get-shipping", protect, control.getShip);
+router.get("/lst-shipping", protect, control.getShipForWeb);
 
 router.get("/get-one-ship/:id", control.getOneShip);
 

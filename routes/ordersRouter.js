@@ -71,7 +71,7 @@ router.put(
   control.updateOrderAddress
 );
 
-//Yeu cau hoan hang tu nguoi dung
+//Yêu cầu hoàn hàng từ người dùng
 router.put(
   "/request-return-order/:orderId",
   protect,
@@ -79,7 +79,7 @@ router.put(
   control.requestReturnOrder
 );
 
-//Xu ly yeu cau hoan hang
+//Xử lý yêu cầu hoàn hàng
 router.put(
   "/return-request/:orderId",
   protect,
