@@ -56,7 +56,7 @@ const orderSchema = new mongoose.Schema({
     deliveredAt: { type: Date }, // Thời gian nhận hàng
     completedAt: { type: Date }, // Thời gian hoàn tất đơn hàng
     cancelledAt: { type: Date }, // Thời gian hủy đơn hàng
-    refundedAt: { type: Date }, //Thoi gian hoan don
+    refundedAt: { type: Date }, //Thoi gian yêu cầu hoan don
     completedRefundedAt: { type: Date }, //Thoi gian hoan tat hoan don
   },
   points: { type: Number, default: 0 }, //Xu được sử dụng

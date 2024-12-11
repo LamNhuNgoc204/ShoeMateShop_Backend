@@ -104,12 +104,12 @@ exports.getOrderForShip = async (req, res) => {
       status: { $in: ["processing", "delivered"] },
     }).populate("shipping_id", "name");
 
+    console.log("orders==>", orders);
+
     const orderIds = orders.map((order) => order._id);
     const orderDetails = await OrderDetail.find({
       order_id: { $in: orderIds },
     }).populate("product.id");
-
-    console.log(orders.map((order) => order.returnRequest));
 
     const ordersWithDetails = orders.map((order) => {
       const details = orderDetails.filter((detail) =>

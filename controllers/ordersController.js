@@ -529,6 +529,9 @@ exports.requestReturnOrder = async (req, res) => {
       requestDate: Date.now(),
       status: "pending",
     };
+    order.timestamps = {
+      refundedAt: Date.now(),
+    };
 
     const result = await order.save();
     return res.status(200).json({
