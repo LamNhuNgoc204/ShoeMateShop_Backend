@@ -154,17 +154,17 @@ exports.adddNewUser = async (req, res) => {
 };
 
 
-exports.refreshFcmToken = async(req, res) => {
+exports.refreshFcmToken = async (req, res) => {
   try {
     const user = req.user;
     const { token } = req.body;
-    const updatedUser = await User.findByIdAndUpdate(user._id,{FCMToken: token});
-    if(updatedUser) {
+    const updatedUser = await User.findByIdAndUpdate(user._id, { FCMToken: token });
+    if (updatedUser) {
       return res.status(200).json({
         status: true,
         message: "Token added successfully",
       });
-    } 
+    }
     return res.status(400).json({
       status: false,
       message: "Token not found",
@@ -197,48 +197,48 @@ exports.LockAccount = async (req, res) => {
 };
 
 
-exports.addSearch = async(req, res) => {
+exports.addSearch = async (req, res) => {
   try {
-     let user = req.user;
-     if(!req.body.search) {
-       return res.status(400).json({ status: false, message: "Search field is required" });
-     }
-     if(user.searchHistory.includes(req.query.search)) {
-      user.searchHistory = user.searchHistory.filter(search => search != req.body.search);
-     }
-     user.searchHistory = [...user.searchHistory, req.body.search];
-     const updatedUser = await user.save();
-     return res.status(200).json({ status:true, data:updatedUser, message: 'Update successful' });
+    let user = req.user;
+    if (!req.body.search) {
+      return res.status(400).json({ status: false, message: "Search field is required" });
+    }
+    user.searchHistory = user.searchHistory.filter(search => search != req.body.search);
+
+    console.log('user search: ', user.searchHistory);
+    const updateUser = await User.findByIdAndUpdate(user._id, { searchHistory: [...user.searchHistory, req.body.search] })
+    return res.status(200).json({ status: true, data: updateUser, message: 'Update successful' });
   } catch (error) {
     console.log("Error: ", error);
-    return res.status(500).json({ status: false, message: "Server error" });  
+    return res.status(500).json({ status: false, message: "Server error" });
   }
 }
 
 exports.removeSearch = async (req, res) => {
   try {
     const user = req.user;
-    if(!req.body.search) {
+    if (!req.body.search) {
       return res.status(400).json({ status: false, message: "Search field is required" });
     }
     const userTemp = await User.findById(user._id);
     const searchs = userTemp.searchHistory;
     const updatedSearchs = searchs.filter(search => search != req.body.search)
-    const updatedUser = await User.findByIdAndUpdate(user._id,{searchHistory: updatedSearchs})
-    return res.status(200).json({ status:true, data:updatedUser, message: 'remove search success' });
+    console.log('user search: ', updatedSearchs)
+    const updatedUser = await User.findByIdAndUpdate(user._id, { searchHistory: updatedSearchs })
+    return res.status(200).json({ status: true, data: updatedUser, message: 'remove search success' });
   } catch (error) {
     console.log("Error: ", error);
     return res.status(500).json({ status: false, message: "Server error" });
-    
+
   }
 }
 
-exports.getSearchHistories = async (req,res) => {
+exports.getSearchHistories = async (req, res) => {
   try {
     const user = req.user;
     const userTemp = await User.findById(user._id);
     console.log("searchs: ", userTemp.searchHistory)
-    return res.status(200).json({ status:true, data: userTemp.searchHistory, message: 'Get search histories success' });
+    return res.status(200).json({ status: true, data: userTemp.searchHistory, message: 'Get search histories success' });
   } catch (error) {
     console.log("Error: ", error);
     return res.status(500).json({ status: false, message: "Server error" });
