@@ -5,6 +5,7 @@ const paymentMethodSchema = new mongoose.Schema({
   image: { type: String },
   isActive: { type: Boolean, default: true },
   isDefault: { type: Boolean, default: false },
+  createdAt: { type: Date, default: Date.now },
 });
 
 module.exports =

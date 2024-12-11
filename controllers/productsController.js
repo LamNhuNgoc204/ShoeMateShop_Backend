@@ -38,9 +38,19 @@ exports.createProduct = async (req, res) => {
     });
 
     const savedProduct = await newProduct.save();
-    res.status(201).json(savedProduct);
+
+    const populatedProduct = await Product.findById(savedProduct._id)
+      .populate("brand")
+      .populate("category")
+      .populate("size.sizeId");
+
+    return res.status(201).json({ status: true, data: populatedProduct });
   } catch (error) {
-    res.status(500).json({ message: "Error creating product", error });
+    console.log("errorr==>", error);
+
+    return res
+      .status(500)
+      .json({ status: false, message: "Error creating product", error });
   }
 };
 
@@ -71,41 +81,32 @@ exports.updateProduct = async (req, res) => {
         category,
         size,
         assets,
+        updatedAt: Date.now(),
       },
       { new: true, runValidators: true }
-    );
+    )
+      .populate("brand")
+      .populate("category")
+      .populate("size.sizeId");
 
     if (!updatedProduct) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    res.status(200).json(updatedProduct);
+    return res.status(200).json({ status: true, data: updatedProduct });
   } catch (error) {
-    res.status(500).json({ message: "Error updating product", error });
-  }
-};
-
-// Xóa sản phẩm theo ID (Chỉ admin hoặc nhân viên)
-exports.deleteProduct = async (req, res) => {
-  try {
-    const deletedProduct = await Product.findByIdAndDelete(req.params.id);
-
-    if (!deletedProduct) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    res
-      .status(200)
-      .json({ status: true, message: "Product deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Error deleting product", error });
+    return res
+      .status(500)
+      .json({ status: false, message: "Error updating product", error });
   }
 };
 
 // Lấy danh sách tất cả sản phẩm
 exports.getAllProducts = async (req, res) => {
   try {
-    let userId = req.user ? req.user._id : null;
+    let userId = req.user !== null ? req.user._id : null;
+
+    // console.log("userId", userId);
 
     const products = await Product.find()
       .populate({
@@ -153,16 +154,112 @@ exports.getAllProducts = async (req, res) => {
       }
     }
 
-    res.status(200).json(products);
+    res.status(200).json({ data: products, status: true });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching products", error });
+    res
+      .status(500)
+      .json({ status: false, message: "Error fetching products", error });
+  }
+};
+
+exports.getProductsForWeb = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      minPrice,
+      maxPrice,
+      category,
+      brand,
+      quantityStatus,
+    } = req.query;
+    const skip = (page - 1) * limit;
+
+    const filterConditions = {};
+    // minPrice
+    if (minPrice) filterConditions.price = { $gte: minPrice };
+    // maxPrice
+    if (maxPrice)
+      filterConditions.price = { ...filterConditions.price, $lte: maxPrice };
+
+    // Theo cate & brand
+    if (category) filterConditions["category"] = category;
+    if (brand) filterConditions["brand"] = brand;
+
+    // Nếu quantityStatus = "in-stock" => sp có size quantity > 0
+    // Nếu quantityStatus = "out-of-stock" => sp size quantity = 0
+    const quantityFilter = (product) => {
+      // Kiểm tra xem có size nào còn hàng
+      const hasStock = product.size.some((size) => size.quantity > 0);
+      // Kiểm tra tất cả các size đều hết hàng
+      const allOutOfStock = product.size.every((size) => size.quantity === 0);
+
+      if (quantityStatus === "in-stock" && hasStock) {
+        return true;
+      }
+
+      if (quantityStatus === "out-of-stock" && allOutOfStock) {
+        return true;
+      }
+
+      // Nếu không có quantityStatus, trả tất cả sản phẩm
+      return !quantityStatus;
+    };
+
+    const products = await Product.find(filterConditions)
+      .populate({
+        path: "brand",
+        select: "name",
+      })
+      .populate({
+        path: "category",
+        select: "name",
+      })
+      .populate({
+        path: "size.sizeId",
+        select: "name",
+      })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const filteredProducts = products.filter(quantityFilter);
+
+    // Lấy sl sp thỏa mãn đk
+    const totalProducts = await Product.countDocuments(filterConditions);
+    const totalPages = Math.ceil(totalProducts / limit);
+
+    res.status(200).json({
+      data: filteredProducts,
+      totalProducts,
+      totalPages,
+      currentPage: parseInt(page),
+      limit: parseInt(limit),
+      status: true,
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ status: false, message: "Error fetching products", error });
   }
 };
 
 exports.getAllBrands = async (_, res) => {
   try {
-    const brand = await Brand.find();
-    return res.status(200).json(brand);
+    const brands = await Brand.find();
+    const products = await Product.find();
+
+    const brandWithProducts = brands.map((brand) => {
+      const productsInBrand = products.filter(
+        (product) => product.brand.toString() === brand._id.toString()
+      );
+
+      return {
+        ...brand.toObject(),
+        products: productsInBrand,
+      };
+    });
+    return res.status(200).json(brandWithProducts);
   } catch (error) {
     return res.status(500).json({ message: "Error fetching products", error });
   }
@@ -170,8 +267,20 @@ exports.getAllBrands = async (_, res) => {
 
 exports.getAllCate = async (_, res) => {
   try {
-    const cate = await Categories.find();
-    return res.status(200).json(cate);
+    const categories = await Categories.find();
+    const products = await Product.find();
+
+    const categoriesWithProducts = categories.map((category) => {
+      const productsInCategory = products.filter(
+        (product) => product.category.toString() === category._id.toString()
+      );
+
+      return {
+        ...category.toObject(),
+        products: productsInCategory,
+      };
+    });
+    return res.status(200).json(categoriesWithProducts);
   } catch (error) {
     return res.status(500).json({ message: "Error fetching products", error });
   }
@@ -180,8 +289,29 @@ exports.getAllCate = async (_, res) => {
 exports.getAllSize = async (_, res) => {
   try {
     const sizes = await Size.find();
-    return res.status(200).json(sizes);
+    const products = await Product.find();
+
+    const sizesWithProducts = sizes.map((size) => {
+      const productsInSize = products.filter((product) => {
+        try {
+          return product?.size?.some(
+            (item) => item?.sizeId?.toString() === size._id.toString()
+          );
+        } catch (err) {
+          console.error("Error with product:", product, err);
+          return false;
+        }
+      });
+
+      return {
+        ...size.toObject(),
+        products: productsInSize,
+      };
+    });
+
+    return res.status(200).json(sizesWithProducts);
   } catch (error) {
+    // console.log("error=======>", error);
     return res.status(500).json({ message: "Error fetching products", error });
   }
 };
@@ -380,6 +510,43 @@ exports.removeFromWishlist = async (req, res) => {
     return res.status(500).json({
       status: false,
       message: "Error removing product from wishlist.",
+      error: error.message,
+    });
+  }
+};
+
+exports.stopSelling = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID sản phẩm không hợp lệ" });
+    }
+    if (!["Đang kinh doanh", "Ngừng bán"].includes(status)) {
+      return res.status(400).json({ message: "Trạng thái không hợp lệ" });
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Sản phẩm không tìm thấy" });
+    }
+
+    product.status = status;
+    product.updatedAt = Date.now();
+
+    await product.save();
+
+    return res.status(200).json({
+      status: true,
+      message: "Sản phẩm đã được tạm ngừng bán",
+      data: product,
+    });
+  } catch (error) {
+    console.error("Lỗi khi cập nhật sản phẩm:", error);
+    return res.status(500).json({
+      status: false,
+      message: "Server error",
       error: error.message,
     });
   }

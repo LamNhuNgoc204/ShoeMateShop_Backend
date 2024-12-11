@@ -36,7 +36,6 @@ router.post(
   userController.adddNewUser
 );
 
-
 router.post('/refresh-fcm', protect, userController.refreshFcmToken)
 router.put("/lock-accound/:userId", protect, userController.LockAccount);
 router.put("/add-search", protect, userController.addSearch)

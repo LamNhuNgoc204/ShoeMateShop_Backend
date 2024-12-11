@@ -1,14 +1,12 @@
 const Order = require("../models/orderModel");
 const OrderDetail = require("../models/orderDetailModel");
 const Payment = require("../models/paymentModel");
-const Size = require("../models/sizeModel");
 const Product = require("../models/productModel");
 const Cart = require("../models/cartModels");
 const Ship = require("../models/shippingModel");
 const axios = require("axios");
 const crypto = require("crypto");
-const updatePaymentHistory = require("../service/updatePaymentHistory");
-const {createNotification} = require('../controllers/notificationController')
+const { createNotification } = require("../controllers/notificationController");
 
 exports.getOrderDetail = async (req, res) => {
   try {
@@ -35,7 +33,7 @@ exports.getOrderDetail = async (req, res) => {
       receiver: order.receiver,
       receiverPhone: order.receiverPhone,
       address: order.address,
-      statusShip: order.shipping_id.status,
+      statusShip: order.status,
       shipCost: ship.cost,
       // voucherPrice: order.voucher_id.discount_value,
       orderStatus: order.status,
@@ -46,18 +44,20 @@ exports.getOrderDetail = async (req, res) => {
     if (order.timestamps.placedAt) {
       orderDetails.timestamps.placedAt = order.timestamps.placedAt;
     }
-    if (order.status === "shipping" && order.timestamps.shippedAt) {
+    if (order.timestamps.shippedAt) {
       orderDetails.timestamps.shippedAt = order.timestamps.shippedAt;
     }
-    if (order.status === "delivered" && order.timestamps.deliveredAt) {
+    if (order.timestamps.deliveredAt) {
       orderDetails.timestamps.deliveredAt = order.timestamps.deliveredAt;
     }
-    if (order.status === "completed" && order.timestamps.completedAt) {
+    if (order.timestamps.completedAt) {
       orderDetails.timestamps.completedAt = order.timestamps.completedAt;
     }
-    if (order.status === "cancelled" && order.timestamps.cancelledAt) {
+    if (order.timestamps.cancelledAt) {
       orderDetails.timestamps.cancelledAt = order.timestamps.cancelledAt;
     }
+
+    console.log("orderDetails========> ", orderDetails);
 
     return res.status(200).json({ status: true, data: orderDetails });
   } catch (error) {
@@ -159,20 +159,30 @@ exports.createNewOrder = async (req, res) => {
       product_id: { $in: products.map((product) => product._id) },
     });
 
-    // Cập nhật số lượng sản phẩm trong kho
+    // Cập nhật số lượng sản phẩm theo size trong kho
     for (const product of products) {
       const updatedProduct = await Product.updateOne(
-        { _id: product._id, "size.sizeId": product.size_id },
-        { $inc: { "size.$.quantity": -product.quantity } }
+        {
+          _id: product._id, // Kiểm tra ID sản phẩm
+          "size.sizeId": product.size_id, // Kiểm tra sizeId trong sản phẩm
+        },
+        {
+          $inc: { "size.$.quantity": -product.quantity }, // trừ số lượng size tương tương ứng id
+        }
       );
 
+      // Khôgn tìm thấy
       if (updatedProduct.matchedCount === 0) {
         console.warn(
           `Không tìm thấy sản phẩm với _id: ${product._id} và sizeId: ${product.size_id}`
         );
       }
     }
-    createNotification(savedOrder._id, `đơn hàng của bạn đã được tạo và đang chờ người bán xác nhận`)
+
+    createNotification(
+      savedOrder._id,
+      `đơn hàng của bạn đã được tạo và đang chờ người bán xác nhận`
+    );
 
     return res.status(201).json({
       status: true,
@@ -373,11 +383,49 @@ exports.getRefundedOrders = async (req, res) => {
   }
 };
 
-exports.getAllOrdersForAdmin = async (_, res) => {
+exports.getAllOrdersForAdmin = async (req, res) => {
   try {
-    const orders = await Order.find({})
+    const { page = 1, limit = 10, filterStatus = "all" } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    let statusCondition = {};
+    if (filterStatus === "all") {
+      statusCondition = {};
+    } else {
+      statusCondition = { status: filterStatus };
+    }
+
+    const totalOrders = await Order.countDocuments(statusCondition);
+
+    const pendingOrders = await Order.find({
+      status: "pending",
+    });
+
+    const processingOrder = await Order.find({
+      status: "processing",
+    }).countDocuments();
+
+    const completedOrder = await Order.find({
+      status: "completed",
+    }).countDocuments();
+
+    const ordersCancel = await Order.find({
+      status: "cancelled",
+    });
+
+    const refundedOrder = await Order.find({
+      "returnRequest.status": "pending",
+    });
+
+    const orders = await Order.find(statusCondition)
       .populate("user_id", "username email")
-      .populate("payment_id.payment_method_id", "payment_method")
+      .populate({
+        path: "payment_id",
+        populate: {
+          path: "payment_method_id",
+          model: "paymentMethod",
+        },
+      })
       .populate(
         "voucher_id",
         "discount_value voucher_name min_order_value max_discount_value"
@@ -387,8 +435,25 @@ exports.getAllOrdersForAdmin = async (_, res) => {
         path: "orderDetails",
         select:
           "product.id product.name product.size_name product.price product.pd_image product.pd_quantity",
-      });
-    return res.status(200).json({ status: true, data: orders });
+      })
+      .sort({ "timestamps.placedAt": -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const totalPages = Math.ceil(totalOrders / limit);
+
+    return res.status(200).json({
+      status: true,
+      data: orders,
+      totalPages,
+      currentPage: parseInt(page),
+      limit: parseInt(limit),
+      processingOrder,
+      completedOrder,
+      refundedOrder,
+      pendingOrders,
+      ordersCancel,
+    });
   } catch (error) {
     console.log("create new order error: ", error);
     return res
@@ -653,6 +718,10 @@ exports.confirmOrder = async (req, res) => {
     const orderId = req.order._id;
     const { status } = req.body;
 
+    if (!order) {
+      return res.status(404).json({ error: "Order not found." });
+    }
+
     const validStatuses = ["processing", "delivered", "completed", "cancelled"];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: "Invalid status provided." });
@@ -660,18 +729,55 @@ exports.confirmOrder = async (req, res) => {
 
     const updateFields = { status };
     if (status === "processing") {
-      await createNotification(orderId, `Đơn hàng của bạn đã được xác nhận và đang trên đường vận chuyển đến bạn`)
+      await createNotification(
+        orderId,
+        `Đơn hàng của bạn đã được xác nhận và đang trên đường vận chuyển đến bạn`
+      );
       updateFields["timestamps.shippedAt"] = Date.now();
     } else if (status === "delivered") {
-      await createNotification(orderId, `Đơn hàng của bạn đã được giao thành công`)
+      await createNotification(
+        orderId,
+        `Đơn hàng của bạn đã được giao thành công`
+      );
       updateFields["timestamps.deliveredAt"] = Date.now();
     } else if (status === "completed") {
-      await createNotification(orderId, `Đơn hàng được xác nhận thành công`)
+      await createNotification(orderId, `Đơn hàng được xác nhận thành công`);
       updateFields["timestamps.completedAt"] = Date.now();
+
+      // Cập nhật số lượng bán ra
+      const orderDetails = await OrderDetail.find({
+        order_id: orderId,
+      }).populate("product.id");
+
+      for (const detail of orderDetails) {
+        const product = await Product.findById(detail.product.id);
+        if (product) {
+          product.sold += detail.product.pd_quantity;
+          await product.save();
+        }
+      }
     } else if (status === "cancelled") {
-      await createNotification(orderId, `Đơn hàng của bạn đã được huỷ`)
+      await createNotification(orderId, `Đơn hàng của bạn đã được huỷ`);
       updateFields["timestamps.cancelledAt"] = Date.now();
       updateFields["canceller"] = "Shop";
+
+      // Cập nhật lại số lượng sản phẩm vào kho
+      const orderDetails = await OrderDetail.find({
+        order_id: orderId,
+      }).populate("product.id");
+      for (const detail of orderDetails) {
+        const product = await Product.findById(detail.product.id);
+        if (product) {
+          // Tìm size sản phẩm và cập nhật số lượng
+          const size = product.size.find(
+            (s) => s.sizeId.toString() === detail.product.size_id.toString()
+          );
+          if (size) {
+            size.quantity += detail.product.pd_quantity;
+          }
+          await product.save();
+        }
+      }
     }
 
     const updateOrder = await Order.findByIdAndUpdate(
@@ -681,10 +787,6 @@ exports.confirmOrder = async (req, res) => {
         new: true,
       }
     );
-
-    if (!order) {
-      return res.status(404).json({ error: "Order not found." });
-    }
 
     return res.status(200).json({
       status: true,

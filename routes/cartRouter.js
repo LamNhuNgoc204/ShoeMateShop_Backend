@@ -32,7 +32,4 @@ router.post(
 // Clear the entire cart
 router.delete("/clear-cart", protect, cartController.clearCart);
 
-// Get Cart By User Id
-router.get("/get-cart-by-user-id", protect, cartController.getCartByUserId);
-
 module.exports = router;

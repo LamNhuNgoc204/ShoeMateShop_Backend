@@ -3,7 +3,6 @@ const router = express.Router();
 const reviewController = require("../controllers/reviewController");
 const {
   checkUpdateReview,
-  checkReviewById,
   checkProductById,
   checkUserUpdateReview,
   checkUserProductReview,
@@ -22,7 +21,7 @@ router.get(
 //Review nhieu sp trong 1 don hang
 router.post("/", protect, reviewController.createMultipleReviews);
 
-// Manage reviews
+// Duyệt đánh giá
 router.put(
   "/update-review-status/:reviewId",
   protect,
@@ -31,6 +30,7 @@ router.put(
   reviewController.updateReviewStatus
 );
 
+//Lấy đánh giá cho web
 router.get(
   "/get-all-reviews",
   protect,
@@ -38,25 +38,19 @@ router.get(
   reviewController.getAllReviews
 );
 
-router.get(
-  "/get-pending-reviews",
-  protect,
-  adminMiddleware,
-  reviewController.getPendingReviews
-);
-
-// Get review detail
-router.get(
-  "/get-review-detail/:reviewId",
-  checkReviewById,
-  reviewController.getReviewById
-);
-
 // Get list product's reviews
 router.get(
   "/get-list-product-reviews/:productId",
   checkProductById,
-  reviewController.getProductReviews
+  reviewController.getReviewByProductId
+);
+
+// Get user product reviews
+router.get(
+  "/get-user-reviews",
+  protect,
+  checkUserProductReview,
+  reviewController.getUserProductReview
 );
 
 // Update product review
@@ -67,12 +61,12 @@ router.put(
   reviewController.updateProductReview
 );
 
-// Get user product reviews
-router.get(
-  "/get-user-reviews",
+// Phản hồi đánh giá người
+router.put(
+  "/respondtoreview/:reviewId",
   protect,
-  checkUserProductReview,
-  reviewController.getUserProductReview
+  adminMiddleware,
+  reviewController.respondToReview
 );
 
 module.exports = router;

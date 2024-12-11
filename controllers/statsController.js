@@ -51,7 +51,7 @@ exports.getStats = async (req, res) => {
     const { start, end } = getDateRange(period, parseInt(offset, 10));
 
     const stats = await Order.aggregate([
-      { $match: { createdAt: { $gte: start, $lte: end } } },
+      { $match: { "timestamps.placedAt": { $gte: start, $lte: end } } },
       { $unwind: "$orderDetails" },
       {
         $lookup: {
@@ -64,17 +64,16 @@ exports.getStats = async (req, res) => {
       { $unwind: "$orderDetail" },
       {
         $group: {
-          _id: "$status", // Group by order status
+          _id: "$status",
           totalSales: { $sum: "$orderDetail.product.pd_quantity" },
           totalRevenue: {
             $sum: { $multiply: ["$orderDetail.product.price", "$orderDetail.product.pd_quantity"] },
           },
-          orderCount: { $sum: 1 } // Count the number of orders per status
+          orderCount: { $sum: 1 },
         },
       },
     ]);
 
-    // Định dạng kết quả trả về với các trạng thái "pending", "processing", "completed", "cancelled", "refunded"
     const formattedStats = {
       pending: { totalSales: 0, totalRevenue: 0, orderCount: 0 },
       processing: { totalSales: 0, totalRevenue: 0, orderCount: 0 },
@@ -83,13 +82,12 @@ exports.getStats = async (req, res) => {
       refunded: { totalSales: 0, totalRevenue: 0, orderCount: 0 },
     };
 
-    // Điền dữ liệu vào `formattedStats`
-    stats.forEach(stat => {
+    stats.forEach((stat) => {
       if (formattedStats[stat._id] !== undefined) {
         formattedStats[stat._id] = {
           totalSales: stat.totalSales,
           totalRevenue: stat.totalRevenue,
-          orderCount: stat.orderCount
+          orderCount: stat.orderCount,
         };
       }
     });
@@ -104,6 +102,7 @@ exports.getStats = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch stats" });
   }
 };
+
 
 
 // Best-selling products
@@ -132,11 +131,12 @@ exports.getBestSellingProducts = async (req, res) => {
       { $sort: { totalSold: sort === "asc" ? 1 : -1 } },
       { $limit: 10 },
     ]);
-    res.json({status: true, data: bestSelling});
+    res.json({ status: true, data: bestSelling });
   } catch (error) {
     res.status(500).json({ status: false, error: "Failed to fetch best-selling products" });
   }
 };
+;
 
 
 exports.getRevenueByProduct = async (req, res) => {
@@ -145,7 +145,7 @@ exports.getRevenueByProduct = async (req, res) => {
 
   try {
     const revenueData = await Order.aggregate([
-      { $match: { status, createdAt: { $gte: start, $lte: end } } },
+      { $match: { status, "timestamps.placedAt": { $gte: start, $lte: end } } },
       { $unwind: "$orderDetails" },
       {
         $lookup: {
@@ -169,7 +169,6 @@ exports.getRevenueByProduct = async (req, res) => {
       { $sort: { totalRevenue: sort === "asc" ? 1 : -1 } },
     ]);
 
-    // Tính tổng doanh thu của toàn bộ sản phẩm trong khoảng thời gian đã chọn
     const totalRevenue = revenueData.reduce((sum, item) => sum + item.totalRevenue, 0);
     const totalSales = revenueData.reduce((sum, item) => sum + item.totalSales, 0);
 
@@ -192,44 +191,43 @@ exports.getRevenueStats = async (req, res) => {
   const { start, end } = getDateRange(period, parseInt(offset, 10));
 
   try {
-    // Determine the grouping format for MongoDB based on period
     let dateFormat;
     let dateRange;
-    
+
     switch (period) {
       case "week":
-        dateFormat = { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } };
+        dateFormat = { $dateToString: { format: "%Y-%m-%d", date: "$timestamps.placedAt" } };
         dateRange = Array.from({ length: 7 }, (_, i) => {
           const date = new Date(start);
           date.setDate(date.getDate() + i);
           return date.toISOString().split("T")[0];
         });
         break;
-        
+
       case "month":
-        dateFormat = { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } };
+        dateFormat = { $dateToString: { format: "%Y-%m-%d", date: "$timestamps.placedAt" } };
         dateRange = Array.from({ length: 30 }, (_, i) => {
           const date = new Date(start);
           date.setDate(date.getDate() + i);
           return date.toISOString().split("T")[0];
         });
         break;
-        
+
       case "year":
-        dateFormat = { $dateToString: { format: "%Y-%m", date: "$createdAt" } };
+        dateFormat = { $dateToString: { format: "%Y-%m", date: "$timestamps.placedAt" } };
         dateRange = Array.from({ length: 12 }, (_, i) => {
           const date = new Date(start);
           date.setMonth(date.getMonth() + i);
           return date.toISOString().substring(0, 7);
         });
         break;
-        
+
       default:
         return res.status(400).json({ status: false, error: "Invalid period" });
     }
 
     const stats = await Order.aggregate([
-      { $match: { status, createdAt: { $gte: start, $lte: end } } },
+      { $match: { status, "timestamps.placedAt": { $gte: start, $lte: end } } },
       { $unwind: "$orderDetails" },
       {
         $lookup: {
@@ -249,10 +247,9 @@ exports.getRevenueStats = async (req, res) => {
           dailySales: { $sum: "$orderDetail.product.pd_quantity" },
         },
       },
-      { $sort: { _id: 1 } }, // Sort by date ascending
+      { $sort: { _id: 1 } },
     ]);
 
-    // Fill missing dates in the range with zero values
     const filledStats = dateRange.map((date) => {
       const stat = stats.find((s) => s._id === date);
       return {

@@ -13,7 +13,6 @@ const voucherSchema = new mongoose.Schema({
   usage_conditions: { type: String, required: true },
   usage_scope: { type: String },
   status: { type: String, enum: ["active", "inactive"], default: "active" },
-  isInMiniGame: { type: Boolean, default: false },
   usedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
   createdAt: { type: Date, default: Date.now },
 });

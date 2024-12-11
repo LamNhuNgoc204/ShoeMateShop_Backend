@@ -79,6 +79,21 @@ app.use("/wallet", walletRouter);
 app.use("/recent-views", recentViewRouter);
 app.use('/upload', uploadRouter)
 
+app.get("/.well-known/assetlinks.json", (req, res) => {
+  res.json([
+    {
+      relation: ["delegate_permission/common.handle_all_urls"],
+      target: {
+        namespace: "android_app",
+        package_name: "com.bdnteam.mateshoe",
+        sha256_cert_fingerprints: [
+          "5E:F7:D8:9D:03:43:B7:F0:49:AC:A9:04:A7:3C:17:12:21:26:04:3A:DE:6C:4A:87:24:5D:17:1A:F2:25:B9:38",
+        ],
+      },
+    },
+  ]);
+});
+
 app.use("/", (req, res) => {
   res.status(200).json({ msg: "on" });
   console.log("server on...");
@@ -98,6 +113,10 @@ app.use(function (err, req, res, next) {
   // render the error page
   res.status(err.status || 500);
   res.render("error");
+});
+
+app.listen(() => {
+  console.log(`Server is running on http://localhost:3000`);
 });
 
 module.exports = app;

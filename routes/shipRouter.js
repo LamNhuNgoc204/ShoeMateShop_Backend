@@ -19,13 +19,20 @@ router.get("/get-shipping", protect, control.getShip);
 
 router.get("/get-one-ship/:id", control.getOneShip);
 
-router.put("update-ship/:id", protect, managerMiddleware, control.updateShip);
+router.put("/update-ship/:id", protect, managerMiddleware, control.updateShip);
 
 router.get(
   "/get-order-forship",
   protect,
   managerMiddleware,
   control.getOrderForShip
+);
+
+router.put(
+  "/update-status/:id",
+  protect,
+  managerMiddleware,
+  control.updateStarus
 );
 
 module.exports = router;

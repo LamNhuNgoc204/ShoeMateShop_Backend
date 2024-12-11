@@ -1,5 +1,6 @@
 const User = require("../models/userModel");
 const { hashPassword } = require("../utils/encryptionUtils");
+const { isValidPhoneNumber } = require("../utils/numberUtils");
 
 exports.updateUserPermissions = async (req, res) => {
   try {
@@ -23,7 +24,6 @@ exports.updateUserPermissions = async (req, res) => {
       phone: user.phoneNumber,
       name: user.name,
       role: user.role,
-      device_info: user.device_info,
     };
 
     return res.status(200).json({
@@ -59,6 +59,40 @@ exports.changePass = async (req, res) => {
     return res
       .status(200)
       .json({ status: true, message: "Update password success" });
+  } catch (error) {
+    console.error("Error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
+exports.updateInfor = async (req, res) => {
+  try {
+    const user = req.user;
+    const { avatar, name, phoneNumber } = req.body;
+
+    if (phoneNumber && !isValidPhoneNumber(phoneNumber)) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Invalid phoneNumber" });
+    }
+
+    user.avatar = avatar ? avatar : user.avatar;
+    user.name = name ? name : user.name;
+    user.phoneNumber = phoneNumber ? phoneNumber : user.phoneNumber;
+
+    const updatedUser = await user.save();
+    if (!updatedUser) {
+      return res.status(404).json({
+        status: false,
+        message: "User not found.",
+      });
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: "User profile updated successfully.",
+      data: updatedUser,
+    });
   } catch (error) {
     console.error("Error: ", error);
     return res.status(500).json({ status: false, message: "Server error" });

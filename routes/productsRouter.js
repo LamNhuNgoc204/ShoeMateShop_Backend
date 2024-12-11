@@ -16,16 +16,16 @@ router.put(
   productController.updateProduct
 );
 
-// API xóa sản phẩm (chỉ admin hoặc nhân viên)
-router.delete(
-  "/delete/:id",
-  protect,
-  adminOrEmployee,
-  productController.deleteProduct
-);
-
 // API lấy tất cả sản phẩm
 router.get("/list-products", protect, productController.getAllProducts);
+
+//Danh sách sp cho admin
+router.get(
+  "/lst-products",
+  protect,
+  adminOrEmployee,
+  productController.getProductsForWeb
+);
 
 // API lấy sản phẩm theo ID
 router.get("/detail/:id", protect, productController.getProductById);
@@ -54,5 +54,8 @@ router.delete(
   protect,
   productController.removeFromWishlist
 );
+
+// Ngừng bán sp
+router.put("/stop-selling/:id", protect, productController.stopSelling);
 
 module.exports = router;

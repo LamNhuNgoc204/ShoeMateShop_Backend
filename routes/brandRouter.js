@@ -1,7 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const { protect } = require("../middlewares/authMiddleware");
-const { managerMiddleware } = require("../middlewares/adminMiddleware");
+const {
+  managerMiddleware,
+  adminMiddleware,
+} = require("../middlewares/adminMiddleware");
 
 const controller = require("../controllers/brandController");
 const { validateCreateCategory } = require("../middlewares/categoryMiddleware");
@@ -33,7 +36,13 @@ router.put(
   controller.updateBrand
 );
 
+router.get("/get-all-brand", protect, controller.getAllBrand);
 
-router.get('/get-all-brand', protect, controller.getAllBrand);
+router.delete(
+  "/delete-brand-by-id/:brandId",
+  protect,
+  adminMiddleware,
+  controller.deleteBrand
+);
 
 module.exports = router;

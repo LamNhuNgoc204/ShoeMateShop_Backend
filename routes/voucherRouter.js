@@ -28,6 +28,11 @@ router.delete(
 
 // Lấy danh sách tất cả voucher (Ai cũng có thể truy cập) - Route: /list
 router.get("/list", protect, voucherController.getAllVouchers);
+router.get(
+  "/lst-voucher-for-web",
+  protect,
+  voucherController.getAllVouchersForWeb
+);
 
 // Lấy voucher theo ID (Ai cũng có thể truy cập) - Route: /detail/:id
 router.get("/detail/:id", voucherController.getVoucherById);

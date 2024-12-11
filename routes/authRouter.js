@@ -10,13 +10,13 @@ const {
   verifyOTP,
   saveNewPassword,
 } = require("../middlewares/userMiddleware");
-const { verifyToken } = require("../middlewares/authMiddleware");
+const { verifyToken, protect } = require("../middlewares/authMiddleware");
 
 //methods:  PUT
 //http:  http://localhost:3000/auth
 
 //Verify token
-router.get("/protected", verifyToken, AuthController.getProtectedData);
+router.post("/protected", verifyToken, AuthController.getProtectedData);
 
 // Verify email
 router.post("/verify-email", AuthController.verifyOTP);
@@ -61,6 +61,6 @@ router.post(
   AuthController.signInWithGG
 );
 
-router.post("/refresh-token", AuthController.refreshToken);
+router.post("/refresh-token", protect, AuthController.refreshToken);
 
 module.exports = router;

@@ -2,7 +2,7 @@ var express = require("express");
 var router = express.Router();
 const adminController = require("../controllers/adminController");
 const { checkUserPermission } = require("../middlewares/userMiddleware");
-const { protect } = require("../middlewares/authMiddleware");
+const { protect, adminOrEmployee } = require("../middlewares/authMiddleware");
 
 // url: http://localhost:3000/admins
 
@@ -15,5 +15,12 @@ router.put(
 );
 
 router.post("/change-password", adminController.changePass);
+
+router.put(
+  "/update-infor",
+  protect,
+  adminOrEmployee,
+  adminController.updateInfor
+);
 
 module.exports = router;

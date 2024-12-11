@@ -1,4 +1,41 @@
 const Voucher = require("../models/voucherModel");
+// Thư viện chạy tự động, dành cho việc chuyển đổi trạng thái voucher khi hết hạn
+const cron = require("node-cron");
+
+const BATCH_SIZE = 1000;
+
+const processExpiredVouchers = async () => {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  let updatedCount = 0;
+
+  while (true) {
+    const vouchers = await Voucher.find({
+      expiry_date: { $lt: today },
+      status: "active",
+    })
+      .limit(BATCH_SIZE)
+      .select("_id");
+
+    if (vouchers.length === 0) break; // Không còn voucher để xử lý
+
+    // Cập nhật trạng thái
+    const ids = vouchers.map((v) => v._id);
+    const result = await Voucher.updateMany(
+      { _id: { $in: ids } },
+      { $set: { status: "inactive" } }
+    );
+
+    updatedCount += result.modifiedCount;
+    console.log(`Processed ${result.modifiedCount} vouchers in this batch.`);
+  }
+
+  console.log(`Total updated vouchers: ${updatedCount}`);
+};
+
+// Cron job chạy lúc 23:59 => 59 23 * * *
+cron.schedule("59 23 * * *", processExpiredVouchers);
 
 exports.createVoucher = async (req, res) => {
   try {
@@ -12,7 +49,6 @@ exports.createVoucher = async (req, res) => {
       start_date,
       usage_conditions,
       usage_scope,
-      isInMiniGame,
       min_order_value,
       max_discount_value,
     } = req.body;
@@ -46,7 +82,6 @@ exports.createVoucher = async (req, res) => {
       start_date,
       usage_conditions,
       usage_scope,
-      isInMiniGame,
       min_order_value,
       max_discount_value,
     });
@@ -77,9 +112,11 @@ exports.updateVoucher = async (req, res) => {
       return res.status(404).json({ message: "Voucher not found" });
     }
 
-    res.status(200).json(updatedVoucher);
+    res.status(200).json({ status: true, data: updatedVoucher });
   } catch (error) {
-    res.status(500).json({ message: "Error updating voucher", error });
+    res
+      .status(500)
+      .json({ status: false, message: "Error updating voucher", error });
   }
 };
 
@@ -106,6 +143,50 @@ exports.getAllVouchers = async (req, res) => {
     const vouchers = await Voucher.find();
     res.status(200).json({ status: true, data: vouchers });
   } catch (error) {
+    res
+      .status(500)
+      .json({ status: false, message: "Error fetching vouchers", error });
+  }
+};
+
+exports.getAllVouchersForWeb = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, statusFilter = "all" } = req.query;
+    const skip = (page - 1) * limit;
+
+    // Lọc theo trạng thái
+    let statusCondition = {};
+    if (statusFilter === "active") {
+      statusCondition = { status: "active" }; // 'active'
+    } else if (statusFilter === "inactive") {
+      statusCondition = { status: "inactive" }; // 'inactive'
+    }
+
+    const totalVouchers = await Voucher.countDocuments(statusCondition);
+    const activeVC = await Voucher.find({ status: "active" });
+    const inactiveVC = await Voucher.find({ status: "inactive" });
+
+    // Lấy voucher theo điều kiện
+    const vouchers = await Voucher.find(statusCondition)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const totalPages = Math.ceil(totalVouchers / limit);
+
+    res.status(200).json({
+      status: true,
+      data: vouchers,
+      totalVouchers,
+      totalPages,
+      currentPage: parseInt(page),
+      limit: parseInt(limit),
+      activeVC,
+      inactiveVC,
+    });
+  } catch (error) {
+    console.log("error===", error);
+
     res
       .status(500)
       .json({ status: false, message: "Error fetching vouchers", error });

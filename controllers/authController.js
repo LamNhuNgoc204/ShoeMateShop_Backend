@@ -244,7 +244,7 @@ exports.login = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         status: false,
-        message: "Please provide both email and password.",
+        message: "Vui lòng cung cấp cả email và mật khẩu.",
       });
     }
 
@@ -253,11 +253,11 @@ exports.login = async (req, res) => {
     if (!user) {
       return res
         .status(400)
-        .json({ status: false, message: "User does not exist." });
+        .json({ status: false, message: "Người dùng không tồn tại!!!" });
     }
 
     if (!user.isActive) {
-      return res.status(403).json({ message: "Account is inactive" });
+      return res.status(403).json({ message: "Tài khoản không hoạt động!" });
     }
 
     // Check if password is correct
@@ -265,7 +265,7 @@ exports.login = async (req, res) => {
     if (!isPasswordCorrect) {
       return res
         .status(401)
-        .json({ status: false, message: "Invalid password." });
+        .json({ status: false, message: "Mật khẩu không hợp lệ." });
     }
 
     // Generate JWT token
@@ -288,27 +288,18 @@ exports.login = async (req, res) => {
 
 exports.refreshToken = async (req, res) => {
   try {
-    const { token, userId } = req.body;
-
-    const user = await User.findById(userId);
+    const user = req?.user;
     if (!user) {
       return res
         .status(404)
         .json({ status: false, message: "User not found!" });
     }
 
-    if (!token)
-      return res.status(403).json({ message: "Refresh token is required" });
-
-    let newToken = "";
-    const checkToken = verifyToken(token);
-    if (!checkToken.valid) {
-      newToken = createToken(userId);
-    }
+    const token = createToken(user._id);
 
     return res.status(200).json({
       status: true,
-      data: newToken,
+      data: token,
     });
   } catch (error) {
     console.log("refreshToken error: ", error);
@@ -350,7 +341,10 @@ exports.getProtectedData = async (req, res) => {
   try {
     const user = req.user;
 
+    console.log("usser ===>", user);
+
     return res.status(200).json({
+      status: true,
       message: "Verify success",
       user: user,
     });
