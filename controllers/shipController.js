@@ -98,15 +98,51 @@ exports.updateStarus = async (req, res) => {
   }
 };
 
+// exports.getOrderForShip = async (req, res) => {
+//   try {
+//     const orders = await Order.find({
+//       status: { $in: ["processing", "delivered"] },
+//     })
+//       .populate("shipping_id", "name")
+//       .lean();
+
+//     console.log("orders==>", orders);
+
+//     const orderIds = orders.map((order) => order._id);
+//     const orderDetails = await OrderDetail.find({
+//       order_id: { $in: orderIds },
+//     }).populate("product.id");
+
+//     const ordersWithDetails = orders.map((order) => {
+//       const details = orderDetails.filter((detail) =>
+//         detail.order_id.equals(order._id)
+//       );
+//       return {
+//         ...order,
+//         orderDetails: details,
+//       };
+//     });
+
+//     return res.status(200).json({
+//       status: true,
+//       data: ordersWithDetails,
+//     });
+//   } catch (error) {
+//     console.log("errror: ", error);
+//     return res.status(500).json({ status: false, message: error.message });
+//   }
+// };
+
 exports.getOrderForShip = async (req, res) => {
   try {
     const orders = await Order.find({
       status: { $in: ["processing", "delivered"] },
-    }).populate("shipping_id", "name");
-
-    console.log("orders==>", orders);
+    })
+      .populate("shipping_id", "name")
+      .lean();
 
     const orderIds = orders.map((order) => order._id);
+
     const orderDetails = await OrderDetail.find({
       order_id: { $in: orderIds },
     }).populate("product.id");
@@ -115,9 +151,11 @@ exports.getOrderForShip = async (req, res) => {
       const details = orderDetails.filter((detail) =>
         detail.order_id.equals(order._id)
       );
+
       return {
-        ...order.toObject(),
+        ...order,
         orderDetails: details,
+        returnRequest: order.returnRequest,
       };
     });
 

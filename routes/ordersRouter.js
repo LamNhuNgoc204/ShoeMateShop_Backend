@@ -88,6 +88,15 @@ router.put(
   control.handleReturnRq
 );
 
+//Hoàn hàng
+router.put(
+  "/return-order/:orderId",
+  protect,
+  adminOrEmployee,
+  middle.checkOrderByID,
+  control.handleReturnOrder
+);
+
 //Huy don tu phia nguoi dung
 router.put(
   "/cancel-order/:orderId",
