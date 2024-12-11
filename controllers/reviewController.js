@@ -243,7 +243,8 @@ exports.getAllReviews = async (req, res) => {
   try {
     const reviews = await Review.find()
       .populate("product_id", "name assets")
-      .populate("reviewer_id", "email name");
+      .populate("reviewer_id", "email name")
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({
       status: true,

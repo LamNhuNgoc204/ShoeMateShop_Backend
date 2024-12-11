@@ -100,7 +100,7 @@ exports.updateRole = async (req, res) => {
 
 exports.getAllUser = async (_, res) => {
   try {
-    const users = await User.find({ role: { $ne: "admin" } });
+    const users = await User.find().sort({ createAt: -1 });
 
     return res
       .status(200)
@@ -153,8 +153,7 @@ exports.adddNewUser = async (req, res) => {
   }
 };
 
-
-exports.refreshFcmToken = async(req, res) => {
+exports.refreshFcmToken = async (req, res) => {
   try {
     const user = req.user;
     const { token } = req.body;
@@ -168,7 +167,7 @@ exports.refreshFcmToken = async(req, res) => {
     console.log("Error: ", error);
     return res.status(500).json({ status: false, message: "Server error" });
   }
-}
+};
 exports.LockAccount = async (req, res) => {
   try {
     const { userId } = req.params;
