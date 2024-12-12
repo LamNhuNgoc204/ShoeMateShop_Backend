@@ -136,7 +136,7 @@ exports.updateStarus = async (req, res) => {
 exports.getOrderForShip = async (req, res) => {
   try {
     const orders = await Order.find({
-      status: { $in: ["processing", "delivered"] },
+      status: { $in: ["processing", "delivered", "completed"] },
     })
       .populate("shipping_id", "name")
       .lean();
