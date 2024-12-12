@@ -399,7 +399,10 @@ exports.getAllOrdersForAdmin = async (req, res) => {
     } else if (filterStatus === "return-rejected") {
       returnRequestCondition = { "returnRequest.status": "rejected" }; // Lọc status hoàn trả bị từ chối
     } else if (filterStatus === "return-refunded") {
-      returnRequestCondition = { "returnRequest.status": "refunded" }; // Lọc status hoàn trả đã hoàn tiền
+      returnRequestCondition = {
+        status: "refunded",
+        "returnRequest.status": "refunded",
+      }; // Lọc status hoàn trả đã hoàn tiền
     } else {
       // Lọc trạng thái đơn hàng
       statusCondition = { status: filterStatus };
@@ -529,9 +532,7 @@ exports.requestReturnOrder = async (req, res) => {
       requestDate: Date.now(),
       status: "pending",
     };
-    order.timestamps = {
-      refundedAt: Date.now(),
-    };
+    order.timestamps.refundedAt = Date.now();
 
     const result = await order.save();
     return res.status(200).json({
@@ -860,6 +861,37 @@ exports.getOrdersForBottomSheet = async (req, res) => {
 exports.handleReturnOrder = async (req, res) => {
   try {
     const order = req.order;
+
+    order.status = "refunded";
+    order.returnRequest.status = "refunded";
+    order.timestamps.completedRefundedAt = Date.now();
+
+    const result = await order.save();
+    if (!result) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Error updating order" });
+    }
+
+    // Cập nhật số lượng sản phẩm
+    for (const orderDetail of order.orderDetails) {
+      const product = await Product.findById(orderDetail.productId);
+      if (product) {
+        // Tăng số lượng trong kho và giảm số lượng đã bán
+        for (const size of product.size) {
+          if (size.sizeId.toString() === orderDetail.sizeId.toString()) {
+            size.quantity += orderDetail.quantity;
+            product.sold -= orderDetail.quantity;
+            break;
+          }
+        }
+        await product.save();
+      }
+    }
+
+    return res
+      .status(200)
+      .json({ status: true, message: "success", data: result });
   } catch (error) {
     console.log("error: ", error);
     return res.status(500).json({ status: false, message: "Server error" });
