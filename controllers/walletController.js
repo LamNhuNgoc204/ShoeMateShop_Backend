@@ -261,12 +261,17 @@ const transferMoney = async (req, res) => {
     });
     await recipientWallet.save();
 
+    const Userrecipient = await User.findOne({ _id: recipientWallet.userId });
+    const FCMTokenrecipient = Userrecipient.FCMToken;
+    // Nội dung thông báo cho người chuyển
     const senderContent = `Bạn đã chuyển ${amount} VND cho ${recipientName}. Số dư hiện tại của bạn: ${senderWallet.balance} VND.`;
-    await sendNotification(senderWallet.FCMToken, 'MateShoe Staff 📝', senderContent);
+    console.log("senderWallet", senderWallet);
+    await sendNotification(FCMToken, 'MateShoe Staff 📝', senderContent);
 
     // Nội dung thông báo cho người nhận
     const recipientContent = `Bạn đã nhận ${amount} VND từ ${senderName}. Số dư hiện tại của bạn: ${recipientWallet.balance} VND.`;
-    await sendNotification(recipient.FCMToken, 'MateShoe Staff 📝', recipientContent);
+    console.log("recipientWallet", recipientWallet);
+    await sendNotification(FCMTokenrecipient, 'MateShoe Staff 📝', recipientContent);
 
     res.status(200).json({ message: "Transfer successful", senderWallet, recipientWallet, status: true });
   } catch (error) {
@@ -274,32 +279,56 @@ const transferMoney = async (req, res) => {
   }
 };
 
-
-
 // Thanh toán
 const makePayment = async (req, res) => {
   const { amount } = req.body;
   console.log("amount", amount);
   const userId = req.user._id;
 
+  // Kiểm tra số tiền
   if (!amount || amount <= 0) {
     console.log("Invalid amount");
-    return res.status(400).json({ error: "Invalid amount" , status:false });
+    return res.status(200).json({
+      status: false,
+      error: "Invalid amount",
+      code: "Invalidamount"
+    });
   }
 
   try {
     const wallet = await Wallet.findOne({ userId });
 
+    // Kiểm tra ví tồn tại
+    if (!wallet) {
+      console.log("Wallet not found");
+      return res.status(200).json({
+        status: false,
+        error: "Wallet not found",
+        code: "walletnotcreated"
+      });
+    }
+
+    // Kiểm tra ví có được kích hoạt hay không
     if (!wallet.isActive) {
       console.log("Wallet is not active");
-      return res.status(400).json({ error: "Wallet is not active", status:false });
+      return res.status(200).json({
+        status: false,
+        error: "Wallet is not active",
+        code: "walletnotactive"
+      });
     }
 
+    // Kiểm tra số dư trong ví
     if (wallet.balance < amount) {
       console.log("Insufficient balance");
-      return res.status(400).json({ error: "Insufficient balance", status:false });
+      return res.status(200).json({
+        status: false,
+        error: "Insufficient balance",
+        code: "Insufficientbalance"
+      });
     }
 
+    // Xử lý thanh toán
     wallet.balance -= amount;
     wallet.transactions.push({
       transactionId: new mongoose.Types.ObjectId(),
@@ -309,11 +338,26 @@ const makePayment = async (req, res) => {
     });
 
     await wallet.save();
-    res.status(200).json({ message: "Payment successful", wallet , status:true });
+
+    // Trả về thành công
+    return res.status(200).json({
+      status: true,
+      message: "Payment successful",
+      wallet
+    });
   } catch (error) {
-    res.status(500).json({ error: "Failed to process payment" , status:false });
+    // Xử lý lỗi server
+    console.error("Error during payment processing:", error);
+    return res.status(500).json({
+      status: false,
+      error: "Failed to process payment"
+    });
   }
 };
+
+
+
+
 
 // Lấy số dư
 const getBalance = async (req, res) => {
@@ -341,9 +385,7 @@ const getBalance = async (req, res) => {
 
 // Lấy lịch sử giao dịch
 const getTransactions = async (req, res) => {
-  // const { userId } = req.params;
   const userId = req.user._id;
-
   try {
     const wallet = await Wallet.findOne({ userId });
 
@@ -351,7 +393,6 @@ const getTransactions = async (req, res) => {
       return res.status(404).json({ error: "Wallet not found", status: false });
     }
 
-    // Sắp xếp giao dịch giảm dần theo timestamp
     const sortedTransactions = wallet.transactions.sort((a, b) => 
       new Date(b.timestamp) - new Date(a.timestamp)
     );
