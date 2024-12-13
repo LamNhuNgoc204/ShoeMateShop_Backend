@@ -279,6 +279,7 @@ exports.getProcessingOrders = async (req, res) => {
     const orders = await Order.find({
       status: { $in: ["processing", "delivered"] },
       user_id: req.user._id,
+      returnRequest: { $exists: false },
     }).sort({ updateAt: -1 });
 
     const orderIds = orders.map((order) => order._id);
@@ -338,7 +339,7 @@ exports.getCancelledOrders = async (req, res) => {
       status: "cancelled",
       user_id: req.user._id,
     }).sort({ updateAt: -1 });
-    
+
     const orderIds = orders.map((order) => order._id);
     const orderDetails = await OrderDetail.find({
       order_id: { $in: orderIds },
@@ -366,7 +367,7 @@ exports.getRefundedOrders = async (req, res) => {
     const orders = await Order.find({
       status: "refunded",
       user_id: req.user._id,
-      "returnRequest.status": { $exists: true, $ne: null },
+      $or: [{ returnRequest: { $exists: true } }],
     }).sort({ "returnRequest.requestDate": -1 });
     // .sort({ updateAt: -1 });
 
@@ -581,17 +582,14 @@ exports.handleReturnRq = async (req, res) => {
     order.returnRequest.responseDate = Date.now();
 
     if (returnStatus === "accepted") {
-      console.log("Yêu cầu hoàn hàng của bạn đã được chấp nhận :)");
-
       await createNotification(
         order._id,
         `Yêu cầu hoàn hàng của bạn đã được chấp nhận :)`
       );
-      order.status = "refunded";
+      // order.status = "refunded";
+      order.updateAt = Date.now();
     } else {
-      console.log(
-        `Tiếc quá. Yêu cầu hoàn hàng của bạn đã bị từ chối vì lý do không hợp lý :)`
-      );
+      order.updateAt = Date.now();
 
       await createNotification(
         order._id,

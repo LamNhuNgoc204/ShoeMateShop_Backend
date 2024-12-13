@@ -139,6 +139,7 @@ exports.getOrderForShip = async (req, res) => {
       status: { $in: ["processing", "delivered", "completed"] },
     })
       .populate("shipping_id", "name")
+      // .sort({ updateAt: -1 })
       .lean();
 
     const orderIds = orders.map((order) => order._id);
