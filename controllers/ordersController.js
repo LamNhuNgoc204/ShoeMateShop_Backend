@@ -111,6 +111,7 @@ exports.createNewOrder = async (req, res) => {
         completedAt: null,
         cancelledAt: null,
       },
+      updateAt: Date.now(),
     });
 
     const savedOrder = await newOrder.save();
@@ -250,6 +251,7 @@ exports.getPendingOrders = async (req, res) => {
       status: "pending",
       user_id: req.user._id,
     });
+
     const orderIds = orders.map((order) => order._id);
     const orderDetails = await OrderDetail.find({
       order_id: { $in: orderIds },
@@ -277,7 +279,8 @@ exports.getProcessingOrders = async (req, res) => {
     const orders = await Order.find({
       status: { $in: ["processing", "delivered"] },
       user_id: req.user._id,
-    });
+    }).sort({ updateAt: -1 });
+
     const orderIds = orders.map((order) => order._id);
     const orderDetails = await OrderDetail.find({
       order_id: { $in: orderIds },
@@ -305,7 +308,8 @@ exports.getCompletedOrders = async (req, res) => {
     const orders = await Order.find({
       status: "completed",
       user_id: req.user._id,
-    });
+    }).sort({ updateAt: -1 });
+
     const orderIds = orders.map((order) => order._id);
     const orderDetails = await OrderDetail.find({
       order_id: { $in: orderIds },
@@ -333,7 +337,7 @@ exports.getCancelledOrders = async (req, res) => {
     const orders = await Order.find({
       status: "cancelled",
       user_id: req.user._id,
-    });
+    }).sort({ updateAt: -1 });
     const orderIds = orders.map((order) => order._id);
     const orderDetails = await OrderDetail.find({
       order_id: { $in: orderIds },
@@ -361,7 +365,8 @@ exports.getRefundedOrders = async (req, res) => {
     const orders = await Order.find({
       status: "refunded",
       user_id: req.user._id,
-    });
+    }).sort({ updateAt: -1 });
+
     const orderIds = orders.map((order) => order._id);
     const orderDetails = await OrderDetail.find({
       order_id: { $in: orderIds },
@@ -452,7 +457,7 @@ exports.getAllOrdersForAdmin = async (req, res) => {
         select:
           "product.id product.name product.size_name product.price product.pd_image product.pd_quantity",
       })
-      .sort({ "timestamps.placedAt": -1 })
+      .sort({ createAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
 
@@ -532,6 +537,7 @@ exports.requestReturnOrder = async (req, res) => {
       requestDate: Date.now(),
       status: "pending",
     };
+    order.updateAt = Date.now();
     order.timestamps.refundedAt = Date.now();
 
     const result = await order.save();
@@ -568,6 +574,7 @@ exports.handleReturnRq = async (req, res) => {
     }
 
     order.returnRequest.status = returnStatus;
+    order.updateAt = Date.now();
     order.returnRequest.responseDate = Date.now();
 
     if (returnStatus === "accepted") {
@@ -623,6 +630,7 @@ exports.cancelOrder = async (req, res) => {
 
     order.status = "cancelled";
     order.canceller = user.name;
+    order.updateAt = Date.now();
     order.timestamps.cancelledAt = Date.now();
 
     // Cộng lại sản phẩm vào kho
@@ -757,7 +765,7 @@ exports.confirmOrder = async (req, res) => {
       return res.status(400).json({ error: "Invalid status provided." });
     }
 
-    const updateFields = { status };
+    const updateFields = { status, updateAt: Date.now() };
     if (status === "processing") {
       await createNotification(
         orderId,
@@ -864,6 +872,7 @@ exports.handleReturnOrder = async (req, res) => {
 
     order.status = "refunded";
     order.returnRequest.status = "refunded";
+    order.updateAt = Date.now();
     order.timestamps.completedRefundedAt = Date.now();
 
     const result = await order.save();

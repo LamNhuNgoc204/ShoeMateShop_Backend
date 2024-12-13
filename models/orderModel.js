@@ -61,6 +61,8 @@ const orderSchema = new mongoose.Schema({
   },
   points: { type: Number, default: 0 }, //Xu được sử dụng
   isReviewed: { type: Boolean, default: false },
+  createAt: { type: Date, default: Date.now },
+  updateAt: { type: Date },
 });
 
 module.exports = mongoose.models.orders || mongoose.model("order", orderSchema);
