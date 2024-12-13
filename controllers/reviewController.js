@@ -140,9 +140,11 @@ exports.getUnreviewedOrdersWithProducts = async (req, res) => {
 exports.createMultipleReviews = async (req, res) => {
   try {
     // Nhan mang reviews tu body
-    const { reviews } = req.body;
+    const { reviews, orderId } = req.body;
+    const result = await Order.findByIdAndUpdate(orderId, { isReviewed: true });
 
-    console.log("Danh sách sp cần review", reviews);
+    console.log("result====>", result);
+    // console.log("Danh sách sp cần review", reviews);
 
     const reviewer_id = req.user._id;
 
@@ -179,7 +181,7 @@ exports.createMultipleReviews = async (req, res) => {
 
     const newReviews = await Promise.all(reviewPromises);
 
-    const order_id = reviews[0].orderDetail_id;
+    const order_id = reviews.orderDetail_id;
 
     const allOrderDetails = await OrderDetail.find({ order_id });
     const isAllReviewed = allOrderDetails.every((detail) => detail.isReviewed);

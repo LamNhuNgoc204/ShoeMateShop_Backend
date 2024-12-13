@@ -338,6 +338,7 @@ exports.getCancelledOrders = async (req, res) => {
       status: "cancelled",
       user_id: req.user._id,
     }).sort({ updateAt: -1 });
+    
     const orderIds = orders.map((order) => order._id);
     const orderDetails = await OrderDetail.find({
       order_id: { $in: orderIds },
@@ -365,7 +366,9 @@ exports.getRefundedOrders = async (req, res) => {
     const orders = await Order.find({
       status: "refunded",
       user_id: req.user._id,
-    }).sort({ updateAt: -1 });
+      "returnRequest.status": { $exists: true, $ne: null },
+    }).sort({ "returnRequest.requestDate": -1 });
+    // .sort({ updateAt: -1 });
 
     const orderIds = orders.map((order) => order._id);
     const orderDetails = await OrderDetail.find({
