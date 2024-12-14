@@ -8,7 +8,8 @@ exports.getUserCard = async (req, res) => {
 
     const userCard = await Cart.find({ user_id: userId })
       .populate("product_id", "assets name price")
-      .populate("size_id", "name");
+      .populate("size_id", "name")
+      .sort({ updateAt: -1 });
 
     return res.status(200).json({ status: true, data: userCard });
   } catch (error) {
@@ -54,10 +55,12 @@ exports.addProductToCart = async (req, res) => {
     if (cartItem) {
       // Nếu sản phẩm đã tồn tại, tăng số lượng
       cartItem.quantity += quantity;
+      cartItem.updateAt = Date.now();
       await cartItem.save();
     } else {
       // Nếu không, tạo một mục giỏ hàng mới
       cartItem = new Cart({ user_id, product_id, size_id: size._id, quantity });
+      cartItem.updateAt = Date.now();
       await cartItem.save();
     }
 
@@ -94,6 +97,7 @@ exports.updateCartQuantity = async (req, res) => {
       product_id,
       size_id,
     });
+
     if (!cartItem) {
       return res
         .status(404)
@@ -112,6 +116,7 @@ exports.updateCartQuantity = async (req, res) => {
     } else {
       // Cập nhật số lượng và lưu lại
       cartItem.quantity = quantity;
+      cartItem.updateAt = Date.now();
       await cartItem.save();
 
       return res.status(200).json({
