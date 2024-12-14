@@ -137,18 +137,20 @@ exports.updateCartQuantity = async (req, res) => {
 // API để xóa một sản phẩm khỏi giỏ hàng
 exports.removeProductFromCart = async (req, res) => {
   try {
-    const { product_id, size_name } = req.body;
+    console.log("delete cart ..........................");
+
+    const { product_id, size_id } = req.body;
     const user_id = req.user._id;
 
-    if (!product_id || !size_name) {
-      console.log("Missing product_id or size_name");
+    if (!product_id || !size_id) {
+      console.log("Missing product_id or size_id");
       return res
         .status(400)
-        .json({ status: false, message: "Missing product_id or size_name" });
+        .json({ status: false, message: "Missing product_id or size_id" });
     }
 
     // Kiểm tra xem kích thước có tồn tại trong bộ sưu tập Size cho sản phẩm này không
-    const size = await Size.findOne({ name: size_name });
+    const size = await Size.findById(size_id);
     if (!size) {
       return res
         .status(400)
@@ -175,8 +177,14 @@ exports.removeProductFromCart = async (req, res) => {
     }
 
     // Xóa mục giỏ hàng từ bộ sưu tập Cart
-    await Cart.deleteOne({ _id: cartItem._id });
-    console.log("Deleted cartItem:", cartItem._id);
+    const result = await Cart.deleteOne({ _id: cartItem._id });
+
+    if (result.deletedCount === 0) {
+      return res.status(500).json({
+        status: false,
+        message: "Failed to remove product from cart",
+      });
+    }
 
     return res.status(200).json({
       status: true,
