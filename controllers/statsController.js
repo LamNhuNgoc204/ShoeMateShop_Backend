@@ -3,6 +3,7 @@ const Order = require("../models/orderModel");
 const OrderDetail = require("../models/orderDetailModel");
 const Product = require("../models/productModel");
 const moment = require("moment");
+const User = require("../models/userModel");
 // Hàm helper để xác định ngày bắt đầu và kết thúc cho từng khoảng thời gian
 const getDateRange = (period, offset = 0) => {
   const now = new Date();
@@ -270,3 +271,120 @@ exports.getRevenueStats = async (req, res) => {
   }
 };
 
+exports.LowStock = async (req, res) => {
+  try {
+    const threshold = parseInt(req.query.threshold) || 10;
+    console.log("Threshold:", threshold);
+
+    // Lấy toàn bộ sản phẩm và populate các trường liên quan
+    const allProducts = await Product.find({}).populate("brand category size.sizeId");
+
+    // Lọc sản phẩm và chỉ giữ lại các size sắp hết hàng
+    const lowStockProducts = allProducts
+      .map(product => {
+        // Lọc các size có số lượng dưới threshold
+        const lowStockSizes = product.size.filter(size => size.quantity < threshold);
+
+        // Nếu không có size nào thỏa mãn, bỏ qua sản phẩm
+        if (lowStockSizes.length === 0) return null;
+
+        // Trả về sản phẩm với thông tin size sắp hết hàng
+        return {
+          _id: product._id,
+          name: product.name,
+          description: product.description,
+          brand: product.brand?.name || "N/A",
+          category: product.category?.name || "N/A",
+          lowStockSizes: lowStockSizes.map(size => ({
+            sizeName: size.sizeId?.name || "Unknown",
+            quantity: size.quantity
+          }))
+        };
+      })
+      .filter(product => product !== null); // Loại bỏ các sản phẩm không có size sắp hết hàng
+
+    res.status(200).json({
+      success: true,
+      message: "Danh sách sản phẩm sắp hết hàng",
+      data: lowStockProducts,
+    });
+  } catch (error) {
+    console.error("Lỗi khi thống kê sản phẩm sắp hết hàng:", error);
+    res.status(500).json({
+      success: false,
+      message: "Đã xảy ra lỗi trong khi xử lý yêu cầu",
+      error: error.message,
+    });
+  }
+};
+
+
+  exports.getRegistrationStats = async (req, res) => {
+    const { type } = req.query;  // Lấy type (year, month, week) từ query params
+  
+    try {
+      let query = {};
+      let result = [];
+  
+      if (type === "year") {
+        // Thống kê theo năm (hiển thị 3 năm gần nhất)
+        const currentYear = moment().year();  // Năm hiện tại
+        for (let i = 0; i < 3; i++) {
+          const yearToCheck = currentYear - i;
+          const startDate = moment().year(yearToCheck).startOf("year").toDate();
+          const endDate = moment().year(yearToCheck).endOf("year").toDate();
+  
+          // Tìm số lượng người dùng đăng ký trong năm
+          const count = await User.countDocuments({
+            createAt: { $gte: startDate, $lt: endDate },
+          });
+  
+          result.push({ year: yearToCheck, count });
+        }
+      } else if (type === "month") {
+        // Thống kê theo tháng (30 ngày trong tháng hiện tại)
+        const startDate = moment().startOf("month").toDate();  // Ngày đầu tháng
+        const endDate = moment().endOf("month").toDate();  // Ngày cuối tháng
+  
+        const countByDay = [];
+        // Lặp qua từng ngày trong tháng
+        for (let i = 0; i < 30; i++) {
+          const dayStart = moment(startDate).add(i, "days").startOf("day").toDate();
+          const dayEnd = moment(dayStart).endOf("day").toDate();
+          
+          const count = await User.countDocuments({
+            createAt: { $gte: dayStart, $lt: dayEnd },
+          });
+  
+          countByDay.push({ day: moment(dayStart).format("YYYY-MM-DD"), count });
+        }
+        result = countByDay;
+      } else if (type === "week") {
+        // Thống kê theo tuần (7 ngày trong tuần hiện tại)
+        const startOfWeek = moment().startOf("week").toDate();  // Ngày đầu tuần
+        const endOfWeek = moment().endOf("week").toDate();  // Ngày cuối tuần
+  
+        const countByDay = [];
+        // Lặp qua 7 ngày trong tuần
+        for (let i = 0; i < 7; i++) {
+          const dayStart = moment(startOfWeek).add(i, "days").startOf("day").toDate();
+          const dayEnd = moment(dayStart).endOf("day").toDate();
+          
+          const count = await User.countDocuments({
+            createAt: { $gte: dayStart, $lt: dayEnd },
+          });
+  
+          countByDay.push({ day: moment(dayStart).format("YYYY-MM-DD"), count });
+        }
+        result = countByDay;
+      } else {
+        return res.status(400).json({ success: false, message: "Invalid type. Use 'year', 'month', or 'week'." });
+      }
+  
+      return res.json({ success: true, data: result });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: err.message });
+    }
+  };
+  

@@ -6,8 +6,12 @@ const statsController = require("../controllers/statsController"); // corrected 
 
 // Routes for product statistics
 router.get("/total-revenue", statsController.getStats);
-router.get("/best-selling-products", protect, managerMiddleware, statsController.getBestSellingProducts);
 router.get("/products", protect, managerMiddleware, statsController.getRevenueByProduct);
 router.get("/", protect, managerMiddleware, statsController.getRevenueStats);
+router.get("/low-stock", protect, managerMiddleware, statsController.LowStock);
+router.get("/best-selling-products", protect, managerMiddleware, statsController.getBestSellingProducts);
+router.get("/get-registration", protect, managerMiddleware, statsController.getRegistrationStats);
+
+
 
 module.exports = router;
