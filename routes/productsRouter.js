@@ -58,4 +58,7 @@ router.delete(
 // Ngừng bán sp
 router.put("/stop-selling/:id", protect, productController.stopSelling);
 
+// Gợi ý sản phẩm
+router.get("/similar-product/:productId", protect, productController.getSimilarPd);
+
 module.exports = router;
