@@ -137,8 +137,6 @@ exports.updateCartQuantity = async (req, res) => {
 // API để xóa một sản phẩm khỏi giỏ hàng
 exports.removeProductFromCart = async (req, res) => {
   try {
-    console.log("delete cart ..........................");
-
     const { product_id, size_id } = req.body;
     const user_id = req.user._id;
 
