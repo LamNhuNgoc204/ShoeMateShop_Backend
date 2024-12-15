@@ -4,8 +4,9 @@ const Payment = require("../models/paymentModel");
 const Product = require("../models/productModel");
 const Cart = require("../models/cartModels");
 const Ship = require("../models/shippingModel");
-const axios = require("axios");
-const crypto = require("crypto");
+const Wallet = require("../models/walletModel");
+const { sendRefundRequestEmail } = require("../utils/emailUtils");
+
 const { createNotification } = require("../controllers/notificationController");
 
 exports.getOrderDetail = async (req, res) => {
@@ -701,59 +702,6 @@ exports.cancelOrder = async (req, res) => {
   }
 };
 
-const config = {
-  app_id: "2554",
-  key1: "sdngKKJmqEMzvh5QQcdD2A9XBSKUNaYn",
-  key2: "trMrHtvjo6myautxDUiAcYsVtaeQ8nhf",
-  refund_url: "https://sb-openapi.zalopay.vn/v2/refund",
-};
-
-async function refundZaloPay(order, refundAmount) {
-  try {
-    const detailOrder = await order.populate(
-      "payment_id.payment_method_id",
-      "payment_method transaction_id"
-    );
-    const timestamp = Date.now();
-    const refundId = `refund_${order._id}_${timestamp}`;
-
-    // Tạo data cần thiết cho request
-    const requestData = {
-      app_id: config.app_id,
-      // Mã giao dịch ZaloPay bạn nhận được khi thanh toán
-      zp_trans_id: detailOrder.payment_id.payment_method_id.transaction_id,
-      amount: refundAmount,
-      description: `Refund for order #${order._id}`,
-      refund_id: refundId,
-      timestamp: timestamp,
-    };
-
-    // Tạo checksum để bảo mật
-    const checksumString = `${requestData.app_id}|${requestData.zp_trans_id}|${requestData.amount}|${requestData.timestamp}|${config.key1}`;
-    const checksum = crypto
-      .createHmac("sha256", config.key1)
-      .update(checksumString)
-      .digest("hex");
-
-    // Thêm checksum vào request
-    requestData.mac = checksum;
-
-    // Gửi yêu cầu hoàn tiền đến ZaloPay
-    const response = await axios.post(config.refund_url, requestData);
-
-    if (response.data.return_code === 1) {
-      console.log("Refund successful:", response.data);
-      return response.data;
-    } else {
-      console.error("Refund failed:", response.data.return_message);
-      throw new Error(response.data.return_message);
-    }
-  } catch (error) {
-    console.error("Error processing refund:", error);
-    throw error;
-  }
-}
-
 exports.confirmOrder = async (req, res) => {
   try {
     const order = req.order;
@@ -873,6 +821,7 @@ exports.getOrdersForBottomSheet = async (req, res) => {
 exports.handleReturnOrder = async (req, res) => {
   try {
     const order = req.order;
+    const userId = order.user_id;
 
     order.status = "refunded";
     order.returnRequest.status = "refunded";
@@ -887,19 +836,41 @@ exports.handleReturnOrder = async (req, res) => {
     }
 
     // Cập nhật số lượng sản phẩm
-    for (const orderDetail of order.orderDetails) {
-      const product = await Product.findById(orderDetail.productId);
-      if (product) {
-        // Tăng số lượng trong kho và giảm số lượng đã bán
-        for (const size of product.size) {
-          if (size.sizeId.toString() === orderDetail.sizeId.toString()) {
-            size.quantity += orderDetail.quantity;
-            product.sold -= orderDetail.quantity;
-            break;
+    if (!order.orderDetails || !Array.isArray(order.orderDetails)) {
+      throw new Error("Order details không hợp lệ.");
+    }
+
+    await Promise.all(
+      order.orderDetails.map(async (orderDetail) => {
+        const product = await Product.findById(orderDetail.product.id);
+        if (product) {
+          for (const size of product.size) {
+            if (
+              size.sizeId.toString() === orderDetail.product.size_id.toString()
+            ) {
+              size.quantity = Math.max(
+                0,
+                size.quantity + orderDetail.product.pd_quantity
+              );
+              product.sold = Math.max(
+                0,
+                product.sold - orderDetail.product.pd_quantity
+              );
+              break;
+            }
           }
+          await product.save();
         }
-        await product.save();
-      }
+      })
+    );
+
+    // Cập nhật ví người dùng
+    const userWallet = await Wallet.findOne({ user_id: userId });
+    if (userWallet) {
+      userWallet.balance += order.total_price;
+      await userWallet.save();
+    } else {
+      await sendRefundRequestEmail(order.user_id.email);
     }
 
     return res
