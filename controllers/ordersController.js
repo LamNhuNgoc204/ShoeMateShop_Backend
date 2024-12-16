@@ -91,7 +91,7 @@ exports.createNewOrder = async (req, res) => {
     const voucher = await Voucher.findOne({ voucher_code });
     if (voucher) {
       voucher.quantity -= 1;
-      voucher.usedBy.push(userId);
+      voucher.usedBy.push(user_id);
       await voucher.save();
     }
 

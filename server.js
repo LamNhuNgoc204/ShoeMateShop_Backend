@@ -47,8 +47,10 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
 const mongooseURL = process.env.MONGODB_URI;
+const mongooselocal = process.env.MONGODB_LOCAL;
+
 mongoose
-  .connect(mongooseURL)
+  .connect(mongooselocal)
   .then(() => console.log("Connect to mongodb success.."))
   .catch((error) => console.error("Error connecting to database...", error));
 
