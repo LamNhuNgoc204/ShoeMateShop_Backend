@@ -123,24 +123,28 @@ exports.updateVoucher = async (req, res) => {
 // Xóa voucher theo ID (Chỉ admin hoặc nhân viên)
 exports.deleteVoucher = async (req, res) => {
   try {
-    const deletedVoucher = await Voucher.findByIdAndDelete(req.params.id);
-
-    if (!deletedVoucher) {
+    const updatedVoucher = await Voucher.findByIdAndUpdate(
+      req.params.id,
+      { status: "inactive" },
+      { new: true } 
+    );
+    if (!updatedVoucher) {
       return res.status(404).json({ message: "Voucher not found" });
     }
-
-    res
-      .status(200)
-      .json({ status: true, message: "Voucher deleted successfully" });
+    res.status(200).json({
+      status: true,
+      message: "Voucher status updated to inactive successfully",
+      voucher: updatedVoucher,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Error deleting voucher", error });
+    res.status(500).json({ message: "Error updating voucher status", error });
   }
 };
 
 // Lấy danh sách tất cả các voucher
 exports.getAllVouchers = async (req, res) => {
   try {
-    const vouchers = await Voucher.find();
+    const vouchers = await Voucher.find( { status: "active" });
     res.status(200).json({ status: true, data: vouchers });
   } catch (error) {
     res
@@ -229,30 +233,36 @@ exports.applyVoucher = async (req, res) => {
   try {
     userId = req.user._id;
     const { voucher_code, totalOrderValue } = req.body;
+    console.log(req.body);
 
     const voucher = await Voucher.findOne({ voucher_code });
 
     if (!voucher) {
       return res
         .status(404)
-        .json({ status: false, message: "Voucher not found" });
+        .json({ status: false, message: "Voucher not found" ,code:"notfound"});
     }
 
     if (totalOrderValue < voucher.min_order_value) {
-      return res.status(400).json({
+      console.log("totalOrderValue", voucher.min_order_value);
+      return res.status(200).json({
         status: false,
+        code:"minordervalue",
         message: `Order value must be at least ${voucher.min_order_value} to apply this voucher`,
       });
     }
 
     if (voucher.quantity <= 0) {
+      console.log(voucher.quantity);
       return res
         .status(400)
-        .json({ status: false, message: "No vouchers available" });
+        .json({ status: false, message: "No vouchers available" ,code:"quantity"});
     }
 
     if (voucher.usedBy.includes(userId)) {
-      return res.status(200).json({
+      console.log(voucher.usedBy);
+      return res.status(400).json({
+        code:"usedBy",
         status: false,
         message: "This voucher has already been used by you",
       });
@@ -262,9 +272,11 @@ exports.applyVoucher = async (req, res) => {
       discountAmount = voucher.max_discount_value;
     }
     const discountedPrice = totalOrderValue - discountAmount;
-
+    console.log("discountedPrice",discountedPrice);
     res.status(200).json({
+    
       status: true,
+      code:"success",
       message: "Voucher applied successfully",
       originalPrice: totalOrderValue,
       discountedPrice,
@@ -272,6 +284,8 @@ exports.applyVoucher = async (req, res) => {
       voucher_code: voucher.voucher_code,
     });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: "Error applying voucher", error });
+    
   }
 };
