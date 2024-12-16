@@ -16,7 +16,7 @@ router.get("/get-user-card", protect, cartController.getUserCard);
 router.put("/update-cart-quantity", protect, cartController.updateCartQuantity);
 
 // Remove a product from the cart
-router.post(
+router.delete(
   "/remove-product-from-cart",
   protect,
   cartController.removeProductFromCart

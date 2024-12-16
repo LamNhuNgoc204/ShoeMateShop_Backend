@@ -69,12 +69,84 @@ exports.sendVerificationEmail = async (email, otpCode) => {
           </div>
       </body>
       </html>
-    `
+    `,
   };
 
   await transporter.sendMail(mailOptions);
 };
 
+exports.sendRefundRequestEmail = async (email) => {
+  const mailOptions = {
+    from: '"ShoeMate Shop 👟" <shoemateshop@gmail.com>',
+    to: email,
+    subject: "Refund Request - Action Required",
+    text: `We need additional information to process your refund.`,
+    html: `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Refund Request</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    background-color: #f4f4f4;
+                    padding: 20px;
+                }
+                .container {
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background: #fff;
+                    padding: 20px;
+                    border-radius: 5px;
+                    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                }
+                h1 {
+                    color: #333;
+                }
+                .button {
+                    display: inline-block;
+                    font-size: 16px;
+                    color: #fff;
+                    background-color: #007BFF;
+                    padding: 10px 20px;
+                    text-decoration: none;
+                    border-radius: 5px;
+                    margin-top: 20px;
+                }
+                .footer {
+                    margin-top: 20px;
+                    font-size: 12px;
+                    color: #888;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Refund Request</h1>
+                <p>Hello,</p>
+                <p>We received your request for a refund. To proceed, we need additional information from you. Please reply to this email with the following details:</p>
+                <ul>
+                    <li>Your full name</li>
+                    <li>Order number</li>
+                    <li>Reason for the refund</li>
+                    <li>Preferred refund method (e.g., bank transfer, credit card reversal)</li>
+                </ul>
+                <p>Once we receive your response, we will process your refund as quickly as possible.</p>
+                <p>If you have any questions, feel free to contact us.</p>
+                <p>Best regards,<br>ShoeMate Shop Team</p>
+                <div class="footer">
+                    <p>&copy; ${new Date().getFullYear()} ShoeMate Shop. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+      `,
+  };
+
+  await transporter.sendMail(mailOptions);
+};
 
 exports.sendRandomPassword = async (email, password, name) => {
   const mailOptions = {
@@ -203,11 +275,8 @@ exports.sendRandomPassword = async (email, password, name) => {
           </div>
       </body>
       </html>
-    `}
+    `,
+  };
 
   await transporter.sendMail(mailOptions);
-}
-
-
-
-
+};

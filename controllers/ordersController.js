@@ -4,9 +4,9 @@ const Payment = require("../models/paymentModel");
 const Product = require("../models/productModel");
 const Cart = require("../models/cartModels");
 const Ship = require("../models/shippingModel");
-const Voucher = require("../models/voucherModel");
-const axios = require("axios");
-const crypto = require("crypto");
+const Wallet = require("../models/walletModel");
+const { sendRefundRequestEmail } = require("../utils/emailUtils");
+
 const { createNotification } = require("../controllers/notificationController");
 
 exports.getOrderDetail = async (req, res) => {
@@ -40,6 +40,8 @@ exports.getOrderDetail = async (req, res) => {
       orderStatus: order.status,
       points: order.points,
       timestamps: {},
+      returnRequest: order.returnRequest || {},
+      canceller: order.canceller,
     };
 
     if (order.timestamps.placedAt) {
@@ -122,6 +124,7 @@ exports.createNewOrder = async (req, res) => {
         completedAt: null,
         cancelledAt: null,
       },
+      updateAt: Date.now(),
     });
 
     const savedOrder = await newOrder.save();
@@ -261,6 +264,7 @@ exports.getPendingOrders = async (req, res) => {
       status: "pending",
       user_id: req.user._id,
     });
+
     const orderIds = orders.map((order) => order._id);
     const orderDetails = await OrderDetail.find({
       order_id: { $in: orderIds },
@@ -288,7 +292,9 @@ exports.getProcessingOrders = async (req, res) => {
     const orders = await Order.find({
       status: { $in: ["processing", "delivered"] },
       user_id: req.user._id,
-    });
+      returnRequest: { $exists: false },
+    }).sort({ updateAt: -1 });
+
     const orderIds = orders.map((order) => order._id);
     const orderDetails = await OrderDetail.find({
       order_id: { $in: orderIds },
@@ -316,7 +322,8 @@ exports.getCompletedOrders = async (req, res) => {
     const orders = await Order.find({
       status: "completed",
       user_id: req.user._id,
-    });
+    }).sort({ updateAt: -1 });
+
     const orderIds = orders.map((order) => order._id);
     const orderDetails = await OrderDetail.find({
       order_id: { $in: orderIds },
@@ -344,7 +351,8 @@ exports.getCancelledOrders = async (req, res) => {
     const orders = await Order.find({
       status: "cancelled",
       user_id: req.user._id,
-    });
+    }).sort({ updateAt: -1 });
+
     const orderIds = orders.map((order) => order._id);
     const orderDetails = await OrderDetail.find({
       order_id: { $in: orderIds },
@@ -370,9 +378,13 @@ exports.getCancelledOrders = async (req, res) => {
 exports.getRefundedOrders = async (req, res) => {
   try {
     const orders = await Order.find({
-      status: "refunded",
       user_id: req.user._id,
-    });
+      $or: [
+        { status: "refunded" },
+        { "returnRequest.reason": { $exists: true } },
+      ],
+    }).sort({ updateAt: -1 });
+
     const orderIds = orders.map((order) => order._id);
     const orderDetails = await OrderDetail.find({
       order_id: { $in: orderIds },
@@ -410,7 +422,10 @@ exports.getAllOrdersForAdmin = async (req, res) => {
     } else if (filterStatus === "return-rejected") {
       returnRequestCondition = { "returnRequest.status": "rejected" }; // Lọc status hoàn trả bị từ chối
     } else if (filterStatus === "return-refunded") {
-      returnRequestCondition = { "returnRequest.status": "refunded" }; // Lọc status hoàn trả đã hoàn tiền
+      returnRequestCondition = {
+        status: "refunded",
+        "returnRequest.status": "refunded",
+      }; // Lọc status hoàn trả đã hoàn tiền
     } else {
       // Lọc trạng thái đơn hàng
       statusCondition = { status: filterStatus };
@@ -460,7 +475,7 @@ exports.getAllOrdersForAdmin = async (req, res) => {
         select:
           "product.id product.name product.size_name product.price product.pd_image product.pd_quantity",
       })
-      .sort({ "timestamps.placedAt": -1 })
+      .sort({ createAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
 
@@ -540,6 +555,8 @@ exports.requestReturnOrder = async (req, res) => {
       requestDate: Date.now(),
       status: "pending",
     };
+    order.updateAt = Date.now();
+    order.timestamps.refundedAt = Date.now();
 
     const result = await order.save();
     return res.status(200).json({
@@ -575,20 +592,18 @@ exports.handleReturnRq = async (req, res) => {
     }
 
     order.returnRequest.status = returnStatus;
+    order.updateAt = Date.now();
     order.returnRequest.responseDate = Date.now();
 
     if (returnStatus === "accepted") {
-      console.log("Yêu cầu hoàn hàng của bạn đã được chấp nhận :)");
-
       await createNotification(
         order._id,
         `Yêu cầu hoàn hàng của bạn đã được chấp nhận :)`
       );
-      order.status = "refunded";
+      // order.status = "refunded";
+      order.updateAt = Date.now();
     } else {
-      console.log(
-        `Tiếc quá. Yêu cầu hoàn hàng của bạn đã bị từ chối vì lý do không hợp lý :)`
-      );
+      order.updateAt = Date.now();
 
       await createNotification(
         order._id,
@@ -630,6 +645,7 @@ exports.cancelOrder = async (req, res) => {
 
     order.status = "cancelled";
     order.canceller = user.name;
+    order.updateAt = Date.now();
     order.timestamps.cancelledAt = Date.now();
 
     // Cộng lại sản phẩm vào kho
@@ -696,59 +712,6 @@ exports.cancelOrder = async (req, res) => {
   }
 };
 
-const config = {
-  app_id: "2554",
-  key1: "sdngKKJmqEMzvh5QQcdD2A9XBSKUNaYn",
-  key2: "trMrHtvjo6myautxDUiAcYsVtaeQ8nhf",
-  refund_url: "https://sb-openapi.zalopay.vn/v2/refund",
-};
-
-async function refundZaloPay(order, refundAmount) {
-  try {
-    const detailOrder = await order.populate(
-      "payment_id.payment_method_id",
-      "payment_method transaction_id"
-    );
-    const timestamp = Date.now();
-    const refundId = `refund_${order._id}_${timestamp}`;
-
-    // Tạo data cần thiết cho request
-    const requestData = {
-      app_id: config.app_id,
-      // Mã giao dịch ZaloPay bạn nhận được khi thanh toán
-      zp_trans_id: detailOrder.payment_id.payment_method_id.transaction_id,
-      amount: refundAmount,
-      description: `Refund for order #${order._id}`,
-      refund_id: refundId,
-      timestamp: timestamp,
-    };
-
-    // Tạo checksum để bảo mật
-    const checksumString = `${requestData.app_id}|${requestData.zp_trans_id}|${requestData.amount}|${requestData.timestamp}|${config.key1}`;
-    const checksum = crypto
-      .createHmac("sha256", config.key1)
-      .update(checksumString)
-      .digest("hex");
-
-    // Thêm checksum vào request
-    requestData.mac = checksum;
-
-    // Gửi yêu cầu hoàn tiền đến ZaloPay
-    const response = await axios.post(config.refund_url, requestData);
-
-    if (response.data.return_code === 1) {
-      console.log("Refund successful:", response.data);
-      return response.data;
-    } else {
-      console.error("Refund failed:", response.data.return_message);
-      throw new Error(response.data.return_message);
-    }
-  } catch (error) {
-    console.error("Error processing refund:", error);
-    throw error;
-  }
-}
-
 exports.confirmOrder = async (req, res) => {
   try {
     const order = req.order;
@@ -764,7 +727,7 @@ exports.confirmOrder = async (req, res) => {
       return res.status(400).json({ error: "Invalid status provided." });
     }
 
-    const updateFields = { status };
+    const updateFields = { status, updateAt: Date.now() };
     if (status === "processing") {
       await createNotification(
         orderId,
@@ -859,6 +822,70 @@ exports.getOrdersForBottomSheet = async (req, res) => {
       message: "get ordeers successfully!",
       data: returnedOrder,
     });
+  } catch (error) {
+    console.log("error: ", error);
+    return res.status(500).json({ status: false, message: "Server error" });
+  }
+};
+
+exports.handleReturnOrder = async (req, res) => {
+  try {
+    const order = req.order;
+    const userId = order.user_id;
+
+    order.status = "refunded";
+    order.returnRequest.status = "refunded";
+    order.updateAt = Date.now();
+    order.timestamps.completedRefundedAt = Date.now();
+
+    const result = await order.save();
+    if (!result) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Error updating order" });
+    }
+
+    // Cập nhật số lượng sản phẩm
+    if (!order.orderDetails || !Array.isArray(order.orderDetails)) {
+      throw new Error("Order details không hợp lệ.");
+    }
+
+    await Promise.all(
+      order.orderDetails.map(async (orderDetail) => {
+        const product = await Product.findById(orderDetail.product.id);
+        if (product) {
+          for (const size of product.size) {
+            if (
+              size.sizeId.toString() === orderDetail.product.size_id.toString()
+            ) {
+              size.quantity = Math.max(
+                0,
+                size.quantity + orderDetail.product.pd_quantity
+              );
+              product.sold = Math.max(
+                0,
+                product.sold - orderDetail.product.pd_quantity
+              );
+              break;
+            }
+          }
+          await product.save();
+        }
+      })
+    );
+
+    // Cập nhật ví người dùng
+    const userWallet = await Wallet.findOne({ user_id: userId });
+    if (userWallet) {
+      userWallet.balance += order.total_price;
+      await userWallet.save();
+    } else {
+      await sendRefundRequestEmail(order.user_id.email);
+    }
+
+    return res
+      .status(200)
+      .json({ status: true, message: "success", data: result });
   } catch (error) {
     console.log("error: ", error);
     return res.status(500).json({ status: false, message: "Server error" });

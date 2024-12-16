@@ -551,3 +551,125 @@ exports.stopSelling = async (req, res) => {
     });
   }
 };
+
+exports.getSimilarPd = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    const currentProduct = await Product.findById(productId);
+    if (!currentProduct) {
+      return res.status(404).json({
+        status: false,
+        message: "Product not found",
+      });
+    }
+
+    const { category, brand } = currentProduct;
+
+    // Tìm các sản phẩm cùng category và brand với sản phẩm hiện tại
+    const similarProducts = await Product.aggregate([
+      {
+        $match: {
+          //lọc sp tương tự
+          // $or: [
+          //   { category: new mongoose.Types.ObjectId(category) },
+          //   { brand: new mongoose.Types.ObjectId(brand) },
+          // ],
+          _id: { $ne: new mongoose.Types.ObjectId(productId) }, // bỏ sp hiện tại
+          status: "Đang kinh doanh",
+        },
+      },
+      {
+        //Kết nối bảng (join)
+        $lookup: {
+          from: "brands", //tên table kết nối
+          localField: "brand", // trường liên kết trong bản PD
+          foreignField: "_id", //Trường lk của bản lk
+          as: "brandInfo", //Lưu thông tin liên kết vào brandInfo
+        },
+      },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "categoryInfo",
+        },
+      },
+    ]);
+
+    // Tính toán trung bình và số lượng đánh giá cho mỗi sản phẩm
+    for (const product of similarProducts) {
+      // Lấy danh sách reviews từ bảng Review
+      const reviews = await Review.find({ product_id: product._id }).select(
+        "rating"
+      );
+
+      // Tính tổng rating và số lượng đánh giá
+      const totalRating = reviews.reduce(
+        (acc, review) => acc + review.rating,
+        0
+      );
+      const numOfReviews = reviews.length;
+      const avgRating = numOfReviews
+        ? (totalRating / numOfReviews).toFixed(1)
+        : 0;
+
+      // Gán rating trung bình và số lượt đánh giá vào sản phẩm
+      product.avgRating = avgRating;
+      product.numOfReviews = numOfReviews;
+    }
+
+    let userId = req.user !== null ? req.user._id : null;
+
+    if (userId) {
+      for (const product of similarProducts) {
+        const isFavorite = await Wishlist.exists({
+          user_id: userId,
+          product_id: product._id,
+        });
+        product.isFavorite = !!isFavorite;
+      }
+    } else {
+      similarProducts.forEach((product) => {
+        product.isFavorite = false;
+      });
+    }
+
+    const sortedSimilarProducts = similarProducts.sort((a, b) => {
+      const isSameCategoryA =
+        a.category.toString() === currentProduct.category.toString();
+      const isSameBrandA =
+        a.brand.toString() === currentProduct.brand.toString();
+
+      const isSameCategoryB =
+        b.category.toString() === currentProduct.category.toString();
+      const isSameBrandB =
+        b.brand.toString() === currentProduct.brand.toString();
+
+      // Sản phẩm A sẽ được ưu tiên sắp xếp lên đầu nếu có cùng category hoặc brand
+      if (isSameCategoryA || isSameBrandA) {
+        return -1; // A đứng trước B
+      }
+      // Sản phẩm B sẽ được ưu tiên sắp xếp lên đầu nếu có cùng category hoặc brand
+      if (isSameCategoryB || isSameBrandB) {
+        return 1; // B đứng trước A
+      }
+      // Nếu cả A và B đều không cùng category hoặc brand, giữ nguyên thứ tự
+      return 0;
+    });
+
+    return res.status(200).json({
+      status: true,
+      message: "Similar products fetched successfully",
+      data: sortedSimilarProducts,
+    });
+  } catch (error) {
+    console.log("error", error);
+    return res.status(500).json({
+      status: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
