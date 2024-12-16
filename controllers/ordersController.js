@@ -9,6 +9,7 @@ const Voucher = require("../models/voucherModel");
 const { sendRefundRequestEmail } = require("../utils/emailUtils");
 
 const { createNotification } = require("../controllers/notificationController");
+const userModel = require("../models/userModel");
 
 exports.getOrderDetail = async (req, res) => {
   try {
@@ -837,6 +838,8 @@ exports.handleReturnOrder = async (req, res) => {
     order.updateAt = Date.now();
     order.timestamps.completedRefundedAt = Date.now();
 
+    console.log("Thay đổi trạng thái đơn hàng");
+
     const result = await order.save();
     if (!result) {
       return res
@@ -844,26 +847,26 @@ exports.handleReturnOrder = async (req, res) => {
         .json({ status: false, message: "Error updating order" });
     }
 
+    const orderDetails = await OrderDetail.find({ order_id: order._id });
     // Cập nhật số lượng sản phẩm
-    if (!order.orderDetails || !Array.isArray(order.orderDetails)) {
+    if (!orderDetails || !Array.isArray(orderDetails)) {
       throw new Error("Order details không hợp lệ.");
     }
 
     await Promise.all(
-      order.orderDetails.map(async (orderDetail) => {
-        const product = await Product.findById(orderDetail.product.id);
+      orderDetails.map(async (orderDetail) => {
+        const productItem = orderDetail.product;
+        const product = await Product.findById(productItem.id);
         if (product) {
           for (const size of product.size) {
-            if (
-              size.sizeId.toString() === orderDetail.product.size_id.toString()
-            ) {
+            if (size.sizeId.toString() === productItem.size_id.toString()) {
               size.quantity = Math.max(
                 0,
-                size.quantity + orderDetail.product.pd_quantity
+                size.quantity + productItem.pd_quantity
               );
               product.sold = Math.max(
                 0,
-                product.sold - orderDetail.product.pd_quantity
+                product.sold - productItem.pd_quantity
               );
               break;
             }
@@ -873,13 +876,20 @@ exports.handleReturnOrder = async (req, res) => {
       })
     );
 
+    const user = await userModel.findById(userId);
+
     // Cập nhật ví người dùng
     const userWallet = await Wallet.findOne({ user_id: userId });
     if (userWallet) {
       userWallet.balance += order.total_price;
+      console.log("userWallet.balance", userWallet.balance);
       await userWallet.save();
+      createNotification(
+        order._id,
+        "Đơn hàng của bạn đã hoàn tất hoàn đơn. Tiền đã được hoàn vào ví ShoeMate Pay của bạn ^v^!"
+      );
     } else {
-      await sendRefundRequestEmail(order.user_id.email);
+      await sendRefundRequestEmail(user.email);
     }
 
     return res
