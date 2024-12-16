@@ -8,15 +8,9 @@ exports.getUserInfo = async (req, res) => {
 
     const information = {
       email: user.email,
+      avatar: user.avatar,
       phone: user.phoneNumber,
       name: user.name,
-      role: user.role,
-      device_info: user.device_info,
-      wallet: user.wallet,
-      address: user.address,
-      search: user.search,
-      cart: user.cart,
-      wishlist: user.wishlist,
     };
 
     return res.status(200).json({
@@ -157,7 +151,9 @@ exports.refreshFcmToken = async (req, res) => {
   try {
     const user = req.user;
     const { token } = req.body;
-    const updatedUser = await User.findByIdAndUpdate(user._id, { FCMToken: token });
+    const updatedUser = await User.findByIdAndUpdate(user._id, {
+      FCMToken: token,
+    });
     if (updatedUser) {
       return res.status(200).json({
         status: true,
@@ -195,51 +191,71 @@ exports.LockAccount = async (req, res) => {
   }
 };
 
-
 exports.addSearch = async (req, res) => {
   try {
     let user = req.user;
     if (!req.body.search) {
-      return res.status(400).json({ status: false, message: "Search field is required" });
+      return res
+        .status(400)
+        .json({ status: false, message: "Search field is required" });
     }
-    user.searchHistory = user.searchHistory.filter(search => search != req.body.search);
+    user.searchHistory = user.searchHistory.filter(
+      (search) => search != req.body.search
+    );
 
-    console.log('user search: ', user.searchHistory);
-    const updateUser = await User.findByIdAndUpdate(user._id, { searchHistory: [...user.searchHistory, req.body.search] })
-    return res.status(200).json({ status: true, data: updateUser, message: 'Update successful' });
+    console.log("user search: ", user.searchHistory);
+    const updateUser = await User.findByIdAndUpdate(user._id, {
+      searchHistory: [...user.searchHistory, req.body.search],
+    });
+    return res
+      .status(200)
+      .json({ status: true, data: updateUser, message: "Update successful" });
   } catch (error) {
     console.log("Error: ", error);
     return res.status(500).json({ status: false, message: "Server error" });
   }
-}
+};
 
 exports.removeSearch = async (req, res) => {
   try {
     const user = req.user;
     if (!req.body.search) {
-      return res.status(400).json({ status: false, message: "Search field is required" });
+      return res
+        .status(400)
+        .json({ status: false, message: "Search field is required" });
     }
     const userTemp = await User.findById(user._id);
     const searchs = userTemp.searchHistory;
-    const updatedSearchs = searchs.filter(search => search != req.body.search)
-    console.log('user search: ', updatedSearchs)
-    const updatedUser = await User.findByIdAndUpdate(user._id, { searchHistory: updatedSearchs })
-    return res.status(200).json({ status: true, data: updatedUser, message: 'remove search success' });
+    const updatedSearchs = searchs.filter(
+      (search) => search != req.body.search
+    );
+    console.log("user search: ", updatedSearchs);
+    const updatedUser = await User.findByIdAndUpdate(user._id, {
+      searchHistory: updatedSearchs,
+    });
+    return res.status(200).json({
+      status: true,
+      data: updatedUser,
+      message: "remove search success",
+    });
   } catch (error) {
     console.log("Error: ", error);
     return res.status(500).json({ status: false, message: "Server error" });
-
   }
-}
+};
 
 exports.getSearchHistories = async (req, res) => {
   try {
     const user = req.user;
     const userTemp = await User.findById(user._id);
-    console.log("searchs: ", userTemp.searchHistory)
-    return res.status(200).json({ status: true, data: userTemp.searchHistory, message: 'Get search histories success' });
+    console.log("searchs: ", userTemp.searchHistory);
+    return res.status(200).json({
+      status: true,
+      data: userTemp.searchHistory,
+      message: "Get search histories success",
+    });
   } catch (error) {
     console.log("Error: ", error);
     return res.status(500).json({ status: false, message: "Server error" });
   }
-}
+};
