@@ -204,34 +204,34 @@ const transferMoney = async (req, res) => {
 
   if (!amount || amount <= 0) {
     console.log("Invalid amount", amount);
-    return res.status(200).json({ error: "Invalid amount", status: false });
+    return res.status(200).json({ error: "Invalid amount", status: false,code: "Invalidamount" });
   }
 
   try {
     const senderWallet = await Wallet.findOne({ userId });
     if (!senderWallet.isActive) {
       console.log("Wallet is not active");
-      return res.status(200).json({ error: "Wallet is not active", status: false });
+      return res.status(200).json({ error: "Wallet is not active", status: false ,code: "walletnotcreated"});
     }
     if (senderWallet.PIN !== pin) {
       console.log("Invalid PIN");
-      return res.status(200).json({ error: "Invalid PIN", status: false });
+      return res.status(200).json({ error: "Invalid PIN", status: false ,code: "InvalidPIN"});
     }
 
     if (senderWallet.balance < amount) {
       console.log("Insufficient balance");
-      return res.status(200).json({ error: "Insufficient balance", status: false });
+      return res.status(200).json({ error: "Insufficient balance", status: false ,code: "Insufficientbalance"});
     }
 
     const recipient = await User.findOne({ email: recipientEmail });
     if (!recipient) {
-      return res.status(204).json({ error: "Recipient not found", status: false });
+      return res.status(200).json({ error: "Recipient not found", status: false ,code: "Recipientnotfound"});
     }
 
     const recipientWallet = await Wallet.findOne({ userId: recipient._id });
     if (!recipientWallet || !recipientWallet.isActive) {
       console.log("Recipient's wallet is not active");
-      return res.status(200).json({ error: "Recipient's wallet is not active", status: false });
+      return res.status(200).json({ error: "Recipient's wallet is not active", status: false ,code: "Recipientwalletnotactive"});
     }
 
     const senderName = req.user.name; 
@@ -273,9 +273,9 @@ const transferMoney = async (req, res) => {
     console.log("recipientWallet", recipientWallet);
     await sendNotification(FCMTokenrecipient, 'MateShoe Staff 📝', recipientContent);
 
-    res.status(200).json({ message: "Transfer successful", senderWallet, recipientWallet, status: true });
+    res.status(200).json({ message: "Transfer successful", senderWallet, recipientWallet, status: true ,code: "TransferSuccessful"});
   } catch (error) {
-    res.status(500).json({ error: "Failed to transfer", status: false });
+    res.status(500).json({ error: "Failed to transfer", status: false ,code: "FailedtoTransfer"});
   }
 };
 
