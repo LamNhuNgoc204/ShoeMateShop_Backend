@@ -264,7 +264,7 @@ exports.applyVoucher = async (req, res) => {
     if (voucher.quantity <= 0) {
       console.log(voucher.quantity);
       return res
-        .status(400)
+        .status(200)
         .json({
           status: false,
           message: "No vouchers available",
@@ -274,7 +274,7 @@ exports.applyVoucher = async (req, res) => {
 
     if (voucher.usedBy.includes(userId)) {
       console.log(voucher.usedBy);
-      return res.status(400).json({
+      return res.status(200).json({
         code: "usedBy",
         status: false,
         message: "This voucher has already been used by you",
