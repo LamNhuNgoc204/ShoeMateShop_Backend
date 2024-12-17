@@ -33,4 +33,4 @@ const shippingSchema = new mongoose.Schema({
 });
 
 module.exports =
-  mongoose.models.shipping || mongoose.model("shipping", shippingSchema);
+  mongoose.models.shippings || mongoose.model("shipping", shippingSchema);

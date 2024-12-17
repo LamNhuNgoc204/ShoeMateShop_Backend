@@ -833,14 +833,27 @@ exports.handleReturnOrder = async (req, res) => {
     const order = req.order;
     const userId = order.user_id;
 
-    order.status = "refunded";
-    order.returnRequest.status = "refunded";
-    order.updateAt = Date.now();
-    order.timestamps.completedRefundedAt = Date.now();
+    // order.status = "refunded";
+    // order.returnRequest.status = "refunded";
+    // order.updateAt = Date.now();
+    // order.timestamps.completedRefundedAt = Date.now();
 
-    console.log("Thay đổi trạng thái đơn hàng");
+    // console.log("Thay đổi trạng thái đơn hàng");
 
-    const result = await order.save();
+    const result = await Order.findOneAndUpdate(
+      { _id: order._id },
+      {
+        $set: {
+          status: "refunded",
+          "returnRequest.status": "refunded",
+          updateAt: Date.now(),
+          "timestamps.completedRefundedAt": Date.now(),
+        },
+      },
+      { new: true }
+    );
+
+    //  await order.save();
     if (!result) {
       return res
         .status(400)
@@ -853,17 +866,17 @@ exports.handleReturnOrder = async (req, res) => {
       throw new Error("Order details không hợp lệ.");
     }
 
+    // console.log("result ====>", result);
+    // console.log("order detatil ====>", orderDetails);
+
     await Promise.all(
       orderDetails.map(async (orderDetail) => {
-        const productItem = orderDetail.product;
-        const product = await Product.findById(productItem.id);
+        const productItem = orderDetail.product; // trong đơn hàng
+        const product = await Product.findById(productItem.id); //trong kho
         if (product) {
           for (const size of product.size) {
             if (size.sizeId.toString() === productItem.size_id.toString()) {
-              size.quantity = Math.max(
-                0,
-                size.quantity + productItem.pd_quantity
-              );
+              size.quantity += productItem.pd_quantity;
               product.sold = Math.max(
                 0,
                 product.sold - productItem.pd_quantity
@@ -871,15 +884,19 @@ exports.handleReturnOrder = async (req, res) => {
               break;
             }
           }
-          await product.save();
+          const res = await product.save();
+          // console.log("=======res======", res);
         }
       })
     );
 
     const user = await userModel.findById(userId);
+    // console.log("user", user);
+    // console.log("order.total_price====>", order.total_price);
 
     // Cập nhật ví người dùng
-    const userWallet = await Wallet.findOne({ user_id: userId });
+    const userWallet = await Wallet.findOne({ userId: user._id });
+    // console.log("userWallet====>", userWallet);
     if (userWallet) {
       userWallet.balance += order.total_price;
       console.log("userWallet.balance", userWallet.balance);
@@ -889,6 +906,7 @@ exports.handleReturnOrder = async (req, res) => {
         "Đơn hàng của bạn đã hoàn tất hoàn đơn. Tiền đã được hoàn vào ví ShoeMate Pay của bạn ^v^!"
       );
     } else {
+      console.log("Không có ví, và check gửi thông báo về mail");
       await sendRefundRequestEmail(user.email);
     }
 
