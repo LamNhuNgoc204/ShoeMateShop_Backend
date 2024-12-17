@@ -399,7 +399,7 @@ exports.signInWithGG = async (req, res) => {
     delete userData.password;
     const token = createToken(userData._id);
 
-    return res.status(200).json({ status: true, data: userData, token: token });
+    return res.status(200).json({ status: true, data:{ user: userData, token } });
   } catch (error) {
     console.log("Google sign-in error: ", error);
     return res.status(500).json({ status: false, message: "Server error" });
